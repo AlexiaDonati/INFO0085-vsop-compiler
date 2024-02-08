@@ -1,3 +1,7 @@
-(*this(*is a*)big comm*)
+"(*this is not a comment*)"
 
-1234vv
+123h
+
+"\b\t\n\r\"\\\x11\
+
+"

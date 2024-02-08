@@ -65,10 +65,6 @@
     int started_comment = 0;
 
     std::string string_buffer = "";
-    std::string hex = "";
-
-    int string_start_column = 0;
-    int string_start_line = 0;
 %}
 
 /* Lexical Structure */
@@ -105,8 +101,7 @@ escape_sequence     b|t|n|r|\"|\\|x{hex_digit}{hex_digit}|\n[ \t]*
 escaped_char        \\{escape_sequence}
 
 /* A string cannot contain a literal line feed, or the end-of-file */
-regular_char        [^\"\n\0\\]
-string_literal      "{regular_char}|{escaped_char}"
+regular_char        [^\"\n\0\\<<EOF>>]
 
 %x string
 
@@ -176,29 +171,24 @@ operator            "{"|"}"|"("|")"|":"|";"|","|"+"|"-"|"*"|"/"|"^"|"."|"="|"<"|
 
 \" {
     string_buffer = "";
-    string_start_column = yylloc.first_column;
-    string_start_line = yylloc.first_line;
     BEGIN(string);
 }
 
+<string>{regular_char}+ {string_buffer += yytext;}
+
 <string>{escaped_char} {
     switch(yytext[1]){
-        case 'b': string_buffer += "\\x08"; break;
-        case 't': string_buffer += "\\x09"; break;
-        case 'n': string_buffer += "\\x0a"; break;
-        case 'r': string_buffer += "\\x0d"; break;
-        case '"': string_buffer += "\\x22"; break;
-        case '\\': string_buffer += "\\x5c"; break;
-        case 'x': 
-            hex.assign(yytext, yyleng-2, 2);
-            string_buffer += std::stoi(hex, 0, 16);
-            break;
-        case '\n': break;
+        case 'b': string_buffer += 'b'; break;
+        case 't': string_buffer += 't'; break;
+        case 'n': string_buffer += 'n'; break;
+        case 'r': string_buffer += 'r'; break;
+        case '"': string_buffer += '"'; break;
+        case '\\': string_buffer += '\\'; break;
+        case 'x': string_buffer += yytext[1]; break; // TODO
+        case '\n' : break;
         default: string_buffer += yytext[1]; break;
     }
 } 
-
-<string>{regular_char}+ {string_buffer += yytext;}
 
 <string>\\[^{escaped_char}{regular_char}] { /* A backslash must be followed by escaped_char */
     //TODO : error
@@ -218,7 +208,7 @@ operator            "{"|"}"|"("|")"|":"|";"|","|"+"|"-"|"*"|"/"|"^"|"."|"="|"<"|
 }
 
 <string>\" {
-    std::cout << string_start_line << "," << string_start_column << "," << "string-literal" << ",";
+    std::cout << yylloc.first_line << "," << yylloc.first_column << "," << "string-literal" << ",";
     std::cout << "\"" << string_buffer << "\"" << std::endl;
     BEGIN(INITIAL);
 }
