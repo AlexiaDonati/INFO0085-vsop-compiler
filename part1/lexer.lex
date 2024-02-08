@@ -112,8 +112,13 @@ operator            "{"|"}"|"("|")"|":"|";"|","|"+"|"-"|"*"|"/"|"^"|"."|"="|"<"|
 {single_line_comment}   /* eat up single-line comments */
 
 <INITIAL>"(*" {
-    started_comment++;
+    started_comment = 1;
     BEGIN(multi_line_comment);  /* As soon as (* is read, another lexical analyzer that only reads (* and *) is called */  
+}
+
+<INITIAL>"*)" { /* A comment must be open before being closed */
+    //TODO : error
+    std::cout << "error: A comment must be open before being closed" << std::endl;
 }
 
 <multi_line_comment>"(*" {
@@ -126,10 +131,12 @@ operator            "{"|"}"|"("|")"|":"|";"|","|"+"|"-"|"*"|"/"|"^"|"."|"="|"<"|
         BEGIN(INITIAL);     
 }
 
-<multi_line_comment>[^\0]    /* eat up multi-line comments */
+<multi_line_comment>[^<<EOF>>]    /* eat up multi-line comments */
 
-<multi_line_comment>\0 {
+<multi_line_comment><<EOF>> { /* All comment must be closed before the end of file */
     //TODO : error
+    std::cout << "error: All comment must be closed before the end of file" << std::endl;
+    BEGIN(INITIAL);
 }
 
 {integer_literal} {  /* For integer literals, output the decimal value (whatever the input format was) */
