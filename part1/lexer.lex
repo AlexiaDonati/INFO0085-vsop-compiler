@@ -182,6 +182,7 @@ operator            "{"|"}"|"("|")"|":"|";"|","|"+"|"-"|"*"|"/"|"^"|"."|"="|"<"|
 }
 
 <string>{escaped_char} {
+    int hex_value;
     switch(yytext[1]){
         case 'b': string_buffer += "\\x08"; break;
         case 't': string_buffer += "\\x09"; break;
@@ -191,7 +192,13 @@ operator            "{"|"}"|"("|")"|":"|";"|","|"+"|"-"|"*"|"/"|"^"|"."|"="|"<"|
         case '\\': string_buffer += "\\x5c"; break;
         case 'x': 
             hex.assign(yytext, yyleng-2, 2);
-            string_buffer += std::stoi(hex, 0, 16);
+            hex_value = std::stoi(hex, 0, 16);
+            /* Replace non printable values */
+            if((hex_value <= 0x1F && hex_value >= 0x00) || hex_value == 0x7F){
+                string_buffer += yytext;
+                break;
+            }
+            string_buffer += hex_value;
             break;
         case '\n': break;
         default: string_buffer += yytext[1]; break;
