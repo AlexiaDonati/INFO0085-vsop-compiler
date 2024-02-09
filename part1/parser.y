@@ -4,6 +4,7 @@
     #include <cstring>
 
     extern FILE* yyin;
+    char *file_name;
     int yylex();
 
     void yyerror(const std::string msg){
@@ -30,6 +31,8 @@ int main( int argc, char **argv ){
         std::cerr << "cannot open " << argv[2] << ": " << std::strerror(errno) << std::endl;
         return EXIT_FAILURE;
     }
+
+    file_name = argv[2];
 
     yylex();
     

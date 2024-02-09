@@ -17,6 +17,9 @@
 %option noyywrap nounput noinput batch
 
 %{
+
+    extern char *file_name;
+
     // Restart: move the first cursor to the last position
     # define LOCATION_STEP(Loc)                   \
         (Loc).first_column = (Loc).last_column;   \
@@ -69,6 +72,11 @@
 
     int string_start_column = 0;
     int string_start_line = 0;
+
+    int comm_start_column = 0;
+    int comm_start_line = 0;
+
+    int errors_count = 0;
 %}
 
 /* Lexical Structure */
@@ -105,7 +113,7 @@ escape_sequence     b|t|n|r|\"|\\|x{hex_digit}{hex_digit}|\n[ \t]*
 escaped_char        \\{escape_sequence}
 
 /* A string cannot contain a literal line feed, or the end-of-file */
-regular_char        [^\"\n\0\\]
+regular_char        [^\"\n\0\\<<EOF>>]
 string_literal      "{regular_char}|{escaped_char}"
 
 %x string
@@ -116,15 +124,18 @@ operator            "{"|"}"|"("|")"|":"|";"|","|"+"|"-"|"*"|"/"|"^"|"."|"="|"<"|
 
 {white_space}           /* eat up whitespace */
 {single_line_comment}   /* eat up single-line comments */
+\                       /* TODO: handle \ in code */
 
 <INITIAL>"(*" {
     started_comment = 1;
+    comm_start_column = yylloc.first_column;
+    comm_start_line = yylloc.first_line;
     BEGIN(multi_line_comment);  /* As soon as (* is read, another lexical analyzer that only reads (* and *) is called */  
 }
 
 <INITIAL>"*)" { /* A comment must be open before being closed */
-    //TODO : error
-    std::cout << "error: A comment must be open before being closed" << std::endl;
+    fprintf(stderr, "%s:%d:%d: A comment must be open before being closed\n", file_name, yylloc.first_line, yylloc.first_column);
+    errors_count++;
 }
 
 <multi_line_comment>"(*" {
@@ -140,8 +151,8 @@ operator            "{"|"}"|"("|")"|":"|";"|","|"+"|"-"|"*"|"/"|"^"|"."|"="|"<"|
 <multi_line_comment>[^<<EOF>>]    /* eat up multi-line comments */
 
 <multi_line_comment><<EOF>> { /* All comment must be closed before the end of file */
-    //TODO : error
-    std::cout << "error: All comment must be closed before the end of file" << std::endl;
+    fprintf(stderr, "%s:%d:%d: All comment must be closed before the end of file\n", file_name, comm_start_line, comm_start_column);
+    errors_count++;
     BEGIN(INITIAL);
 }
 
@@ -156,8 +167,8 @@ operator            "{"|"}"|"("|")"|":"|";"|","|"+"|"-"|"*"|"/"|"^"|"."|"="|"<"|
 }
 
 {integer_literal}{identifier} { /* An integer_literal cannot be directly followed by an identifier */
-    //TODO : error
-    std::cout << "error: An integer_literal cannot be directly followed by an identifier" << std::endl;
+    fprintf(stderr, "%s:%d:%d: An integer_literal cannot be directly followed by an identifier\n", file_name, yylloc.first_line, yylloc.first_column);
+    errors_count++;
 }
 
 {type_identifier} { 
@@ -207,20 +218,20 @@ operator            "{"|"}"|"("|")"|":"|";"|","|"+"|"-"|"*"|"/"|"^"|"."|"="|"<"|
 
 <string>{regular_char}+ {string_buffer += yytext;}
 
-<string>\\[^{escaped_char}{regular_char}] { /* A backslash must be followed by escaped_char */
-    //TODO : error
-    std::cout << "error: A backslash must be followed by escaped_char" << std::endl;
+<string>\\ { /* A backslash must be followed by escape_sequence */
+    fprintf(stderr, "%s:%d:%d: A backslash must be followed by escape_sequence\n", file_name, yylloc.first_line, yylloc.first_column);
+    errors_count++;
 }
 
 <string>\n { /* Cannot use \n without backslash  */
-    //TODO : error
-    std::cout << "error: Cannot use literal line feed without backslash" << std::endl;
+    fprintf(stderr, "%s:%d:%d: Cannot use literal line feed without backslash\n", file_name, yylloc.first_line, yylloc.first_column);
+    errors_count++;
     BEGIN(INITIAL);
 }
 
 <string><<EOF>> { /* All string-literal must be closed before the end of file  */
-    //TODO : error
-    std::cout << "error: All string-literal must be closed before the end of file" << std::endl;
+    fprintf(stderr, "%s:%d:%d: All string-literal must be closed before the end of file\n", file_name, yylloc.first_line, yylloc.first_column);
+    errors_count++;
     BEGIN(INITIAL);
 }
 
@@ -260,6 +271,17 @@ operator            "{"|"}"|"("|")"|":"|";"|","|"+"|"-"|"*"|"/"|"^"|"."|"="|"<"|
             break;
         }
     }
+}
+
+<INITIAL><<EOF>> {
+    if(errors_count > 0){
+        if(errors_count == 1)
+            fprintf(stderr, "\nThere is %d error\n", errors_count);
+        else
+            fprintf(stderr, "\nThere are %d errors\n", errors_count);
+        exit(1);
+    }
+    exit(0);
 }
 
 %%
