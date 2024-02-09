@@ -229,7 +229,7 @@ operator            "{"|"}"|"("|")"|":"|";"|","|"+"|"-"|"*"|"/"|"^"|"."|"="|"<"|
 }
 
 <string><<EOF>> { /* All string-literal must be closed before the end of file  */
-    fprintf(stderr, "%s:%d:%d: All string-literal must be closed before the end of file\n", file_name, string_start_line, string_start_column);
+    fprintf(stderr, "%s:%d:%d: lexical error:\n All string-literal must be closed before the end of file\n", file_name, string_start_line, string_start_column);
     errors_count++;
     BEGIN(INITIAL);
 }
