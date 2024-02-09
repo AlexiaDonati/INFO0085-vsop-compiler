@@ -133,7 +133,7 @@ operator            "{"|"}"|"("|")"|":"|";"|","|"+"|"-"|"*"|"/"|"^"|"."|"="|"<"|
 }
 
 <INITIAL>"*)" { /* A comment must be open before being closed */
-    fprintf(stderr, "%s:%d:%d: A comment must be open before being closed\n", file_name, yylloc.first_line, yylloc.first_column);
+    fprintf(stderr, "%s:%d:%d: lexical error:\n A comment must be open before being closed\n", file_name, yylloc.first_line, yylloc.first_column);
     errors_count++;
 }
 
@@ -150,7 +150,7 @@ operator            "{"|"}"|"("|")"|":"|";"|","|"+"|"-"|"*"|"/"|"^"|"."|"="|"<"|
 <multi_line_comment>[^\0]    /* eat up multi-line comments */
 
 <multi_line_comment><<EOF>> { /* All comment must be closed before the end of file */
-    fprintf(stderr, "%s:%d:%d: All comment must be closed before the end of file\n", file_name, comm_start_line, comm_start_column);
+    fprintf(stderr, "%s:%d:%d: lexical error:\n All comment must be closed before the end of file\n", file_name, comm_start_line, comm_start_column);
     errors_count++;
     BEGIN(INITIAL);
 }
@@ -166,7 +166,7 @@ operator            "{"|"}"|"("|")"|":"|";"|","|"+"|"-"|"*"|"/"|"^"|"."|"="|"<"|
 }
 
 {integer_literal}{identifier} { /* An integer_literal cannot be directly followed by an identifier */
-    fprintf(stderr, "%s:%d:%d: An integer_literal cannot be directly followed by an identifier\n", file_name, yylloc.first_line, yylloc.first_column);
+    fprintf(stderr, "%s:%d:%d: lexical error:\n An integer_literal cannot be directly followed by an identifier\n", file_name, yylloc.first_line, yylloc.first_column);
     errors_count++;
 }
 
@@ -218,18 +218,18 @@ operator            "{"|"}"|"("|")"|":"|";"|","|"+"|"-"|"*"|"/"|"^"|"."|"="|"<"|
 <string>{regular_char}+ {string_buffer += yytext;}
 
 <string>\\ { /* A backslash must be followed by escape_sequence */
-    fprintf(stderr, "%s:%d:%d: A backslash must be followed by escape_sequence\n", file_name, yylloc.first_line, yylloc.first_column);
+    fprintf(stderr, "%s:%d:%d: lexical error:\n A backslash must be followed by escape_sequence\n", file_name, yylloc.first_line, yylloc.first_column);
     errors_count++;
 }
 
 <string>\n { /* Cannot use \n without backslash  */
-    fprintf(stderr, "%s:%d:%d: Cannot use literal line feed without backslash\n", file_name, yylloc.first_line, yylloc.first_column);
+    fprintf(stderr, "%s:%d:%d: lexical error:\n Cannot use literal line feed without backslash\n", file_name, yylloc.first_line, yylloc.first_column);
     errors_count++;
     BEGIN(INITIAL);
 }
 
 <string><<EOF>> { /* All string-literal must be closed before the end of file  */
-    fprintf(stderr, "%s:%d:%d: All string-literal must be closed before the end of file\n", file_name, yylloc.first_line, yylloc.first_column);
+    fprintf(stderr, "%s:%d:%d: All string-literal must be closed before the end of file\n", file_name, string_start_line, string_start_column);
     errors_count++;
     BEGIN(INITIAL);
 }
