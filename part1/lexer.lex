@@ -3,6 +3,7 @@
     #include "parser.tab.h"
     #include <iostream>
     #include <string>
+    #include <stack>
 
     #include <list>
     #include <algorithm>
@@ -73,8 +74,8 @@
     int string_start_column = 0;
     int string_start_line = 0;
 
-    int comm_start_column = 0;
-    int comm_start_line = 0;
+    std::stack<int> comm_start_column_stack;
+    std::stack<int> comm_start_line_stack;
 
     int errors_count = 0;
 %}
@@ -127,8 +128,8 @@ operator            "{"|"}"|"("|")"|":"|";"|","|"+"|"-"|"*"|"/"|"^"|"."|"="|"<"|
 
 <INITIAL>"(*" {
     started_comment = 1;
-    comm_start_column = yylloc.first_column;
-    comm_start_line = yylloc.first_line;
+    comm_start_column_stack.push(yylloc.first_column);
+    comm_start_line_stack.push(yylloc.first_line);
     BEGIN(multi_line_comment);  /* As soon as (* is read, another lexical analyzer that only reads (* and *) is called */  
 }
 
@@ -138,10 +139,17 @@ operator            "{"|"}"|"("|")"|":"|";"|","|"+"|"-"|"*"|"/"|"^"|"."|"="|"<"|
 }
 
 <multi_line_comment>"(*" {
+    comm_start_column_stack.push(yylloc.first_column);
+    comm_start_line_stack.push(yylloc.first_line);
     started_comment++;
 }
 
 <multi_line_comment>"*)" {
+    /* Stack should not be empty */
+    if(!comm_start_column_stack.empty() && !comm_start_line_stack.empty()){
+        comm_start_column_stack.pop();
+        comm_start_line_stack.pop();
+    }
     started_comment--;
     if (started_comment == 0)
         BEGIN(INITIAL);     
@@ -150,6 +158,19 @@ operator            "{"|"}"|"("|")"|":"|";"|","|"+"|"-"|"*"|"/"|"^"|"."|"="|"<"|
 <multi_line_comment>[^\0]    /* eat up multi-line comments */
 
 <multi_line_comment><<EOF>> { /* All comment must be closed before the end of file */
+    int comm_start_column = 0, comm_start_line = 0;
+    /* Stack should not be empty */
+    if(!comm_start_column_stack.empty() && !comm_start_line_stack.empty()){
+        comm_start_column = comm_start_column_stack.top();
+        comm_start_line = comm_start_line_stack.top();
+    }
+    /* Must empty stack for next comment*/
+    while (!comm_start_column_stack.empty()) {
+        comm_start_column_stack.pop();
+    }
+    while (!comm_start_line_stack.empty()) {
+        comm_start_line_stack.pop();
+    }
     fprintf(stderr, "%s:%d:%d: lexical error:\n All comment must be closed before the end of file\n", file_name, comm_start_line, comm_start_column);
     errors_count++;
     BEGIN(INITIAL);
