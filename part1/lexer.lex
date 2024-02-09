@@ -113,7 +113,7 @@ escape_sequence     b|t|n|r|\"|\\|x{hex_digit}{hex_digit}|\n[ \t]*
 escaped_char        \\{escape_sequence}
 
 /* A string cannot contain a literal line feed, or the end-of-file */
-regular_char        [^\"\n\0\\<<EOF>>]
+regular_char        [^\"\n\0\\]
 string_literal      "{regular_char}|{escaped_char}"
 
 %x string
@@ -124,7 +124,6 @@ operator            "{"|"}"|"("|")"|":"|";"|","|"+"|"-"|"*"|"/"|"^"|"."|"="|"<"|
 
 {white_space}           /* eat up whitespace */
 {single_line_comment}   /* eat up single-line comments */
-\                       /* TODO: handle \ in code */
 
 <INITIAL>"(*" {
     started_comment = 1;
@@ -148,7 +147,7 @@ operator            "{"|"}"|"("|")"|":"|";"|","|"+"|"-"|"*"|"/"|"^"|"."|"="|"<"|
         BEGIN(INITIAL);     
 }
 
-<multi_line_comment>[^<<EOF>>]    /* eat up multi-line comments */
+<multi_line_comment>[^\0]    /* eat up multi-line comments */
 
 <multi_line_comment><<EOF>> { /* All comment must be closed before the end of file */
     fprintf(stderr, "%s:%d:%d: All comment must be closed before the end of file\n", file_name, comm_start_line, comm_start_column);
@@ -159,7 +158,7 @@ operator            "{"|"}"|"("|")"|":"|";"|","|"+"|"-"|"*"|"/"|"^"|"."|"="|"<"|
 {integer_literal} {  /* For integer literals, output the decimal value (whatever the input format was) */
     std::cout << yylloc.first_line << "," << yylloc.first_column << "," << "integer-literal" << ",";
     if(yytext[0] == '0' && yytext[1] == 'x'){
-        std::cout << std::hex << std::stoi(yytext, nullptr, 16) << std::endl;
+        std::cout /*<< std::hex*/ << std::stoi(yytext, nullptr, 16) << std::endl;
     }
     else{
         std::cout << std::stoi(yytext) << std::endl;
@@ -178,7 +177,7 @@ operator            "{"|"}"|"("|")"|":"|";"|","|"+"|"-"|"*"|"/"|"^"|"."|"="|"<"|
 {object_identifier} {
     auto it = find(keywords.begin(), keywords.end(), yytext); /* Once an identifier/keyword is read, a table lookup decides if it is an identifier or a keyword */
     if(it != keywords.end()){
-        std::cout << yylloc.first_line << "," <<  yylloc.first_column << "," << "keywords" << "," << yytext << std::endl;
+        std::cout << yylloc.first_line << "," <<  yylloc.first_column << "," << yytext << std::endl;
     }
     else{
         std::cout << yylloc.first_line << "," <<  yylloc.first_column << "," << "object-identifier" << "," << yytext << std::endl; 
