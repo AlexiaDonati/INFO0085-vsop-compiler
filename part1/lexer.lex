@@ -293,6 +293,11 @@ operator            "{"|"}"|"("|")"|":"|";"|","|"+"|"-"|"*"|"/"|"^"|"."|"="|"<"|
     }
 }
 
+. {
+    fprintf(stderr, "%s:%d:%d: lexical error:\n Character '%s' is illegal in this context.\n", file_name, yylloc.first_line, yylloc.first_column, yytext);
+    errors_count++;
+}
+
 <INITIAL><<EOF>> {
     if(errors_count > 0){
         if(errors_count == 1)
