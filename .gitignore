@@ -3,4 +3,8 @@
 *.h
 *.cpp
 *.hpp
+!main.cpp
+!driver.cpp
+!driver.hpp
+*.hh
 vsopc
