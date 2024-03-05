@@ -2,9 +2,22 @@
 #include <string>
 
 #include "driver.hpp"
+#include "ast.hpp"
 
 using namespace std;
+using namespace AST;
 
+int main(int argc, char const *argv[]){
+    Integer_literal* integer_literal = new Integer_literal(10, "file_name", 1, 1);
+
+    Print_visitor* print_visitor = new Print_visitor();
+
+    std::string* str = (std::string*)integer_literal->accept(print_visitor);
+
+    cout << *str << endl;
+}
+
+/*
 enum class Mode
 {
     LEX,
@@ -65,4 +78,4 @@ int main(int argc, char const *argv[])
     }
 
     return 0;
-}
+}*/
