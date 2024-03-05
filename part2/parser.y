@@ -63,69 +63,29 @@
 %token <std::string> STRING_LITERAL "string_literal"
 
 %token
-    LBRACE
-    RBRACE
-    LPAR
-    RPAR
-    COLON
-    SEMICOLON
-    COMMA
-    PLUS "+"
-    MINUS "-"
-    TIMES
-    DIV
-    POW
-    DOT
-    EQUAL
-    LOWER_EQUAL
-    ASSIGN ":="
-    LOWER
+    LBRACE "{"
+    RBRACE "}"
+    LPAR "("
+    RPAR ")"
+    COLON ":"
+    SEMICOLON ";"
+    COMMA ","
+    PLUS  "+"
+    MINUS  "-"
+    TIMES "*"
+    DIV "/"
+    POW "^"
+    DOT "."
+    EQUAL "="
+    LOWER_EQUAL "<="
+    ASSIGN  "<-"
+    LOWER "<"
 ;
-
-%token
-    STAR    "*"
-    SLASH   "/"
-    LPAREN  "("
-    RPAREN  ")"
-;
-
-// For some symbols, need to store a value
-%token <std::string> IDENTIFIER "identifier"
-%token <int> NUMBER "number"
-%nterm <int> exp
-
-// Precedence
-%left "+" "-"; // Could also do: %left PLUS MINUS
-%left "*" "/";
 
 %%
 // Grammar rules
 
-%start unit;
-unit: assignments exp  { driver.result = $2; };
-
-assignments:
-    %empty                      {}
-    | assignments assignment    {};
-
-assignment:
-    "identifier" ":=" exp { driver.add_variable($1, $3); };
-
-exp:
-    "number"
-    | "identifier"  {
-                        if (!driver.has_variable($1))
-                        {
-                            error(@1, "variable " + $1 + " not defined");
-                            YYERROR;
-                        }
-                        $$ = driver.get_variable($1);
-                    }
-    | exp "+" exp   { $$ = $1 + $3; }
-    | exp "-" exp   { $$ = $1 - $3; }
-    | exp "*" exp   { $$ = $1 * $3; }
-    | exp "/" exp   { $$ = $1 / $3; }
-    | "(" exp ")"   { $$ = $2; }
+to_suppr : 
 
 %%
 // User code
