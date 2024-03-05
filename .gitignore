@@ -6,5 +6,7 @@
 !main.cpp
 !driver.cpp
 !driver.hpp
+!ast.cpp
+!ast.hpp
 *.hh
 vsopc
