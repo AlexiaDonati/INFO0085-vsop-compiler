@@ -86,7 +86,7 @@ digit               {bin_digit}|[2-9]
 hex_digit           {digit}|[a-f]|[A-F]
 
 /* whitespace = { " " | tab | lf | ff | cr } */
-blank               [ \t\n\f\r]
+blank               [ \t\f\r]
 white_space          {blank}+
 
 /* Single-line comments are introduced by // and continue up to the next line feed \n */
@@ -126,7 +126,8 @@ operator            "{"|"}"|"("|")"|":"|";"|","|"+"|"-"|"*"|"/"|"^"|"."|"="|"<"|
 
     /* White spaces */
 {white_space}           loc.step();
-{single_line_comment}   loc.lines(yyleng); loc.step(); // TODO: verify
+{single_line_comment}   loc.lines(1); loc.step(); // TODO: verify
+\n+                     loc.lines(yyleng); loc.step();
 
 <INITIAL>"(*" {
     started_comment = 1;
@@ -203,7 +204,7 @@ operator            "{"|"}"|"("|")"|":"|";"|","|"+"|"-"|"*"|"/"|"^"|"."|"="|"<"|
     BEGIN(STRING);
 }
 
-<string>{escaped_char} {
+<STRING>{escaped_char} {
     int hex_value;
     string hex_string = "";
     switch(yytext[1]){
@@ -224,6 +225,7 @@ operator            "{"|"}"|"("|")"|":"|";"|","|"+"|"-"|"*"|"/"|"^"|"."|"="|"<"|
             string_buffer += hex_value;
             break;
         case '\n': 
+            loc.lines(1);
             break;
         default: 
             string_buffer += yytext[1]; 
@@ -238,7 +240,7 @@ operator            "{"|"}"|"("|")"|":"|";"|","|"+"|"-"|"*"|"/"|"^"|"."|"="|"<"|
     return Parser::make_YYerror(loc);
 }
 
-<string>\n { /* Cannot use \n without backslash  */
+<STRING>\n { /* Cannot use \n without backslash  */
     print_error(loc.begin, "Cannot use literal line feed without backslash");
     return Parser::make_YYerror(loc);
 }
