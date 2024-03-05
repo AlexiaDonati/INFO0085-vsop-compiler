@@ -126,7 +126,7 @@ operator            "{"|"}"|"("|")"|":"|";"|","|"+"|"-"|"*"|"/"|"^"|"."|"="|"<"|
 
     /* White spaces */
 {white_space}           loc.step();
-{single_line_comment}   loc.lines(1); loc.step(); // TODO: verify
+{single_line_comment}   loc.lines(1); loc.step();
 \n+                     loc.lines(yyleng); loc.step();
 
 <INITIAL>"(*" {
