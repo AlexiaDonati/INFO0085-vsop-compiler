@@ -4,7 +4,7 @@
 #include "driver.hpp"
 #include "ast.hpp"
 
-using namespace std;
+using namespace std;/*
 using namespace AST;
 
 int main(){
@@ -14,10 +14,12 @@ int main(){
 
     std::string* str = (std::string*)integer_literal->accept(print_visitor);
 
-    cout << *str << endl;
-}
+    Colon* colon = new Colon("file_name", 1, 1);
 
-/*
+    cout << *str << endl;
+}*/
+
+
 enum class Mode
 {
     LEX,
@@ -78,4 +80,4 @@ int main(int argc, char const *argv[])
     }
 
     return 0;
-}*/
+}

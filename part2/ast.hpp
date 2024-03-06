@@ -167,86 +167,120 @@ namespace AST
 
     class Lbrace : public Expr {
         public:
+            Lbrace(std::string file_name, int line, int column)
+                : Expr(file_name, line, column) {}
             void* accept(Visitor* visitor) { return visitor->visit(*this); }
     };
 
     class Rbrace : public Expr {
         public:
+            Rbrace(std::string file_name, int line, int column)
+                : Expr(file_name, line, column) {}
             void* accept(Visitor* visitor) { return visitor->visit(*this); }
     };
 
     class Lpar : public Expr {
         public:
+            Lpar(std::string file_name, int line, int column)
+                : Expr(file_name, line, column) {}
             void* accept(Visitor* visitor) { return visitor->visit(*this); }
     };
 
     class Rpar : public Expr {
         public:
+            Rpar(std::string file_name, int line, int column)
+                : Expr(file_name, line, column) {}
             void* accept(Visitor* visitor) { return visitor->visit(*this); }
     };
 
     class Colon : public Expr {
         public:
+            Colon(std::string file_name, int line, int column)
+                : Expr(file_name, line, column) {}
             void* accept(Visitor* visitor) { return visitor->visit(*this); }
     };
 
     class Semicolon : public Expr {
         public:
+            Semicolon(std::string file_name, int line, int column)
+                : Expr(file_name, line, column) {}
             void* accept(Visitor* visitor) { return visitor->visit(*this); }
     };
 
     class Comma : public Expr {
         public:
+            Comma(std::string file_name, int line, int column)
+                : Expr(file_name, line, column) {}
             void* accept(Visitor* visitor) { return visitor->visit(*this); }
     };
 
     class Plus : public Expr {
         public:
+            Plus(std::string file_name, int line, int column)
+                : Expr(file_name, line, column) {}
             void* accept(Visitor* visitor) { return visitor->visit(*this); }
     };
 
     class Minus : public Expr {
         public:
+            Minus(std::string file_name, int line, int column)
+                : Expr(file_name, line, column) {}
             void* accept(Visitor* visitor) { return visitor->visit(*this); }
     };
 
     class Times : public Expr {
         public:
+            Times(std::string file_name, int line, int column)
+                : Expr(file_name, line, column) {}
             void* accept(Visitor* visitor) { return visitor->visit(*this); }
     };
 
     class Div : public Expr {
         public:
+            Div(std::string file_name, int line, int column)
+                : Expr(file_name, line, column) {}
             void* accept(Visitor* visitor) { return visitor->visit(*this); }
     };
 
     class Pow : public Expr {
         public:
+            Pow(std::string file_name, int line, int column)
+                : Expr(file_name, line, column) {}
             void* accept(Visitor* visitor) { return visitor->visit(*this); }
     };
 
     class Dot : public Expr {
         public:
+            Dot(std::string file_name, int line, int column)
+                : Expr(file_name, line, column) {}
             void* accept(Visitor* visitor) { return visitor->visit(*this); }
     };
 
     class Equal : public Expr {
         public:
+            Equal(std::string file_name, int line, int column)
+                : Expr(file_name, line, column) {}
             void* accept(Visitor* visitor) { return visitor->visit(*this); }
     };
 
     class Lower_equal : public Expr {
         public:
+            Lower_equal(std::string file_name, int line, int column)
+                : Expr(file_name, line, column) {}
             void* accept(Visitor* visitor) { return visitor->visit(*this); }
     };
 
     class Assign : public Expr {
         public:
+            Assign(std::string file_name, int line, int column)
+                : Expr(file_name, line, column) {}
             void* accept(Visitor* visitor) { return visitor->visit(*this); }
     };
 
     class Lower : public Expr {
         public:
+            Lower(std::string file_name, int line, int column)
+                : Expr(file_name, line, column) {}
             void* accept(Visitor* visitor) { return visitor->visit(*this); }
     };
 
