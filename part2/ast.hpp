@@ -39,7 +39,7 @@ namespace AST
             virtual void* visit(Object_identifier object_identifier) = 0;
             virtual void* visit(String_literal string_literal) = 0;
 
-            /*virtual void* visit(Lbrace lbrace) = 0;
+            virtual void* visit(Lbrace lbrace) = 0;
             virtual void* visit(Rbrace rbrace) = 0;
             virtual void* visit(Lpar lpar) = 0;
             virtual void* visit(Rpar rpar) = 0;
@@ -55,7 +55,7 @@ namespace AST
             virtual void* visit(Equal equal) = 0;
             virtual void* visit(Lower_equal lower_equal) = 0;
             virtual void* visit(Assign assign) = 0;
-            virtual void* visit(Lower lower) = 0;*/
+            virtual void* visit(Lower lower) = 0;
     };
 
     class Print_visitor : public Visitor {
@@ -66,7 +66,7 @@ namespace AST
             void* visit(Object_identifier object_identifier);
             void* visit(String_literal string_literal);
 
-            /*void* visit(Lbrace lbrace);
+            void* visit(Lbrace lbrace);
             void* visit(Rbrace rbrace);
             void* visit(Lpar lpar);
             void* visit(Rpar rpar);
@@ -82,7 +82,7 @@ namespace AST
             void* visit(Equal equal);
             void* visit(Lower_equal lower_equal);
             void* visit(Assign assign);
-            void* visit(Lower lower);*/
+            void* visit(Lower lower);
     };
 
     // Data classes
@@ -91,11 +91,17 @@ namespace AST
         public:
             Expr(std::string file_name, int line, int column) 
                 : file_name(file_name), line(line), column(column) {}
-            virtual ~Expr() = default;
+            virtual ~Expr(){
+                for (auto it = this->childrens.begin(); it != this->childrens.end(); ++it){
+                    delete *it;
+                }
+            };
             virtual void* accept(Visitor* visitor) = 0;
             std::string get_file_name() { return file_name; }
             int get_line() { return line; }
             int get_column() { return column; }
+            void add_child(Expr* child) { childrens.push_back(child); }
+            std::vector<Expr*> get_childrens() { return childrens; }
 
         private:
             std::vector<Expr*> childrens;
@@ -159,7 +165,7 @@ namespace AST
             std::string value;
     };
 
-    /*class Lbrace : public Expr {
+    class Lbrace : public Expr {
         public:
             void* accept(Visitor* visitor) { return visitor->visit(*this); }
     };
@@ -242,7 +248,7 @@ namespace AST
     class Lower : public Expr {
         public:
             void* accept(Visitor* visitor) { return visitor->visit(*this); }
-    };*/
+    };
 
 }
 

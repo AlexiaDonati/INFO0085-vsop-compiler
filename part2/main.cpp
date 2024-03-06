@@ -7,7 +7,7 @@
 using namespace std;
 using namespace AST;
 
-int main(int argc, char const *argv[]){
+int main(){
     Integer_literal* integer_literal = new Integer_literal(10, "file_name", 1, 1);
 
     Print_visitor* print_visitor = new Print_visitor();
