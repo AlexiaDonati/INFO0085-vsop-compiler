@@ -1,21 +1,67 @@
 #include "ast.hpp"
 
+#include <string>
+#include <map>
+
 using namespace AST;
 using namespace std;
 
 void* Print_visitor::visit(Integer_literal integer_literal){
-    std::string* str = new std::string(std::to_string(integer_literal.getValue()));
+    std::string* str = new std::string(std::to_string(integer_literal.get_value()));
     return str;
 }
 
 void* Print_visitor::visit(Type_identifier type_identifier){
-    std::string* str = new std::string(type_identifier.getValue());
+    std::string* str = new std::string(type_identifier.get_value());
     return str;
 }
 
 void* Print_visitor::visit(Keyword keyword){
-    keyword.get_line();
-    return nullptr;
+    KEYWORD kw = keyword.get_value();
+    string result = "";
+    
+    switch (kw)
+    {
+        case CLASS:
+        {
+            Expr* name = keyword.get_child(0);
+            Expr* parent = keyword.get_child(1);
+            Expr* fields = keyword.get_child(2);
+            Expr* methods = keyword.get_child(3);
+
+            // Class must have a name, a parent, fields and methods
+            if(!name || !parent || !fields || !methods)
+                return nullptr;
+
+            string* name_result = (string*)name->accept(this);
+            string* parent_result = (string*)parent->accept(this);
+            string* fields_result = (string*)fields->accept(this);
+            string* methods_result = (string*)methods->accept(this);
+
+            result = "Class("
+                         + *name_result
+                         + ", "
+                         + *parent_result
+                         + ", "
+                         + *fields_result
+                         + ", "
+                         + *methods_result
+                         + ")";
+
+            delete name_result;
+            delete parent_result;
+            delete fields_result;
+            delete methods_result;
+            break;
+        }
+        default:
+            break;
+    }
+
+    if (result == "")
+        return nullptr;
+
+    return new string(result);
 }
 
 void* Print_visitor::visit(Object_identifier object_identifier){

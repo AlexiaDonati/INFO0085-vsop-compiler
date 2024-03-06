@@ -6,6 +6,8 @@
 
 namespace AST
 {
+    enum KEYWORD {AND, BOOL, CLASS, DO, ELSE, EXTENDS, FALSE, IF, IN, INT32, ISNULL, LET, NEW, NOT, SELF, STRING, THEN, TRUE, UNIT, WHILE};
+
     class Integer_literal;
     class Type_identifier;
     class Keyword;
@@ -101,7 +103,11 @@ namespace AST
             int get_line() { return line; }
             int get_column() { return column; }
             void add_child(Expr* child) { childrens.push_back(child); }
-            std::vector<Expr*> get_childrens() { return childrens; }
+            Expr* get_child(unsigned long index) { 
+                if (index >= childrens.size()) 
+                    return nullptr;
+                return childrens[index]; 
+            }
 
         private:
             std::vector<Expr*> childrens;
@@ -115,7 +121,7 @@ namespace AST
             Integer_literal(int value, std::string file_name, int line, int column)
                 : Expr(file_name, line, column), value(value) {}
             void* accept(Visitor* visitor) { return visitor->visit(*this); }
-            int getValue() { return value; }
+            int get_value() { return value; }
 
         private:
             int value;
@@ -126,7 +132,7 @@ namespace AST
             Type_identifier(std::string value, std::string file_name, int line, int column)
                 : Expr(file_name, line, column), value(value) {}
             void* accept(Visitor* visitor) { return visitor->visit(*this); }
-            std::string getValue() { return value; }
+            std::string get_value() { return value; }
 
         private:
             std::string value;
@@ -134,13 +140,13 @@ namespace AST
 
     class Keyword : public Expr {
         public:
-            Keyword(std::string value, std::string file_name, int line, int column)
+            Keyword(KEYWORD value, std::string file_name, int line, int column)
                 : Expr(file_name, line, column), value(value) {}
             void* accept(Visitor* visitor) { return visitor->visit(*this); }
-            std::string getValue() { return value; }
+            KEYWORD get_value() { return value; }
 
         private:
-            std::string value;
+            KEYWORD value;
     };
 
     class Object_identifier : public Expr {
@@ -148,7 +154,7 @@ namespace AST
             Object_identifier(std::string value, std::string file_name, int line, int column)
                 : Expr(file_name, line, column), value(value) {}
             void* accept(Visitor* visitor) { return visitor->visit(*this); }
-            std::string getValue() { return value; }
+            std::string get_value() { return value; }
 
         private:
             std::string value;
@@ -159,7 +165,7 @@ namespace AST
             String_literal(std::string value, std::string file_name, int line, int column)
                 : Expr(file_name, line, column), value(value) {}
             void* accept(Visitor* visitor) { return visitor->visit(*this); }
-            std::string getValue() { return value; }
+            std::string get_value() { return value; }
 
         private:
             std::string value;

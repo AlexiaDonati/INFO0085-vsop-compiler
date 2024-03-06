@@ -4,20 +4,31 @@
 #include "driver.hpp"
 #include "ast.hpp"
 
-using namespace std;/*
+using namespace std;
 using namespace AST;
 
 int main(){
-    Integer_literal* integer_literal = new Integer_literal(10, "file_name", 1, 1);
+    Keyword* keyword = new Keyword(CLASS, "file_name", 1, 1);
+
+    keyword->add_child(new Integer_literal(1, "Object", 1, 1));
+    keyword->add_child(new Integer_literal(2, "Object", 1, 1));
+    keyword->add_child(new Integer_literal(3, "Object", 1, 1));
+    keyword->add_child(new Integer_literal(4, "Object", 1, 1));
 
     Print_visitor* print_visitor = new Print_visitor();
 
-    std::string* str = (std::string*)integer_literal->accept(print_visitor);
+    std::string* str = (std::string*)keyword->accept(print_visitor);
 
-    Colon* colon = new Colon("file_name", 1, 1);
-
+    if (!str)
+    {
+        cout << "Error" << endl;
+        return 1;
+    }
+    
     cout << *str << endl;
-}*/
+
+    delete str;
+}/*
 
 
 enum class Mode
@@ -80,4 +91,4 @@ int main(int argc, char const *argv[])
     }
 
     return 0;
-}
+}*/
