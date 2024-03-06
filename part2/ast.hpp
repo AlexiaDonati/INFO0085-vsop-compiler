@@ -6,290 +6,351 @@
 
 namespace AST
 {
-    enum KEYWORD {AND, BOOL, CLASS, DO, ELSE, EXTENDS, FALSE, IF, IN, INT32, ISNULL, LET, NEW, NOT, SELF, STRING, THEN, TRUE, UNIT, WHILE};
-
-    class Integer_literal;
-    class Type_identifier;
-    class Keyword;
-    class Object_identifier;
-    class String_literal;
-    class Lbrace;
-    class Rbrace;
-    class Lpar;
-    class Rpar;
-    class Colon;
-    class Semicolon;
-    class Comma;
-    class Plus;
-    class Minus;
-    class Times;
-    class Div;
-    class Pow;
-    class Dot;
-    class Equal;
-    class Lower_equal;
+    class Expr;
+    template <typename T>
+    class List;
+    class Program;
+    class Class;
+    class Field;
+    class Method;
+    class Formal;
+    class Block;
+    class If;
+    class While;
+    class Let;
     class Assign;
-    class Lower;
-
-    // Visitor classes
-
-    class Visitor{
-        public:
-            virtual void* visit(Integer_literal integer_literal) = 0;
-            virtual void* visit(Type_identifier type_identifier) = 0;
-            virtual void* visit(Keyword keyword) = 0;
-            virtual void* visit(Object_identifier object_identifier) = 0;
-            virtual void* visit(String_literal string_literal) = 0;
-
-            virtual void* visit(Lbrace lbrace) = 0;
-            virtual void* visit(Rbrace rbrace) = 0;
-            virtual void* visit(Lpar lpar) = 0;
-            virtual void* visit(Rpar rpar) = 0;
-            virtual void* visit(Colon colon) = 0;
-            virtual void* visit(Semicolon semicolon) = 0;
-            virtual void* visit(Comma comma) = 0;
-            virtual void* visit(Plus plus) = 0;
-            virtual void* visit(Minus minus) = 0;
-            virtual void* visit(Times times) = 0;
-            virtual void* visit(Div div) = 0;
-            virtual void* visit(Pow pow) = 0;
-            virtual void* visit(Dot dot) = 0;
-            virtual void* visit(Equal equal) = 0;
-            virtual void* visit(Lower_equal lower_equal) = 0;
-            virtual void* visit(Assign assign) = 0;
-            virtual void* visit(Lower lower) = 0;
-    };
-
-    class Print_visitor : public Visitor {
-        public:
-            void* visit(Integer_literal integer_literal);
-            void* visit(Type_identifier type_identifier);
-            void* visit(Keyword keyword);
-            void* visit(Object_identifier object_identifier);
-            void* visit(String_literal string_literal);
-
-            void* visit(Lbrace lbrace);
-            void* visit(Rbrace rbrace);
-            void* visit(Lpar lpar);
-            void* visit(Rpar rpar);
-            void* visit(Colon colon);
-            void* visit(Semicolon semicolon);
-            void* visit(Comma comma);
-            void* visit(Plus plus);
-            void* visit(Minus minus);
-            void* visit(Times times);
-            void* visit(Div div);
-            void* visit(Pow pow);
-            void* visit(Dot dot);
-            void* visit(Equal equal);
-            void* visit(Lower_equal lower_equal);
-            void* visit(Assign assign);
-            void* visit(Lower lower);
-    };
+    class Unop;
+    class Binop;
+    class Call;
+    class New;
+    class String;
+    class Integer;
+    class Boolean;
+    class Unit;
+    class Object;
 
     // Data classes
 
     class Expr {
         public:
-            Expr(std::string file_name, int line, int column) 
-                : file_name(file_name), line(line), column(column) {}
-            virtual ~Expr(){
-                for (auto it = this->childrens.begin(); it != this->childrens.end(); ++it){
-                    delete *it;
-                }
-            };
-            virtual void* accept(Visitor* visitor) = 0;
-            std::string get_file_name() { return file_name; }
+            Expr(int line, int column, std::string file_name) : 
+                line(line), column(column), file_name(file_name) {};
+            ~Expr() = default;
+
             int get_line() { return line; }
             int get_column() { return column; }
-            void add_child(Expr* child) { childrens.push_back(child); }
-            Expr* get_child(unsigned long index) { 
-                if (index >= childrens.size()) 
-                    return nullptr;
-                return childrens[index]; 
-            }
-
+            std::string get_file_name() { return file_name; }
         private:
-            std::vector<Expr*> childrens;
-            std::string file_name;
             int line;
             int column;
+            std::string file_name;
     };
 
-    class Integer_literal : public Expr {
+    template <typename T>
+    class List : public Expr {
         public:
-            Integer_literal(int value, std::string file_name, int line, int column)
-                : Expr(file_name, line, column), value(value) {}
-            void* accept(Visitor* visitor) { return visitor->visit(*this); }
-            int get_value() { return value; }
+            List(int line, int column, std::string file_name) : 
+                Expr(line, column, file_name) {};
+            ~List() {
+                for (auto expr : list)
+                    delete expr;
+            };
 
+            void add(T* expr) { list.push_back(expr);};
+            unsigned long size() { return list.size();};
+        private:
+            std::vector<T*> list;
+    };
+
+    class String : public Expr {
+        public:
+            String(int line, int column, std::string file_name, std::string value) : 
+                Expr(line, column, file_name), value(value) {};
+            ~String() = default;
+
+            std::string get_value() { return value; }
+        private:
+            std::string value;
+    };
+
+    class Integer : public Expr {
+        public:
+            Integer(int line, int column, std::string file_name, int value) : 
+                Expr(line, column, file_name), value(value) {};
+            ~Integer() = default;
+
+            int get_value() { return value; }
         private:
             int value;
     };
 
-    class Type_identifier : public Expr {
+    class Boolean : public Expr {
         public:
-            Type_identifier(std::string value, std::string file_name, int line, int column)
-                : Expr(file_name, line, column), value(value) {}
-            void* accept(Visitor* visitor) { return visitor->visit(*this); }
-            std::string get_value() { return value; }
+            Boolean(int line, int column, std::string file_name, bool value) : 
+                Expr(line, column, file_name), value(value) {};
+            ~Boolean() = default;
 
+            bool get_value() { return value; }
         private:
-            std::string value;
+            bool value;
     };
 
-    class Keyword : public Expr {
-        public:
-            Keyword(KEYWORD value, std::string file_name, int line, int column)
-                : Expr(file_name, line, column), value(value) {}
-            void* accept(Visitor* visitor) { return visitor->visit(*this); }
-            KEYWORD get_value() { return value; }
 
+    class Unit : public Expr {
+        public:
+            Unit(int line, int column, std::string file_name) : 
+                Expr(line, column, file_name) {};
+            ~Unit() = default;
+    };
+
+    class Object : public Expr {
+        public:
+            Object(int line, int column, std::string file_name, std::string name) : 
+                Expr(line, column, file_name), name(name) {};
+            ~Object() = default;
+
+            std::string get_name() { return name; }
         private:
-            KEYWORD value;
+            std::string name;
     };
 
-    class Object_identifier : public Expr {
+    class New : public Expr {
         public:
-            Object_identifier(std::string value, std::string file_name, int line, int column)
-                : Expr(file_name, line, column), value(value) {}
-            void* accept(Visitor* visitor) { return visitor->visit(*this); }
-            std::string get_value() { return value; }
+            New(int line, int column, std::string file_name, std::string type) : 
+                Expr(line, column, file_name), type(type) {};
+            ~New() = default;
 
+            std::string get_type() { return type; }
         private:
-            std::string value;
+            std::string type;
     };
 
-    class String_literal : public Expr {
+    class Binop : public Expr {
         public:
-            String_literal(std::string value, std::string file_name, int line, int column)
-                : Expr(file_name, line, column), value(value) {}
-            void* accept(Visitor* visitor) { return visitor->visit(*this); }
-            std::string get_value() { return value; }
+            Binop(int line, int column, std::string file_name, std::string op, Expr* left_expr, Expr* right_expr) : 
+                Expr(line, column, file_name), op(op), left_expr(left_expr), right_expr(right_expr) {};
+            ~Binop() {
+                delete left_expr;
+                delete right_expr;
+            };
 
+            std::string get_op() { return op; }
+            Expr* get_left_expr() { return left_expr; }
+            Expr* get_right_expr() { return right_expr; }
         private:
-            std::string value;
+            std::string op;
+            Expr* left_expr;
+            Expr* right_expr;
     };
 
-    class Lbrace : public Expr {
+    class Unop : public Expr {
         public:
-            Lbrace(std::string file_name, int line, int column)
-                : Expr(file_name, line, column) {}
-            void* accept(Visitor* visitor) { return visitor->visit(*this); }
-    };
+            Unop(int line, int column, std::string file_name, std::string op, Expr* expr) : 
+                Expr(line, column, file_name), op(op), expr(expr) {};
+            ~Unop() {
+                delete expr;
+            };
 
-    class Rbrace : public Expr {
-        public:
-            Rbrace(std::string file_name, int line, int column)
-                : Expr(file_name, line, column) {}
-            void* accept(Visitor* visitor) { return visitor->visit(*this); }
-    };
-
-    class Lpar : public Expr {
-        public:
-            Lpar(std::string file_name, int line, int column)
-                : Expr(file_name, line, column) {}
-            void* accept(Visitor* visitor) { return visitor->visit(*this); }
-    };
-
-    class Rpar : public Expr {
-        public:
-            Rpar(std::string file_name, int line, int column)
-                : Expr(file_name, line, column) {}
-            void* accept(Visitor* visitor) { return visitor->visit(*this); }
-    };
-
-    class Colon : public Expr {
-        public:
-            Colon(std::string file_name, int line, int column)
-                : Expr(file_name, line, column) {}
-            void* accept(Visitor* visitor) { return visitor->visit(*this); }
-    };
-
-    class Semicolon : public Expr {
-        public:
-            Semicolon(std::string file_name, int line, int column)
-                : Expr(file_name, line, column) {}
-            void* accept(Visitor* visitor) { return visitor->visit(*this); }
-    };
-
-    class Comma : public Expr {
-        public:
-            Comma(std::string file_name, int line, int column)
-                : Expr(file_name, line, column) {}
-            void* accept(Visitor* visitor) { return visitor->visit(*this); }
-    };
-
-    class Plus : public Expr {
-        public:
-            Plus(std::string file_name, int line, int column)
-                : Expr(file_name, line, column) {}
-            void* accept(Visitor* visitor) { return visitor->visit(*this); }
-    };
-
-    class Minus : public Expr {
-        public:
-            Minus(std::string file_name, int line, int column)
-                : Expr(file_name, line, column) {}
-            void* accept(Visitor* visitor) { return visitor->visit(*this); }
-    };
-
-    class Times : public Expr {
-        public:
-            Times(std::string file_name, int line, int column)
-                : Expr(file_name, line, column) {}
-            void* accept(Visitor* visitor) { return visitor->visit(*this); }
-    };
-
-    class Div : public Expr {
-        public:
-            Div(std::string file_name, int line, int column)
-                : Expr(file_name, line, column) {}
-            void* accept(Visitor* visitor) { return visitor->visit(*this); }
-    };
-
-    class Pow : public Expr {
-        public:
-            Pow(std::string file_name, int line, int column)
-                : Expr(file_name, line, column) {}
-            void* accept(Visitor* visitor) { return visitor->visit(*this); }
-    };
-
-    class Dot : public Expr {
-        public:
-            Dot(std::string file_name, int line, int column)
-                : Expr(file_name, line, column) {}
-            void* accept(Visitor* visitor) { return visitor->visit(*this); }
-    };
-
-    class Equal : public Expr {
-        public:
-            Equal(std::string file_name, int line, int column)
-                : Expr(file_name, line, column) {}
-            void* accept(Visitor* visitor) { return visitor->visit(*this); }
-    };
-
-    class Lower_equal : public Expr {
-        public:
-            Lower_equal(std::string file_name, int line, int column)
-                : Expr(file_name, line, column) {}
-            void* accept(Visitor* visitor) { return visitor->visit(*this); }
+            std::string get_op() { return op; }
+            Expr* get_expr() { return expr; }
+        private:
+            std::string op;
+            Expr* expr;
     };
 
     class Assign : public Expr {
         public:
-            Assign(std::string file_name, int line, int column)
-                : Expr(file_name, line, column) {}
-            void* accept(Visitor* visitor) { return visitor->visit(*this); }
+            Assign(int line, int column, std::string file_name, std::string name, Expr* expr) : 
+                Expr(line, column, file_name), name(name), expr(expr) {};
+            ~Assign() {
+                delete expr;
+            };
+
+            std::string get_name() { return name; }
+            Expr* get_expr() { return expr; }
+        private:
+            std::string name;
+            Expr* expr;
     };
 
-    class Lower : public Expr {
+    class Let : public Expr {
         public:
-            Lower(std::string file_name, int line, int column)
-                : Expr(file_name, line, column) {}
-            void* accept(Visitor* visitor) { return visitor->visit(*this); }
+            Let(int line, int column, std::string file_name, std::string name, std::string type, Expr* init_expr, Expr* scope_expr) : 
+                Expr(line, column, file_name), name(name), type(type), init_expr(init_expr), scope_expr(scope_expr) {};
+            Let(int line, int column, std::string file_name, std::string name, std::string type, Expr* scope_expr) : 
+                Expr(line, column, file_name), name(name), type(type), init_expr(nullptr), scope_expr(scope_expr) {};
+            ~Let() {
+                if (has_init_expr())
+                    delete init_expr;
+                delete scope_expr;
+            };
+
+            bool has_init_expr() { return init_expr != nullptr; }
+            std::string get_name() { return name; }
+            std::string get_type() { return type; }
+            Expr* get_init_expr() { return init_expr; }
+            Expr* get_scope_expr() { return scope_expr; }
+        private:
+            std::string name;
+            std::string type;
+            Expr* init_expr; // not mandatory
+            Expr* scope_expr;
     };
 
+    class While : public Expr {
+        public:
+            While(int line, int column, std::string file_name, Expr* cond_expr, Expr* body_expr) : 
+                Expr(line, column, file_name), cond_expr(cond_expr), body_expr(body_expr) {};
+            ~While() {
+                delete cond_expr;
+                delete body_expr;
+            };
+
+            Expr* get_cond_expr() { return cond_expr; }
+            Expr* get_body_expr() { return body_expr; }
+        private:
+            Expr* cond_expr;
+            Expr* body_expr;
+    };
+
+    class If : public Expr {
+        public:
+            If(int line, int column, std::string file_name, Expr* cond_expr, Expr* then_expr, Expr* else_expr) : 
+                Expr(line, column, file_name), cond_expr(cond_expr), then_expr(then_expr), else_expr(else_expr) {};
+            If(int line, int column, std::string file_name, Expr* cond_expr, Expr* then_expr) :
+                Expr(line, column, file_name), cond_expr(cond_expr), then_expr(then_expr), else_expr(nullptr) {};
+            ~If() {
+                delete cond_expr;
+                delete then_expr;
+                if (has_else_expr())
+                    delete else_expr;
+            };
+
+            bool has_else_expr() { return else_expr != nullptr; }
+            Expr* get_cond_expr() { return cond_expr; }
+            Expr* get_then_expr() { return then_expr; }
+            Expr* get_else_expr() { return else_expr; }
+        private:
+            Expr* cond_expr;
+            Expr* then_expr;
+            Expr* else_expr; // not mandatory
+    };
+
+    class Block : public Expr {
+        public:
+            Block(int line, int column, std::string file_name) : 
+                Expr(line, column, file_name), expr_list(new List<Expr>(line, column, file_name)) {};
+            ~Block() {
+                delete expr_list;
+            };
+
+            List<Expr>* get_expr_list() { return expr_list; }
+        private:
+            List<Expr>* expr_list;
+    };
+
+    class Formal : public Expr {
+        public:
+            Formal(int line, int column, std::string file_name, std::string name, std::string type) : 
+                Expr(line, column, file_name), name(name), type(type) {};
+            ~Formal() = default;
+
+            std::string get_name() { return name; }
+            std::string get_type() { return type; }
+        private:
+            std::string name;
+            std::string type;
+    };
+
+    class Method : public Expr {
+        public:
+            Method(int line, int column, std::string file_name, std::string name, List<Formal>* formal_list, std::string return_type, Block* body_block) : 
+                Expr(line, column, file_name), name(name), formal_list(formal_list), return_type(return_type), body_block(body_block) {};
+            ~Method() {
+                delete formal_list;
+                delete body_block;
+            };
+
+            std::string get_name() { return name; }
+            List<Formal>* get_formal_list() { return formal_list; }
+            std::string get_return_type() { return return_type; }
+            Expr* get_body_block() { return body_block; }
+        private:
+            std::string name;
+            List<Formal>* formal_list;
+            std::string return_type;
+            Block* body_block;
+    };
+
+    class Field : public Expr {
+        public:
+            Field(int line, int column, std::string file_name, std::string name, std::string type, Expr* init_expr) : 
+                Expr(line, column, file_name), name(name), type(type), init_expr(init_expr) {};
+            ~Field() {
+                if (has_init_expr())
+                    delete init_expr;
+            };
+
+            bool has_init_expr() { return init_expr != nullptr; }
+            std::string get_name() { return name; }
+            std::string get_type() { return type; }
+            Expr* get_init_expr() { return init_expr; }
+        private:
+            std::string name;
+            std::string type;
+            Expr* init_expr; // not mandatory
+    };
+
+    class Class : public Expr {
+        public:
+            Class(int line, int column, std::string file_name, std::string name, std::string parent, List<Field>* field_list, List<Method>* method_list) : 
+                Expr(line, column, file_name), name(name), parent(parent), field_list(field_list), method_list(method_list) {};
+            ~Class() {
+                delete field_list;
+                delete method_list;
+            };
+
+            std::string get_name() { return name; }
+            std::string get_parent() { return parent; }
+            List<Field>* get_field_list() { return field_list; }
+            List<Method>* get_method_list() { return method_list; }
+        private:
+            std::string name;
+            std::string parent;
+            List<Field>* field_list;
+            List<Method>* method_list;
+    };
+
+    class Program : public Expr {
+        public:
+            Program(int line, int column, std::string file_name, List<Class>* class_list) : 
+                Expr(line, column, file_name), class_list(class_list) {};
+            ~Program() {
+                delete class_list;
+            };
+
+            List<Class>* get_class_list() { return class_list; }
+        private:
+            List<Class>* class_list;
+    };
+
+    class Call : public Expr {
+        public:
+            Call(int line, int column, std::string file_name, Object* object, std::string method, List<Expr>* arg_expr_list) : 
+                Expr(line, column, file_name), object(object), method(method), arg_expr_list(arg_expr_list) {};
+            ~Call() {
+                delete object;
+                delete arg_expr_list;
+            };
+
+            Expr* get_object() { return object; }
+            std::string get_method() { return method; }
+            List<Expr>* get_arg_expr_list() { return arg_expr_list; }
+        private:
+            Object* object;
+            std::string method;
+            List<Expr>* arg_expr_list;
+    };
 }
 
 #endif

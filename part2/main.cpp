@@ -6,7 +6,7 @@
 
 using namespace std;
 using namespace AST;
-
+/*
 int main(){
     Keyword* keyword = new Keyword(CLASS, "file_name", 1, 1);
 
@@ -28,7 +28,7 @@ int main(){
     cout << *str << endl;
 
     delete str;
-}/*
+}*/
 
 
 enum class Mode
@@ -91,4 +91,4 @@ int main(int argc, char const *argv[])
     }
 
     return 0;
-}*/
+}
