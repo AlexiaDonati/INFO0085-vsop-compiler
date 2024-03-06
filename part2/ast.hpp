@@ -29,13 +29,63 @@ namespace AST
     class Unit;
     class Object;
 
+    // Visitor
+
+    class Visitor {
+        public:
+            virtual void* visit(Program* program) = 0;
+            virtual void* visit(Class* class_) = 0;
+            virtual void* visit(Field* field) = 0;
+            virtual void* visit(Method* method) = 0;
+            virtual void* visit(Formal* formal) = 0;
+            virtual void* visit(Block* block) = 0;
+            virtual void* visit(If* if_) = 0;
+            virtual void* visit(While* while_) = 0;
+            virtual void* visit(Let* let) = 0;
+            virtual void* visit(Assign* assign) = 0;
+            virtual void* visit(Unop* unop) = 0;
+            virtual void* visit(Binop* binop) = 0;
+            virtual void* visit(Call* call) = 0;
+            virtual void* visit(New* new_) = 0;
+            virtual void* visit(String* string_) = 0;
+            virtual void* visit(Integer* integer) = 0;
+            virtual void* visit(Boolean* boolean) = 0;
+            virtual void* visit(Unit* unit) = 0;
+            virtual void* visit(Object* object) = 0;
+    };
+
+    class Print_visitor : public Visitor {
+        public:
+            void* visit(Program* program);
+            void* visit(Class* class_);
+            void* visit(Field* field);
+            void* visit(Method* method);
+            void* visit(Formal* formal);
+            void* visit(Block* block);
+            void* visit(If* if_);
+            void* visit(While* while_);
+            void* visit(Let* let);
+            void* visit(Assign* assign);
+            void* visit(Unop* unop);
+            void* visit(Binop* binop);
+            void* visit(Call* call);
+            void* visit(New* new_);
+            void* visit(String* string_);
+            void* visit(Integer* integer);
+            void* visit(Boolean* boolean);
+            void* visit(Unit* unit);
+            void* visit(Object* object);
+    };
+
     // Data classes
 
     class Expr {
         public:
             Expr(int line, int column, std::string file_name) : 
                 line(line), column(column), file_name(file_name) {};
-            ~Expr() = default;
+            virtual ~Expr() = default;
+
+            virtual void* accept(Visitor* visitor) = 0;
 
             int get_line() { return line; }
             int get_column() { return column; }
@@ -56,6 +106,15 @@ namespace AST
                     delete expr;
             };
 
+            void* accept(Visitor* visitor) { 
+                std::vector<void*>* result_list = new std::vector<void*>();
+
+                for (auto expr : list)
+                    result_list->push_back(expr->accept(visitor));
+
+                return result_list;
+            }
+
             void add(T* expr) { list.push_back(expr);};
             unsigned long size() { return list.size();};
         private:
@@ -68,6 +127,8 @@ namespace AST
                 Expr(line, column, file_name), value(value) {};
             ~String() = default;
 
+            void* accept(Visitor* visitor) { return visitor->visit(this); }
+
             std::string get_value() { return value; }
         private:
             std::string value;
@@ -78,6 +139,8 @@ namespace AST
             Integer(int line, int column, std::string file_name, int value) : 
                 Expr(line, column, file_name), value(value) {};
             ~Integer() = default;
+
+            void* accept(Visitor* visitor) { return visitor->visit(this); }
 
             int get_value() { return value; }
         private:
@@ -90,6 +153,8 @@ namespace AST
                 Expr(line, column, file_name), value(value) {};
             ~Boolean() = default;
 
+            void* accept(Visitor* visitor) { return visitor->visit(this); }
+
             bool get_value() { return value; }
         private:
             bool value;
@@ -101,6 +166,8 @@ namespace AST
             Unit(int line, int column, std::string file_name) : 
                 Expr(line, column, file_name) {};
             ~Unit() = default;
+
+            void* accept(Visitor* visitor) { return visitor->visit(this); }
     };
 
     class Object : public Expr {
@@ -108,6 +175,8 @@ namespace AST
             Object(int line, int column, std::string file_name, std::string name) : 
                 Expr(line, column, file_name), name(name) {};
             ~Object() = default;
+
+            void* accept(Visitor* visitor) { return visitor->visit(this); }
 
             std::string get_name() { return name; }
         private:
@@ -119,6 +188,8 @@ namespace AST
             New(int line, int column, std::string file_name, std::string type) : 
                 Expr(line, column, file_name), type(type) {};
             ~New() = default;
+
+            void* accept(Visitor* visitor) { return visitor->visit(this); }
 
             std::string get_type() { return type; }
         private:
@@ -133,6 +204,8 @@ namespace AST
                 delete left_expr;
                 delete right_expr;
             };
+
+            void* accept(Visitor* visitor) { return visitor->visit(this); }
 
             std::string get_op() { return op; }
             Expr* get_left_expr() { return left_expr; }
@@ -151,6 +224,8 @@ namespace AST
                 delete expr;
             };
 
+            void* accept(Visitor* visitor) { return visitor->visit(this); }
+
             std::string get_op() { return op; }
             Expr* get_expr() { return expr; }
         private:
@@ -165,6 +240,8 @@ namespace AST
             ~Assign() {
                 delete expr;
             };
+
+            void* accept(Visitor* visitor) { return visitor->visit(this); }
 
             std::string get_name() { return name; }
             Expr* get_expr() { return expr; }
@@ -184,6 +261,8 @@ namespace AST
                     delete init_expr;
                 delete scope_expr;
             };
+
+            void* accept(Visitor* visitor) { return visitor->visit(this); }
 
             bool has_init_expr() { return init_expr != nullptr; }
             std::string get_name() { return name; }
@@ -206,6 +285,8 @@ namespace AST
                 delete body_expr;
             };
 
+            void* accept(Visitor* visitor) { return visitor->visit(this); }
+
             Expr* get_cond_expr() { return cond_expr; }
             Expr* get_body_expr() { return body_expr; }
         private:
@@ -226,6 +307,8 @@ namespace AST
                     delete else_expr;
             };
 
+            void* accept(Visitor* visitor) { return visitor->visit(this); }
+
             bool has_else_expr() { return else_expr != nullptr; }
             Expr* get_cond_expr() { return cond_expr; }
             Expr* get_then_expr() { return then_expr; }
@@ -244,6 +327,8 @@ namespace AST
                 delete expr_list;
             };
 
+            void* accept(Visitor* visitor) { return visitor->visit(this); }
+
             List<Expr>* get_expr_list() { return expr_list; }
         private:
             List<Expr>* expr_list;
@@ -254,6 +339,8 @@ namespace AST
             Formal(int line, int column, std::string file_name, std::string name, std::string type) : 
                 Expr(line, column, file_name), name(name), type(type) {};
             ~Formal() = default;
+
+            void* accept(Visitor* visitor) { return visitor->visit(this); }
 
             std::string get_name() { return name; }
             std::string get_type() { return type; }
@@ -270,6 +357,8 @@ namespace AST
                 delete formal_list;
                 delete body_block;
             };
+
+            void* accept(Visitor* visitor) { return visitor->visit(this); }
 
             std::string get_name() { return name; }
             List<Formal>* get_formal_list() { return formal_list; }
@@ -291,6 +380,8 @@ namespace AST
                     delete init_expr;
             };
 
+            void* accept(Visitor* visitor) { return visitor->visit(this); }
+
             bool has_init_expr() { return init_expr != nullptr; }
             std::string get_name() { return name; }
             std::string get_type() { return type; }
@@ -309,6 +400,8 @@ namespace AST
                 delete field_list;
                 delete method_list;
             };
+
+            void* accept(Visitor* visitor) { return visitor->visit(this); }
 
             std::string get_name() { return name; }
             std::string get_parent() { return parent; }
@@ -329,6 +422,8 @@ namespace AST
                 delete class_list;
             };
 
+            void* accept(Visitor* visitor) { return visitor->visit(this); }
+
             List<Class>* get_class_list() { return class_list; }
         private:
             List<Class>* class_list;
@@ -342,6 +437,8 @@ namespace AST
                 delete object;
                 delete arg_expr_list;
             };
+
+            void* accept(Visitor* visitor) { return visitor->visit(this); }
 
             Expr* get_object() { return object; }
             std::string get_method() { return method; }

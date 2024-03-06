@@ -6,29 +6,20 @@
 
 using namespace std;
 using namespace AST;
-/*
-int main(){
-    Keyword* keyword = new Keyword(CLASS, "file_name", 1, 1);
 
-    keyword->add_child(new Integer_literal(1, "Object", 1, 1));
-    keyword->add_child(new Integer_literal(2, "Object", 1, 1));
-    keyword->add_child(new Integer_literal(3, "Object", 1, 1));
-    keyword->add_child(new Integer_literal(4, "Object", 1, 1));
+int main(){
+    string* str;
+
+    Integer* integer = new Integer(42, 0, "int", 78);
 
     Print_visitor* print_visitor = new Print_visitor();
 
-    std::string* str = (std::string*)keyword->accept(print_visitor);
-
-    if (!str)
-    {
-        cout << "Error" << endl;
-        return 1;
-    }
+    str = (string*)integer->accept(print_visitor);
     
     cout << *str << endl;
 
     delete str;
-}*/
+}/*
 
 
 enum class Mode
@@ -91,4 +82,4 @@ int main(int argc, char const *argv[])
     }
 
     return 0;
-}
+}*/
