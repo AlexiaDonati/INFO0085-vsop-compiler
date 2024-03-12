@@ -12,9 +12,18 @@ int main(){
 
     Integer* integer = new Integer(42, 0, "int", 78);
 
+    Let* let = new Let(0,0,"test","name","type",integer,integer);
+
     Print_visitor* print_visitor = new Print_visitor();
 
-    str = (string*)integer->accept(print_visitor);
+    List<Expr>* list = new List<Expr>();
+
+    list->add((Expr*) integer);
+    list->add((Expr*) let);
+
+    Block* block = new Block(0, 0, "block", list);
+
+    str = (string*)block->accept(print_visitor);
     
     cout << *str << endl;
 

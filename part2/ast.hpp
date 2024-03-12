@@ -97,23 +97,19 @@ namespace AST
     };
 
     template <typename T>
-    class List : public Expr {
+    class List {
         public:
-            List(int line, int column, std::string file_name) : 
-                Expr(line, column, file_name) {};
+            List() = default;
             ~List() {
                 for (auto expr : list)
                     delete expr;
             };
 
-            void* accept(Visitor* visitor) { 
-                std::vector<void*>* result_list = new std::vector<void*>();
-
-                for (auto expr : list)
-                    result_list->push_back(expr->accept(visitor));
-
-                return result_list;
+            void* accept_one(Visitor* visitor, size_t index) { 
+                return list[index]->accept(visitor);
             }
+
+            size_t get_size() { return list.size(); }
 
             void add(T* expr) { list.push_back(expr);};
             unsigned long size() { return list.size();};
@@ -321,8 +317,8 @@ namespace AST
 
     class Block : public Expr {
         public:
-            Block(int line, int column, std::string file_name) : 
-                Expr(line, column, file_name), expr_list(new List<Expr>(line, column, file_name)) {};
+            Block(int line, int column, std::string file_name, List<Expr>* expr_list) : 
+                Expr(line, column, file_name), expr_list(expr_list) {};
             ~Block() {
                 delete expr_list;
             };

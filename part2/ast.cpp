@@ -1,6 +1,7 @@
 #include "ast.hpp"
 
 #include <string>
+#include <vector>
 #include <map>
 
 using namespace AST;
@@ -92,7 +93,8 @@ void* Print_visitor::visit(Let* let){
                   + let->get_type()
                   + ((let->has_init_expr()) ? ", " + *init_expr_result : "")
                   + ", "
-                  + *scope_expr_result;
+                  + *scope_expr_result
+                  + ")";
 
     delete scope_expr_result;
     if (let->has_init_expr())
@@ -161,8 +163,21 @@ void* Print_visitor::visit(Formal* formal){
     return nullptr;
 }
 void* Print_visitor::visit(Block* block){
-    block->get_line();
-    return nullptr;
+    List<Expr>* expr_list = block->get_expr_list();
+    size_t size = expr_list->get_size();
+
+    string result = "Block[";
+
+    for (size_t i = 0; i < size; i++){
+        string* expr_result = (string*)expr_list->accept_one(this, i);
+
+        result += *expr_result;
+        result += (i+1 == size) ? "]" : ", ";
+
+        delete expr_result;
+    }
+
+    return new string(result);
 }
 
 void* Print_visitor::visit(Call* call){
