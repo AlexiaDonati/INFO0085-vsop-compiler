@@ -75,6 +75,36 @@ namespace AST
             void* visit(Boolean* boolean);
             void* visit(Unit* unit);
             void* visit(Object* object);
+
+            std::string get_value_from_void(void* void_value){
+                // Specifiate the type of the value
+                std::string* value = (std::string*) void_value;
+
+                // Give this value to a non pointer variable
+                std::string return_value = *value;
+
+                // Free the pointer
+                delete value;
+
+                // Return the value as non pointer
+                return return_value;
+            }   
+
+            template <typename T>
+            std::string print_list(List<T>* list){
+                size_t size = list->get_size();
+
+                std::string result = "Block[";
+
+                for (size_t i = 0; i < size; i++){
+                    std::string expr_result = this->get_value_from_void(list->accept_one(this, i));
+
+                    result += expr_result;
+                    result += (i+1 == size) ? "]" : ", ";
+                }
+
+                return result;
+            }    
     };
 
     // Data classes
@@ -436,7 +466,7 @@ namespace AST
 
             void* accept(Visitor* visitor) { return visitor->visit(this); }
 
-            Expr* get_object() { return object; }
+            Object* get_object() { return object; }
             std::string get_method() { return method; }
             List<Expr>* get_arg_expr_list() { return arg_expr_list; }
         private:

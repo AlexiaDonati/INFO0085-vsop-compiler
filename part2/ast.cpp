@@ -7,11 +7,6 @@
 using namespace AST;
 using namespace std;
 
-template <typename T>
-T get_value_from_void(void* void_value);
-template <typename T>
-string print_list(Visitor* visitor, List<T>* list);
-
 void* Print_visitor::visit(String* string_){
     return new string(string_->get_value());
 }
@@ -39,8 +34,8 @@ void* Print_visitor::visit(New* new_){
 }
 
 void* Print_visitor::visit(Binop* binop){
-    string left_result = get_value_from_void<string>(binop->get_left_expr()->accept(this)),
-           right_result = get_value_from_void<string>(binop->get_right_expr()->accept(this));
+    string left_result = this->get_value_from_void(binop->get_left_expr()->accept(this)),
+           right_result = this->get_value_from_void(binop->get_right_expr()->accept(this));
 
     string result = "BinOp(" 
                   + binop->get_op() 
@@ -54,7 +49,7 @@ void* Print_visitor::visit(Binop* binop){
 }
 
 void* Print_visitor::visit(Unop* unop){
-    string expr_result = get_value_from_void<string>(unop->get_expr()->accept(this));
+    string expr_result = this->get_value_from_void(unop->get_expr()->accept(this));
 
     string result = "UnOp(" 
                   + unop->get_op() 
@@ -66,7 +61,7 @@ void* Print_visitor::visit(Unop* unop){
 }
 
 void* Print_visitor::visit(Assign* assign){
-    string expr_result = get_value_from_void<string>(assign->get_expr()->accept(this));
+    string expr_result = this->get_value_from_void(assign->get_expr()->accept(this));
 
     string result = "Assign(" 
                   + assign->get_name() 
@@ -78,12 +73,12 @@ void* Print_visitor::visit(Assign* assign){
 }
 
 void* Print_visitor::visit(Let* let){
-    string scope_expr_result = get_value_from_void<string>(let->get_scope_expr()->accept(this)),
+    string scope_expr_result = this->get_value_from_void(let->get_scope_expr()->accept(this)),
            init_expr_result;
 
 
     if(let->has_init_expr())
-        init_expr_result = get_value_from_void<string>(let->get_init_expr()->accept(this));
+        init_expr_result = this->get_value_from_void(let->get_init_expr()->accept(this));
 
     string result = "Let("
                   + let->get_name()
@@ -98,8 +93,8 @@ void* Print_visitor::visit(Let* let){
 }
 
 void* Print_visitor::visit(While* while_){
-    string cond_result = get_value_from_void<string>(while_->get_cond_expr()->accept(this)),
-           body_result = get_value_from_void<string>(while_->get_body_expr()->accept(this));
+    string cond_result = this->get_value_from_void(while_->get_cond_expr()->accept(this)),
+           body_result = this->get_value_from_void(while_->get_body_expr()->accept(this));
 
     string result = "While(" 
                   + cond_result 
@@ -111,12 +106,12 @@ void* Print_visitor::visit(While* while_){
 }
 
 void* Print_visitor::visit(If* if_){
-    string cond_result = get_value_from_void<string>(if_->get_cond_expr()->accept(this)),
-           then_result = get_value_from_void<string>(if_->get_then_expr()->accept(this)),
+    string cond_result = this->get_value_from_void(if_->get_cond_expr()->accept(this)),
+           then_result = this->get_value_from_void(if_->get_then_expr()->accept(this)),
            else_result;
 
     if(if_->has_else_expr())
-        else_result = get_value_from_void<string>(if_->get_else_expr()->accept(this));
+        else_result = this->get_value_from_void(if_->get_else_expr()->accept(this));
 
     string result = "If(" 
                   + cond_result 
@@ -129,23 +124,57 @@ void* Print_visitor::visit(If* if_){
 }
 
 void* Print_visitor::visit(Program* program){
-    program->get_line();
-    return nullptr;
+    return new string(this->print_list(program->get_class_list()));
 }
 
 void* Print_visitor::visit(Class* class_){
-    class_->get_line();
-    return nullptr;
+    string name = class_->get_name();
+    string parent = class_->get_parent();
+    string field_list_result = this->print_list(class_->get_field_list());
+    string method_list_result = this->print_list(class_->get_method_list());
+
+    string result = "Class(" 
+                  + name + ", "
+                  + parent + ", "
+                  + field_list_result + ", "
+                  + method_list_result
+                  + ")";
+
+    return new string(result);
 }
 
 void* Print_visitor::visit(Field* field){
-    field->get_line();
-    return nullptr;
+    string name = field->get_name();
+    string type = field->get_type();
+    string init_expr_result;
+
+    if(field->has_init_expr())
+        init_expr_result = this->get_value_from_void(field->get_init_expr()->accept(this));
+
+    string result = "Field(" 
+                  + name + ", "
+                  + type + ", "
+                  + ((field->has_init_expr()) ? init_expr_result : "")
+                  + ")";
+    
+    
+    return new string(result);
 }
 
 void* Print_visitor::visit(Method* method){
-    method->get_line();
-    return nullptr;
+    string name = method->get_name();
+    string return_type = method->get_return_type();
+    string body_block_result = this->get_value_from_void(method->get_body_block()->accept(this));
+    string formal_list_result = this->print_list(method->get_formal_list());
+
+    string result = "Method(" 
+                    + name + ", "
+                    + formal_list_result + ", "
+                    + return_type + ", "
+                    + body_block_result
+                    + ")";
+
+    return new string(result);
 }
 
 void* Print_visitor::visit(Formal* formal){
@@ -161,43 +190,19 @@ void* Print_visitor::visit(Formal* formal){
 }
 
 void* Print_visitor::visit(Block* block){
-    List<Expr>* expr_list = block->get_expr_list();
-
-    return new string(print_list(this, expr_list));
+    return new string(this->print_list(block->get_expr_list()));
 }
 
 void* Print_visitor::visit(Call* call){
-    call->get_line();
-    return nullptr;
-}
+    string object_result = this->get_value_from_void(call->get_object()->accept(this));
+    string method = call->get_method();
+    string arg_expr_list_result = this->print_list(call->get_arg_expr_list());
 
-template <typename T>
-T get_value_from_void(void* void_value){
-    // Specifiate the type of the value
-    T* value = (T*) void_value;
+    string result = "Call(" 
+                  + object_result + ", "
+                  + method + ", "
+                  + arg_expr_list_result
+                  + ")";
 
-    // Give this value to a non pointer variable
-    T return_value = *value;
-
-    // Free the pointer
-    delete value;
-
-    // Return the value as non pointer
-    return return_value;
-}
-
-template <typename T>
-string print_list(Visitor* visitor, List<T>* list){
-    size_t size = list->get_size();
-
-    string result = "Block[";
-
-    for (size_t i = 0; i < size; i++){
-        string expr_result = get_value_from_void<string>(list->accept_one(visitor, i));
-
-        result += expr_result;
-        result += (i+1 == size) ? "]" : ", ";
-    }
-
-    return result;
+    return new string(result);
 }
