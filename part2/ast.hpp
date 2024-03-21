@@ -90,6 +90,10 @@ namespace AST
                 return return_value;
             }   
 
+            void* get_void_from_value(std::string value){
+                return new std::string(value);
+            }
+
             template <typename T>
             std::string print_list(List<T>* list){
                 size_t size = list->get_size();

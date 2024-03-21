@@ -8,29 +8,29 @@ using namespace AST;
 using namespace std;
 
 void* Print_visitor::visit(String* string_){
-    return new string(string_->get_value());
+    return this->get_void_from_value(string_->get_value());
 }
 
 void* Print_visitor::visit(Integer* integer){
-    return new string(to_string(integer->get_value()));
+    return this->get_void_from_value(to_string(integer->get_value()));
 }
 
 void* Print_visitor::visit(Boolean* boolean){
-    return new string(boolean->get_value() ? "true" : "false");
+    return this->get_void_from_value(boolean->get_value() ? "true" : "false");
 }
 
 void* Print_visitor::visit(Unit* unit){
     // to remove the warning
     unit->get_line();
-    return new string("()");
+    return this->get_void_from_value("()");
 }
 
 void* Print_visitor::visit(Object* object){
-    return new string(object->get_name());
+    return this->get_void_from_value(object->get_name());
 }
 
 void* Print_visitor::visit(New* new_){
-    return new string("New(" + new_->get_type() + ")");
+    return this->get_void_from_value("New(" + new_->get_type() + ")");
 }
 
 void* Print_visitor::visit(Binop* binop){
@@ -45,7 +45,7 @@ void* Print_visitor::visit(Binop* binop){
                   + right_result 
                   + ")";
 
-    return new string(result);
+    return this->get_void_from_value(result);
 }
 
 void* Print_visitor::visit(Unop* unop){
@@ -57,7 +57,7 @@ void* Print_visitor::visit(Unop* unop){
                   + expr_result 
                   + ")";
 
-    return new string(result);
+    return this->get_void_from_value(result);
 }
 
 void* Print_visitor::visit(Assign* assign){
@@ -69,7 +69,7 @@ void* Print_visitor::visit(Assign* assign){
                   + expr_result 
                   + ")";
 
-    return new string(result);
+    return this->get_void_from_value(result);
 }
 
 void* Print_visitor::visit(Let* let){
@@ -89,7 +89,7 @@ void* Print_visitor::visit(Let* let){
                   + scope_expr_result
                   + ")";
 
-    return new string(result);
+    return this->get_void_from_value(result);
 }
 
 void* Print_visitor::visit(While* while_){
@@ -102,7 +102,7 @@ void* Print_visitor::visit(While* while_){
                   + body_result 
                   + ")";
 
-    return new string(result);
+    return this->get_void_from_value(result);
 }
 
 void* Print_visitor::visit(If* if_){
@@ -120,11 +120,11 @@ void* Print_visitor::visit(If* if_){
                   + ((if_->has_else_expr()) ? ", " + else_result : "")
                   + ")";
 
-    return new string(result);
+    return this->get_void_from_value(result);
 }
 
 void* Print_visitor::visit(Program* program){
-    return new string(this->print_list(program->get_class_list()));
+    return this->get_void_from_value(this->print_list(program->get_class_list()));
 }
 
 void* Print_visitor::visit(Class* class_){
@@ -140,7 +140,7 @@ void* Print_visitor::visit(Class* class_){
                   + method_list_result
                   + ")";
 
-    return new string(result);
+    return this->get_void_from_value(result);
 }
 
 void* Print_visitor::visit(Field* field){
@@ -158,7 +158,7 @@ void* Print_visitor::visit(Field* field){
                   + ")";
     
     
-    return new string(result);
+    return this->get_void_from_value(result);
 }
 
 void* Print_visitor::visit(Method* method){
@@ -174,7 +174,7 @@ void* Print_visitor::visit(Method* method){
                     + body_block_result
                     + ")";
 
-    return new string(result);
+    return this->get_void_from_value(result);
 }
 
 void* Print_visitor::visit(Formal* formal){
@@ -186,11 +186,11 @@ void* Print_visitor::visit(Formal* formal){
                   + " : " 
                   + type;
 
-    return new string(result);
+    return this->get_void_from_value(result);
 }
 
 void* Print_visitor::visit(Block* block){
-    return new string(this->print_list(block->get_expr_list()));
+    return this->get_void_from_value(this->print_list(block->get_expr_list()));
 }
 
 void* Print_visitor::visit(Call* call){
@@ -204,5 +204,5 @@ void* Print_visitor::visit(Call* call){
                   + arg_expr_list_result
                   + ")";
 
-    return new string(result);
+    return this->get_void_from_value(result);
 }
