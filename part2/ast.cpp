@@ -33,6 +33,10 @@ void* Print_visitor::visit(New* new_){
     return new string("New(" + new_->get_type() + ")");
 }
 
+void* Print_visitor::visit(Self* self){
+    return new string("self");
+}
+
 void* Print_visitor::visit(Binop* binop){
     string left_result = this->get_value_from_void(binop->get_left_expr()->accept(this)),
            right_result = this->get_value_from_void(binop->get_right_expr()->accept(this));
@@ -194,7 +198,7 @@ void* Print_visitor::visit(Block* block){
 }
 
 void* Print_visitor::visit(Call* call){
-    string object_result = this->get_value_from_void(call->get_object()->accept(this));
+    string object_result = call->get_object();
     string method = call->get_method();
     string arg_expr_list_result = this->print_list(call->get_arg_expr_list());
 
