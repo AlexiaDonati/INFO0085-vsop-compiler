@@ -6,7 +6,7 @@
 !main.cpp
 !driver.cpp
 !driver.hpp
-!ast.cpp
+!print_visitor.cpp
 !ast.hpp
 *.hh
 vsopc
