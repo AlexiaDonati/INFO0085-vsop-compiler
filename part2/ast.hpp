@@ -4,6 +4,11 @@
 #include <string>
 #include <vector>
 
+#define TO_VALUE(void_pointer) this->get_value_from_void(void_pointer)
+#define TO_VOID(value) this->get_void_from_value(value)
+#define ACCEPT(expr) TO_VALUE(expr->accept(this))
+#define ACCEPT_LIST(list) this->accept_list(list)
+
 namespace AST
 {
     class Expr;
@@ -54,6 +59,15 @@ namespace AST
             virtual void* visit(Boolean* boolean) = 0;
             virtual void* visit(Unit* unit) = 0;
             virtual void* visit(Object* object) = 0;
+
+            /*==================================\
+            | Cannot make virtual template.     |
+            | So, these are not specified here, |
+            | but must be done in children!     |
+            \==================================*/
+            // virtual T get_value_from_void(void* void_value) = 0
+            // virtual void* get_void_from_value(T value) = 0
+            // virtual E accept_list(List<T>* list) = 0
     };
 
     class Print_visitor : public Visitor {
@@ -93,8 +107,12 @@ namespace AST
                 return return_value;
             }   
 
+            void* get_void_from_value(std::string value){
+                return new std::string(value);
+            }
+
             template <typename T>
-            std::string print_list(List<T>* list){
+            std::string accept_list(List<T>* list){
                 size_t size = list->get_size();
 
                 std::string result = "Block[";

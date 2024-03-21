@@ -10,7 +10,7 @@ SRC				= main.cpp \
 				  driver.cpp \
 				  parser.cpp \
 				  lexer.cpp \
-				  ast.cpp
+				  print_visitor.cpp
 
 OBJ	  			= $(SRC:.cpp=.o)
 
