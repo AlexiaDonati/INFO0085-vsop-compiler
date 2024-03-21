@@ -7,6 +7,7 @@
 using namespace std;
 using namespace AST;
 
+/*
 int main(){
     string* str;
 
@@ -25,11 +26,19 @@ int main(){
 
     str = (string*)block->accept(print_visitor);
     
+    //cout << *str << endl;
+
+    List<Class>* list_class = new List<Class>();
+
+    Program* program = new Program(0, 0, "program", list_class);
+
+    str = (string*)program->accept(print_visitor);
+
     cout << *str << endl;
 
     delete str;
-}/*
-
+}
+*/
 
 enum class Mode
 {
@@ -84,11 +93,15 @@ int main(int argc, char const *argv[])
     case Mode::PARSE:
         res = driver.parse();
 
+        string *str;
+        
         if (res == 0)
-            cout << "Result: " << driver.result << endl;
+            str = driver.get_ast();
+
+        cout << *str << endl;
 
         return res;
     }
 
     return 0;
-}*/
+}
