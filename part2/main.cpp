@@ -93,7 +93,7 @@ int main(int argc, char const *argv[])
     case Mode::PARSE:
         res = driver.parse();
 
-        string *str;
+        string *str = nullptr;
         
         if (res == 0)
             str = driver.get_ast();
