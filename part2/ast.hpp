@@ -124,6 +124,10 @@ namespace AST
                     result += (i+1 == size) ? "]" : ", ";
                 }
 
+                if(size == 0){
+                    result += "]";
+                }
+
                 return result;
             }    
     };
