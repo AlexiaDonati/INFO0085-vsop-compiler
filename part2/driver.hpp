@@ -5,6 +5,7 @@
 #include <vector>
 #include <map>
 
+#include "ast.hpp"
 #include "parser.hpp"
 
 // Give prototype of yylex() function, then declare it.
@@ -31,31 +32,16 @@ namespace VSOP
         const std::string &get_source_file() { return source_file; }
 
         /**
-         * @brief Add a new integer variable.
-         *
-         * @param name The name of the variable.
-         * @param value The value of the variable.
-         */
-        void add_variable(std::string name, int value) { variables[name] = value; }
+         * @brief Set the AST.
+         * 
+         * @param _ast The AST.
+        */
+        void set_ast(AST::Program *_ast) { ast = _ast; }
 
         /**
-         * @brief Check if a variable exists.
-         *
-         * @param name The name of the variable.
-         *
-         * @return true If the variable exists.
-         * @return false If the variable does not exist.
+         * @brief Get the AST.
          */
-        bool has_variable(std::string name) { return variables.count(name); }
-
-        /**
-         * @brief Get the interger value of a variable.
-         *
-         * @param name The name of the variable.
-         *
-         * @return int The value of the variable.
-         */
-        int get_variable(std::string name) { return variables.at(name); }
+        std::string* get_ast() { return (std::string*) ast->accept(new AST::Print_visitor()); }
 
         /**
          * @brief Run the lexer on the source file.
@@ -76,11 +62,6 @@ namespace VSOP
          */
         void print_tokens();
 
-        /**
-         * @brief The result of the computation.
-         */
-        int result;
-
     private:
         /**
          * @brief The source file.
@@ -91,16 +72,16 @@ namespace VSOP
          * @brief The parser.
          */
         VSOP::Parser *parser;
-
-        /**
-         * @brief Store the variables (names + values).
-         */
-        std::map<std::string, int> variables;
-
+        
         /**
          * @brief Store the tokens.
          */
         std::vector<Parser::symbol_type> tokens;
+
+        /**
+         * @brief The AST.
+         */
+        AST::Program *ast;
 
         /**
          * @brief Start the lexer.
