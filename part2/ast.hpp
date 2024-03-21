@@ -19,6 +19,7 @@ namespace AST
     class While;
     class Let;
     class Assign;
+    class Self;
     class Unop;
     class Binop;
     class Call;
@@ -43,6 +44,7 @@ namespace AST
             virtual void* visit(While* while_) = 0;
             virtual void* visit(Let* let) = 0;
             virtual void* visit(Assign* assign) = 0;
+            virtual void* visit(Self* self) = 0;
             virtual void* visit(Unop* unop) = 0;
             virtual void* visit(Binop* binop) = 0;
             virtual void* visit(Call* call) = 0;
@@ -66,6 +68,7 @@ namespace AST
             void* visit(While* while_);
             void* visit(Let* let);
             void* visit(Assign* assign);
+            void* visit(Self* self);
             void* visit(Unop* unop);
             void* visit(Binop* binop);
             void* visit(Call* call);
@@ -220,6 +223,15 @@ namespace AST
             std::string get_type() { return type; }
         private:
             std::string type;
+    };
+
+    class Self : public Expr {
+        public:
+            Self(int line, int column, std::string file_name) : 
+                Expr(line, column, file_name) {};
+            ~Self() = default;
+
+            void* accept(Visitor* visitor) { return visitor->visit(this); }
     };
 
     class Binop : public Expr {
@@ -457,20 +469,19 @@ namespace AST
 
     class Call : public Expr {
         public:
-            Call(int line, int column, std::string file_name, Object* object, std::string method, List<Expr>* arg_expr_list) : 
+            Call(int line, int column, std::string file_name, std::string object, std::string method, List<Expr>* arg_expr_list) : 
                 Expr(line, column, file_name), object(object), method(method), arg_expr_list(arg_expr_list) {};
             ~Call() {
-                delete object;
                 delete arg_expr_list;
             };
 
             void* accept(Visitor* visitor) { return visitor->visit(this); }
 
-            Object* get_object() { return object; }
+            std::string get_object() { return object; }
             std::string get_method() { return method; }
             List<Expr>* get_arg_expr_list() { return arg_expr_list; }
         private:
-            Object* object;
+            std::string object;
             std::string method;
             List<Expr>* arg_expr_list;
     };
