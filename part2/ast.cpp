@@ -1,41 +1,41 @@
 #include "ast.hpp"
 
-#include <string>
-#include <vector>
-#include <map>
-
 using namespace AST;
 using namespace std;
 
+#define TO_STRING(void_pointer) this->get_value_from_void(void_pointer)
+#define TO_VOID(value) this->get_void_from_value(value)
+#define ACCEPT(expr) TO_STRING(expr->accept(this))
+
 void* Print_visitor::visit(String* string_){
-    return this->get_void_from_value(string_->get_value());
+    return TO_VOID(string_->get_value());
 }
 
 void* Print_visitor::visit(Integer* integer){
-    return this->get_void_from_value(to_string(integer->get_value()));
+    return TO_VOID(to_string(integer->get_value()));
 }
 
 void* Print_visitor::visit(Boolean* boolean){
-    return this->get_void_from_value(boolean->get_value() ? "true" : "false");
+    return TO_VOID(boolean->get_value() ? "true" : "false");
 }
 
 void* Print_visitor::visit(Unit* unit){
     // to remove the warning
     unit->get_line();
-    return this->get_void_from_value("()");
+    return TO_VOID("()");
 }
 
 void* Print_visitor::visit(Object* object){
-    return this->get_void_from_value(object->get_name());
+    return TO_VOID(object->get_name());
 }
 
 void* Print_visitor::visit(New* new_){
-    return this->get_void_from_value("New(" + new_->get_type() + ")");
+    return TO_VOID("New(" + new_->get_type() + ")");
 }
 
 void* Print_visitor::visit(Binop* binop){
-    string left_result = this->get_value_from_void(binop->get_left_expr()->accept(this)),
-           right_result = this->get_value_from_void(binop->get_right_expr()->accept(this));
+    string left_result = ACCEPT(binop->get_left_expr()),
+           right_result = ACCEPT(binop->get_right_expr());
 
     string result = "BinOp(" 
                   + binop->get_op() 
@@ -45,11 +45,11 @@ void* Print_visitor::visit(Binop* binop){
                   + right_result 
                   + ")";
 
-    return this->get_void_from_value(result);
+    return TO_VOID(result);
 }
 
 void* Print_visitor::visit(Unop* unop){
-    string expr_result = this->get_value_from_void(unop->get_expr()->accept(this));
+    string expr_result = ACCEPT(unop->get_expr());
 
     string result = "UnOp(" 
                   + unop->get_op() 
@@ -57,11 +57,11 @@ void* Print_visitor::visit(Unop* unop){
                   + expr_result 
                   + ")";
 
-    return this->get_void_from_value(result);
+    return TO_VOID(result);
 }
 
 void* Print_visitor::visit(Assign* assign){
-    string expr_result = this->get_value_from_void(assign->get_expr()->accept(this));
+    string expr_result = ACCEPT(assign->get_expr());
 
     string result = "Assign(" 
                   + assign->get_name() 
@@ -69,16 +69,16 @@ void* Print_visitor::visit(Assign* assign){
                   + expr_result 
                   + ")";
 
-    return this->get_void_from_value(result);
+    return TO_VOID(result);
 }
 
 void* Print_visitor::visit(Let* let){
-    string scope_expr_result = this->get_value_from_void(let->get_scope_expr()->accept(this)),
+    string scope_expr_result = ACCEPT(let->get_scope_expr()),
            init_expr_result;
 
 
     if(let->has_init_expr())
-        init_expr_result = this->get_value_from_void(let->get_init_expr()->accept(this));
+        init_expr_result = ACCEPT(let->get_init_expr());
 
     string result = "Let("
                   + let->get_name()
@@ -89,12 +89,12 @@ void* Print_visitor::visit(Let* let){
                   + scope_expr_result
                   + ")";
 
-    return this->get_void_from_value(result);
+    return TO_VOID(result);
 }
 
 void* Print_visitor::visit(While* while_){
-    string cond_result = this->get_value_from_void(while_->get_cond_expr()->accept(this)),
-           body_result = this->get_value_from_void(while_->get_body_expr()->accept(this));
+    string cond_result = ACCEPT(while_->get_cond_expr()),
+           body_result = ACCEPT(while_->get_body_expr());
 
     string result = "While(" 
                   + cond_result 
@@ -102,16 +102,16 @@ void* Print_visitor::visit(While* while_){
                   + body_result 
                   + ")";
 
-    return this->get_void_from_value(result);
+    return TO_VOID(result);
 }
 
 void* Print_visitor::visit(If* if_){
-    string cond_result = this->get_value_from_void(if_->get_cond_expr()->accept(this)),
-           then_result = this->get_value_from_void(if_->get_then_expr()->accept(this)),
+    string cond_result = ACCEPT(if_->get_cond_expr()),
+           then_result = ACCEPT(if_->get_then_expr()),
            else_result;
 
     if(if_->has_else_expr())
-        else_result = this->get_value_from_void(if_->get_else_expr()->accept(this));
+        else_result = ACCEPT(if_->get_else_expr());
 
     string result = "If(" 
                   + cond_result 
@@ -120,11 +120,11 @@ void* Print_visitor::visit(If* if_){
                   + ((if_->has_else_expr()) ? ", " + else_result : "")
                   + ")";
 
-    return this->get_void_from_value(result);
+    return TO_VOID(result);
 }
 
 void* Print_visitor::visit(Program* program){
-    return this->get_void_from_value(this->print_list(program->get_class_list()));
+    return TO_VOID(this->print_list(program->get_class_list()));
 }
 
 void* Print_visitor::visit(Class* class_){
@@ -140,7 +140,7 @@ void* Print_visitor::visit(Class* class_){
                   + method_list_result
                   + ")";
 
-    return this->get_void_from_value(result);
+    return TO_VOID(result);
 }
 
 void* Print_visitor::visit(Field* field){
@@ -149,7 +149,7 @@ void* Print_visitor::visit(Field* field){
     string init_expr_result;
 
     if(field->has_init_expr())
-        init_expr_result = this->get_value_from_void(field->get_init_expr()->accept(this));
+        init_expr_result = ACCEPT(field->get_init_expr());
 
     string result = "Field(" 
                   + name + ", "
@@ -158,13 +158,13 @@ void* Print_visitor::visit(Field* field){
                   + ")";
     
     
-    return this->get_void_from_value(result);
+    return TO_VOID(result);
 }
 
 void* Print_visitor::visit(Method* method){
     string name = method->get_name();
     string return_type = method->get_return_type();
-    string body_block_result = this->get_value_from_void(method->get_body_block()->accept(this));
+    string body_block_result = ACCEPT(method->get_body_block());
     string formal_list_result = this->print_list(method->get_formal_list());
 
     string result = "Method(" 
@@ -174,7 +174,7 @@ void* Print_visitor::visit(Method* method){
                     + body_block_result
                     + ")";
 
-    return this->get_void_from_value(result);
+    return TO_VOID(result);
 }
 
 void* Print_visitor::visit(Formal* formal){
@@ -186,15 +186,15 @@ void* Print_visitor::visit(Formal* formal){
                   + " : " 
                   + type;
 
-    return this->get_void_from_value(result);
+    return TO_VOID(result);
 }
 
 void* Print_visitor::visit(Block* block){
-    return this->get_void_from_value(this->print_list(block->get_expr_list()));
+    return TO_VOID(this->print_list(block->get_expr_list()));
 }
 
 void* Print_visitor::visit(Call* call){
-    string object_result = this->get_value_from_void(call->get_object()->accept(this));
+    string object_result = ACCEPT(call->get_object());
     string method = call->get_method();
     string arg_expr_list_result = this->print_list(call->get_arg_expr_list());
 
@@ -204,5 +204,5 @@ void* Print_visitor::visit(Call* call){
                   + arg_expr_list_result
                   + ")";
 
-    return this->get_void_from_value(result);
+    return TO_VOID(result);
 }
