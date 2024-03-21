@@ -2,7 +2,7 @@ CXX 			= clang++
 
 CXXFLAGS 		= -Wall -Wextra
 
-BISONFLAGS 		= -d
+BISONFLAGS 		= -d -Wconflicts-sr -Wcounterexamples
 
 EXEC			= vsopc
 
