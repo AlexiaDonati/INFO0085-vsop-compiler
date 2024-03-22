@@ -14,9 +14,31 @@ using namespace VSOP;
 static const map<Parser::token_type, string> type_to_string = {
     {Parser::token::INTEGER_LITERAL, "integer-literal"},
     {Parser::token::TYPE_IDENTIFIER, "type-identifier"},
-    {Parser::token::KEYWORDS, "keyword"},
+
+    {Parser::token::AND, "and"},
+    {Parser::token::BOOL, "bool"},
+    {Parser::token::CLASS, "class"},
+    {Parser::token::DO, "do"},
+    {Parser::token::ELSE, "else"},
+    {Parser::token::EXTENDS, "extends"},
+    {Parser::token::FALSE, "false"},
+    {Parser::token::IF, "if"},
+    {Parser::token::IN, "in"},
+    {Parser::token::INT32, "int32"},
+    {Parser::token::ISNULL, "isnull"},
+    {Parser::token::LET, "let"},
+    {Parser::token::NEW, "new"},
+    {Parser::token::NOT, "not"},
+    {Parser::token::SELF, "self"},
+    {Parser::token::STRING, "string"},
+    {Parser::token::THEN, "then"},
+    {Parser::token::TRUE, "true"},
+    {Parser::token::UNIT, "unit"},
+    {Parser::token::WHILE, "while"},
+
     {Parser::token::OBJECT_IDENTIFIER, "object-identifier"},
     {Parser::token::STRING_LITERAL, "string-literal"},
+
     {Parser::token::LBRACE, "lbrace"},
     {Parser::token::RBRACE, "rbrace"},
     {Parser::token::LPAR, "lpar"},
@@ -48,13 +70,9 @@ static void print_token(Parser::symbol_type token)
     int value;
     string id;
 
-    if(type != Parser::token::KEYWORDS)
-        cout << pos.line << ","
-             << pos.column << ","
-             << type_to_string.at(type);
-    else
-        cout << pos.line << ","
-             << pos.column;
+    cout << pos.line << ","
+         << pos.column << ","
+         << type_to_string.at(type);
 
     switch (type)
     {
@@ -63,7 +81,6 @@ static void print_token(Parser::symbol_type token)
             cout << "," << value;
             break;
         case Parser::token::TYPE_IDENTIFIER:
-        case Parser::token::KEYWORDS:
         case Parser::token::OBJECT_IDENTIFIER:
             id = token.value.as<string>();
             cout << "," << id;
@@ -110,8 +127,12 @@ int Driver::parse()
 
     parser = new Parser(*this);
 
+    std::cout << "Before Parse" << std::endl;
+
     int res = parser->parse();
-    scan_end();
+
+    std::cout << "After Parse" << std::endl;
+    scan_end(); 
 
     delete parser;
 

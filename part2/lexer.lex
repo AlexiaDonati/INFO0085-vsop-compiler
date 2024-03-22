@@ -193,7 +193,75 @@ operator            "{"|"}"|"("|")"|":"|";"|","|"+"|"-"|"*"|"/"|"^"|"."|"="|"<"|
 {object_identifier} {
     auto it = find(keywords.begin(), keywords.end(), yytext); /* Once an identifier/keyword is read, a table lookup decides if it is an identifier or a keyword */
     if(it != keywords.end())
-        return Parser::make_KEYWORDS(yytext, loc);
+        //return Parser::make_KEYWORDS(yytext, loc);
+        switch(yytext[0]){
+            case 'a': 
+                if(strcmp( yytext, "and") == 0)
+                    return Parser::make_AND(loc);
+                break;
+            case 'b': 
+                if(strcmp( yytext, "bool") == 0)
+                    return Parser::make_BOOL(loc);
+                break;
+            case 'c': 
+                if(strcmp( yytext, "class") == 0)
+                    return Parser::make_CLASS(loc);
+                break;
+            case 'd': 
+                if(strcmp( yytext, "do") == 0)
+                    return Parser::make_DO(loc);
+                break;
+            case 'e': 
+                if(strcmp( yytext, "else") == 0)
+                    return Parser::make_ELSE(loc);
+                else if(strcmp( yytext, "extends") == 0)
+                    return Parser::make_EXTENDS(loc);
+                break;
+            case 'f': 
+                if(strcmp( yytext, "false") == 0)
+                    return Parser::make_FALSE(loc);
+                break;
+            case 'i': 
+                if(strcmp( yytext, "if") == 0)
+                    return Parser::make_IF(loc);
+                else if(strcmp( yytext, "in") == 0)
+                    return Parser::make_IN(loc);
+                else if(strcmp( yytext, "int32") == 0)
+                    return Parser::make_INT32(loc);
+                else if(strcmp( yytext, "isnull") == 0)
+                    return Parser::make_ISNULL(loc);
+                break;
+            case 'l': 
+                if(strcmp( yytext, "let") == 0)
+                    return Parser::make_LET(loc);
+                break;
+            case 'n': 
+                if(strcmp( yytext, "new") == 0)
+                    return Parser::make_NEW(loc);
+                else if(strcmp( yytext, "not") == 0)
+                    return Parser::make_NOT(loc);
+                break;
+            case 's': 
+                if(strcmp( yytext, "self") == 0)
+                    return Parser::make_SELF(loc);
+                else if(strcmp( yytext, "string") == 0)
+                    return Parser::make_STRING(loc);
+                break;
+            case 't': 
+                if(strcmp( yytext, "then") == 0)
+                    return Parser::make_THEN(loc);
+                else if(strcmp( yytext, "true") == 0)
+                    return Parser::make_TRUE(loc);
+                break;
+            case 'u': 
+                if(strcmp( yytext, "unit") == 0)
+                    return Parser::make_UNIT(loc);
+                break;
+            case 'w': 
+                if(strcmp( yytext, "while") == 0)
+                    return Parser::make_WHILE(loc);
+                break;
+        }
     else
         return Parser::make_OBJECT_IDENTIFIER(yytext, loc);
 }
