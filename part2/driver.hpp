@@ -38,11 +38,19 @@ namespace VSOP
         */
         void set_ast(AST::Program *_ast) { ast = _ast; }
 
-        /**
-         * @brief Get the AST.
-         */
-        std::string* get_ast() { return (std::string*) ast->accept(new AST::Print_visitor()); }
+        void print_ast() {
+            std::string* str = (std::string*) ast->accept(new AST::Print_visitor());
+            std::cout << *str << std::endl;
+            delete str;
+        }
 
+        /**
+         * @brief Delete the AST.
+         */
+        void delete_ast() {
+            delete ast;
+        }
+        
         /**
          * @brief Run the lexer on the source file.
          *

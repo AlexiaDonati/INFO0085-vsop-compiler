@@ -93,12 +93,10 @@ int main(int argc, char const *argv[])
     case Mode::PARSE:
         res = driver.parse();
 
-        string *str = nullptr;
-        
-        if (res == 0)
-            str = driver.get_ast();
-
-        cout << *str << endl;
+        if (res == 0){
+            driver.print_ast();
+            driver.delete_ast();
+        }
 
         return res;
     }
