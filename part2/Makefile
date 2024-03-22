@@ -1,6 +1,6 @@
 CXX 			= clang++
 
-CXXFLAGS 		= -Wall -Wextra
+CXXFLAGS 		= -Wall -Wextra -ggdb3
 
 BISONFLAGS 		= -d -Wconflicts-sr -Wcounterexamples
 
