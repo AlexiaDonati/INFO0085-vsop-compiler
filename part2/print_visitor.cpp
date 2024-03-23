@@ -1,10 +1,12 @@
 #include "ast.hpp"
+#include <iostream>
 
 using namespace AST;
 using namespace std;
 
 void* Print_visitor::visit(String* string_){
-    return TO_VOID(string_->get_value());
+    string result = "\"" + string_->get_value() + "\"";
+    return TO_VOID(result);
 }
 
 void* Print_visitor::visit(Integer* integer){
@@ -194,7 +196,7 @@ void* Print_visitor::visit(Block* block){
 }
 
 void* Print_visitor::visit(Call* call){
-    string object_result = call->get_object();
+    string object_result = ACCEPT(call->get_object());
     string method = call->get_method();
     string arg_expr_list_result = ACCEPT_LIST(call->get_arg_expr_list());
 

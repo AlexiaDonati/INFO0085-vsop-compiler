@@ -3,6 +3,7 @@
 
 #include <string>
 #include <vector>
+#include <algorithm>
 
 #define TO_VALUE(void_pointer) this->get_value_from_void(void_pointer)
 #define TO_VOID(value) this->get_void_from_value(value)
@@ -114,17 +115,16 @@ namespace AST
             template <typename T>
             std::string accept_list(List<T>* list){
                 size_t size = list->get_size();
-
-                std::string result = "Block[";
+                std::string result = "[";
 
                 for (size_t i = 0; i < size; i++){
                     std::string expr_result = this->get_value_from_void(list->accept_one(this, i));
-
                     result += expr_result;
                     result += (i+1 == size) ? "]" : ", ";
                 }
 
                 if(size == 0){
+
                     result += "]";
                 }
 
@@ -160,13 +160,15 @@ namespace AST
                     delete expr;
             };
 
-            void* accept_one(Visitor* visitor, size_t index) { 
+            void* accept_one(Visitor* visitor, size_t index) {
                 return list[index]->accept(visitor);
             }
 
             size_t get_size() { return list.size(); }
 
             void add(T* expr) { list.push_back(expr);};
+            void reverse() { std::reverse(list.begin(), list.end()); };
+
             unsigned long size() { return list.size();};
         private:
             std::vector<T*> list;
@@ -491,19 +493,20 @@ namespace AST
 
     class Call : public Expr {
         public:
-            Call(int line, int column, std::string file_name, std::string object, std::string method, List<Expr>* arg_expr_list) : 
+            Call(int line, int column, std::string file_name, Expr* object, std::string method, List<Expr>* arg_expr_list) : 
                 Expr(line, column, file_name), object(object), method(method), arg_expr_list(arg_expr_list) {};
             ~Call() {
+                delete object;
                 delete arg_expr_list;
             };
 
             void* accept(Visitor* visitor) { return visitor->visit(this); }
 
-            std::string get_object() { return object; }
+            Expr* get_object() { return object; }
             std::string get_method() { return method; }
             List<Expr>* get_arg_expr_list() { return arg_expr_list; }
         private:
-            std::string object;
+            Expr* object;
             std::string method;
             List<Expr>* arg_expr_list;
     };
