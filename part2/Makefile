@@ -46,3 +46,6 @@ clean:
 	@rm -f parser.cpp parser.hpp location.hh
 
 .PHONY: clean
+
+install-tools:
+	sudo apt-get install flex bison
