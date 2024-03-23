@@ -26,6 +26,11 @@
 // Add some assertions.
 %define parse.assert
 
+// Add a verbose error message
+%define parse.error verbose
+%define parse.trace
+%define parse.lac full
+
 // C++ code put inside header file
 %code requires { 
     #include <string>
@@ -100,13 +105,12 @@
 // For some symbols, need to store a value
 %token <int> INTEGER_LITERAL "integer-literal"
 %token <std::string> TYPE_IDENTIFIER "type-identifier"
-%token <std::string> KEYWORDS "keywords"
+//%token <std::string> KEYWORDS "keywords"
 %token <std::string> OBJECT_IDENTIFIER "object-identifier"
 %token <std::string> STRING_LITERAL "string_literal"
 
 %nterm 
-    <AST::Program *> program
-    <AST::List<AST::Class> *> class_list
+    <AST::Program *> program start
 
     <AST::Class *> class 
     <ClassBody *> class-body
@@ -117,10 +121,10 @@
     <std::string> type
 
     <AST::Formal *> formal
-    <AST::List<AST::Formal>*> formals
+    <AST::List<AST::Formal>*> formals formals-list
 
     <AST::Expr *> expr literal
-    <AST::List<AST::Expr>*> expr_list args
+    <AST::List<AST::Expr>*> expr_list args args-list
 
     <AST::Block *> block
 ;
@@ -140,60 +144,74 @@
 %% 
 // Grammar rules
 
-%start program;
+%start start;
 
-program:    class program 
-            { 
-                std::cout << "Program" << std::endl;
+start: class program 
+    { 
+        $2->get_class_list()->add($1);
+        $$ = $2; 
+
+        $2->get_class_list()->reverse();
+        driver.set_ast($$);
+    };
+
+program:    class program
+            {
                 $2->get_class_list()->add($1);
                 $$ = $2; 
             }
             | /* empty */ 
-            { 
-                std::cout << "Empty Program" << std::endl;
+            {
                 AST::List<AST::Class>* classes = new AST::List<AST::Class>(); 
                 $$ = new AST::Program(@$.begin.line, @$.begin.column, driver.get_source_file(), classes);
-                driver.set_ast($$);
-            };
-            
+            };   
 
 class:  CLASS TYPE_IDENTIFIER LBRACE class-body RBRACE 
-        { 
-            std::cout << "Class" << std::endl;
+        {
+            $4->fields->reverse();
+            $4->methods->reverse();
             $$ = new AST::Class(@$.begin.line, @$.begin.column, driver.get_source_file(), $2, "Object", $4->fields, $4->methods);
+            delete $4;
         };
         | CLASS TYPE_IDENTIFIER EXTENDS TYPE_IDENTIFIER LBRACE class-body RBRACE 
-        { 
-            std::cout << "Class" << std::endl;
+        {
+            $6->fields->reverse();
+            $6->methods->reverse();
             $$ = new AST::Class(@$.begin.line, @$.begin.column, driver.get_source_file(), $2, $4, $6->fields, $6->methods); 
+            delete $6;
         };
 
+
 class-body: field class-body 
-            { 
-                std::cout << "class-body" << std::endl;
+            {
                 $2->fields->add($1);
                 $$ = $2; 
             }
             | method class-body 
-            { 
-                std::cout << "class-body" << std::endl;
+            {
                 $2->methods->add($1);
                 $$ = $2; 
             }
-            | /* empty */ { $$ = new ClassBody(); };
+            | /* empty */ 
+            {
+                $$ = new ClassBody(); 
+                $$->fields = new AST::List<AST::Field>();
+                $$->methods = new AST::List<AST::Method>();
+            };
 
 
 field : OBJECT_IDENTIFIER COLON type SEMICOLON 
-        { 
+        {
             $$ = new AST::Field(@$.begin.line, @$.begin.column, driver.get_source_file(), $1, $3, nullptr); 
         };
         | OBJECT_IDENTIFIER COLON type ASSIGN expr SEMICOLON 
-        { 
+        {
             $$ = new AST::Field(@$.begin.line, @$.begin.column, driver.get_source_file(), $1, $3, $5); 
         };
 
 method: OBJECT_IDENTIFIER LPAR formals RPAR COLON type block 
-        { 
+        {
+            $3->reverse();
             $$ = new AST::Method(@$.begin.line, @$.begin.column, driver.get_source_file(), $1, $3, $6, $7); 
         };
 
@@ -202,39 +220,49 @@ type:   TYPE_IDENTIFIER { $$ = $1; }
         | BOOL { $$ = std::string("bool"); }
         | STRING { $$ = std::string("string"); }
         | UNIT { $$ = std::string("unit"); };
+       
+formals:    formal formals-list
+            {
+                $2->add($1);
+                $$ = $2;
+            }
+            | /* empty */ 
+            {
+                $$ = new AST::List<AST::Formal>();
+            };
 
-formals:    formal COMMA formals 
+formals-list: COMMA formal formals-list 
             { 
-                $3->add($1);
+                $3->add($2);
                 $$ = $3;
             }
-            | formal 
-            { 
-                $$->add($1);
-            }
-            | /* empty */ { $$ = new AST::List<AST::Formal>(); };
+            | /* empty */ 
+            {
+                $$ = new AST::List<AST::Formal>();
+            };
 
 formal: OBJECT_IDENTIFIER COLON type
-        { 
+        {
             $$ = new AST::Formal(@$.begin.line, @$.begin.column, driver.get_source_file(), $1, $3); 
         };
 
-block:  LBRACE expr_list RBRACE 
-        { 
-            $$ = new AST::Block(@$.begin.line, @$.begin.column, driver.get_source_file(), $2); 
-            delete $2;
+block:  LBRACE expr expr_list RBRACE 
+        {
+            $3->add($2);
+
+            $3->reverse();
+            $$ = new AST::Block(@$.begin.line, @$.begin.column, driver.get_source_file(), $3); 
         };
 
-expr_list:  expr SEMICOLON expr_list 
+expr_list:  SEMICOLON expr expr_list 
             { 
-                $3->add($1); 
+                $3->add($2); 
                 $$ = $3; 
             }
-            | expr 
-            { 
-                $$->add($1);
-            }
-            | /* empty */ { $$ = new AST::List<AST::Expr>(); };
+            | /* empty */ 
+            {
+                $$ = new AST::List<AST::Expr>(); 
+            };
 
 expr:   IF expr THEN expr 
         { 
@@ -315,11 +343,14 @@ expr:   IF expr THEN expr
         }
         
         | OBJECT_IDENTIFIER LPAR args RPAR 
-        { 
-            $$ = new AST::Call(@$.begin.line, @$.begin.column, driver.get_source_file(), "self", $1, $3); 
+        {
+            AST::Self *self = new AST::Self(@$.begin.line, @$.begin.column, driver.get_source_file());
+            $3->reverse();
+            $$ = new AST::Call(@$.begin.line, @$.begin.column, driver.get_source_file(), self, $1, $3); 
         }
-        | OBJECT_IDENTIFIER DOT OBJECT_IDENTIFIER LPAR args RPAR 
+        | expr DOT OBJECT_IDENTIFIER LPAR args RPAR 
         { 
+            $5->reverse();
             $$ = new AST::Call(@$.begin.line, @$.begin.column, driver.get_source_file(), $1, $3, $5); 
         }
 
@@ -336,17 +367,27 @@ expr:   IF expr THEN expr
 
         | LPAR RPAR { $$ = new AST::Unit(@$.begin.line, @$.begin.column, driver.get_source_file()); }
         | LPAR expr RPAR { $$ = $2; };
+        | block {$$ = $1; };
 
-args:   expr COMMA args 
-        { 
-            $3->add($1); 
+args:   expr args-list
+        {
+            $2->add($1);
+            $$ = $2;
+        }
+        | /* empty */ 
+        {
+            $$ = new AST::List<AST::Expr>(); 
+        };
+
+args-list:   COMMA expr args-list 
+        {
+            $3->add($2); 
             $$ = $3; 
         }
-        | expr 
-        { 
-            $$->add($1);
-        }
-        | /* empty */ { $$ = new AST::List<AST::Expr>(); };
+        | /* empty */ 
+        {
+            $$ = new AST::List<AST::Expr>(); 
+        };
 
 literal:    INTEGER_LITERAL { $$ = new AST::Integer(@$.begin.line, @$.begin.column, driver.get_source_file(), $1); }
             | TRUE { $$ = new AST::Boolean(@$.begin.line, @$.begin.column, driver.get_source_file(), true); }
