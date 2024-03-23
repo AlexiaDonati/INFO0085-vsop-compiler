@@ -38,8 +38,12 @@ namespace VSOP
         */
         void set_ast(AST::Program *_ast) { ast = _ast; }
 
+        /**
+         * @brief Print the AST.
+         */
         void print_ast() {
-            std::string* str = (std::string*) ast->accept(new AST::Print_visitor());
+            AST::Print_visitor visitor;
+            std::string* str = (std::string*) ast->accept(&visitor);
             std::cout << *str << std::endl;
             delete str;
         }
