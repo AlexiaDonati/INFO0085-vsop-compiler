@@ -134,11 +134,16 @@
 %precedence ELSE
 
 %right ASSIGN
+
 %left AND
 %right NOT
+
 %nonassoc LOWER LOWER_EQUAL EQUAL
-%left PLUS MINUS TIMES DIV
-%right ISNULL POW
+
+%left PLUS MINUS 
+%left TIMES DIV
+%right UNOP-MINUS ISNULL POW
+
 %left DOT
 
 %% 
@@ -296,7 +301,7 @@ expr:   IF expr THEN expr
         { 
             $$ = new AST::Unop(@$.begin.line, @$.begin.column, driver.get_source_file(), "not", $2); 
         }
-        | MINUS expr 
+        | MINUS expr %prec UNOP-MINUS
         { 
             $$ = new AST::Unop(@$.begin.line, @$.begin.column, driver.get_source_file(), "-", $2); 
         }
@@ -366,7 +371,7 @@ expr:   IF expr THEN expr
         | literal { $$ = $1; }
 
         | LPAR RPAR { $$ = new AST::Unit(@$.begin.line, @$.begin.column, driver.get_source_file()); }
-        | LPAR expr RPAR { $$ = $2; };
+        | LPAR expr RPAR { $$ = $2; }
         | block {$$ = $1; };
 
 args:   expr args-list
