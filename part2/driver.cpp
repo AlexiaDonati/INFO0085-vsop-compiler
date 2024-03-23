@@ -127,11 +127,8 @@ int Driver::parse()
 
     parser = new Parser(*this);
 
-    std::cout << "Before Parse" << std::endl;
-
     int res = parser->parse();
 
-    std::cout << "After Parse" << std::endl;
     scan_end(); 
 
     delete parser;
