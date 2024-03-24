@@ -7,39 +7,6 @@
 using namespace std;
 using namespace AST;
 
-/*
-int main(){
-    string* str;
-
-    Integer* integer = new Integer(42, 0, "int", 78);
-
-    Let* let = new Let(0,0,"test","name","type",integer,integer);
-
-    Print_visitor* print_visitor = new Print_visitor();
-
-    List<Expr>* list = new List<Expr>();
-
-    list->add((Expr*) integer);
-    list->add((Expr*) let);
-
-    Block* block = new Block(0, 0, "block", list);
-
-    str = (string*)block->accept(print_visitor);
-    
-    //cout << *str << endl;
-
-    List<Class>* list_class = new List<Class>();
-
-    Program* program = new Program(0, 0, "program", list_class);
-
-    str = (string*)program->accept(print_visitor);
-
-    cout << *str << endl;
-
-    delete str;
-}
-*/
-
 enum class Mode
 {
     LEX,
@@ -85,8 +52,7 @@ int main(int argc, char const *argv[])
     case Mode::LEX:
         res = driver.lex();
 
-        if (res == 0)
-            driver.print_tokens();
+        driver.print_tokens();
 
         return res;
 

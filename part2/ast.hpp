@@ -124,7 +124,6 @@ namespace AST
                 }
 
                 if(size == 0){
-
                     result += "]";
                 }
 

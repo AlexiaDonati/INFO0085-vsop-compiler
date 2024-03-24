@@ -94,6 +94,7 @@ single_line_comment "//"[^\n]*
 
 %x multi_line_comment
 %x STRING
+%x NEW_LINE_STRING
 
 base_10_number      {digit}+
 base_16_number      "0x"{hex_digit}+
@@ -108,7 +109,7 @@ object_identifier   {lowercase_letter}({letter}|{digit}|"_")*
 
 identifier {type_identifier}|{object_identifier}
 
-escape_sequence     b|t|n|r|\"|\\|x{hex_digit}{hex_digit}|\n[ \t]*
+escape_sequence     b|t|n|r|\"|\\|x{hex_digit}{hex_digit}|\n
 escaped_char        \\{escape_sequence}
 
 /* A string cannot contain a literal line feed, or the end-of-file */
@@ -126,8 +127,9 @@ operator            "{"|"}"|"("|")"|":"|";"|","|"+"|"-"|"*"|"/"|"^"|"."|"="|"<"|
 
     /* White spaces */
 {white_space}           loc.step();
-{single_line_comment}   loc.lines(1); loc.step();
+{single_line_comment}   loc.lines(0); loc.step();
 \n+                     loc.lines(yyleng); loc.step();
+<multi_line_comment>\n+ loc.lines(yyleng); loc.step();
 
 <INITIAL>"(*" {
     started_comment = 1;
@@ -171,6 +173,7 @@ operator            "{"|"}"|"("|")"|":"|";"|","|"+"|"-"|"*"|"/"|"^"|"."|"="|"<"|
         comm_start_stack.pop();
     }
     print_error(comm_start.begin, "All comment must be closed before the end of file");
+    BEGIN(INITIAL);
     return Parser::make_YYerror(comm_start);
 }
 
@@ -283,7 +286,8 @@ operator            "{"|"}"|"("|")"|":"|";"|","|"+"|"-"|"*"|"/"|"^"|"."|"="|"<"|
         case '"': string_buffer += "\\x22"; break;
         case '\\': string_buffer += "\\x5c"; break;
         case 'x': 
-            hex_string += yytext[2] + yytext[3];
+            hex_string += yytext[2];
+            hex_string += yytext[3];
             hex_value = stoi(hex_string, 0, 16);
             /* Replace non printable values */
             if((hex_value <= 0x1F && hex_value >= 0x00) || hex_value == 0x7F){
@@ -294,14 +298,16 @@ operator            "{"|"}"|"("|")"|":"|";"|","|"+"|"-"|"*"|"/"|"^"|"."|"="|"<"|
             break;
         case '\n': 
             loc.lines(1);
+            BEGIN(NEW_LINE_STRING);
             break;
         default: 
             string_buffer += yytext[1]; 
             break;
     }
+    loc.step();
 } 
 
-<STRING>{regular_char}+ {string_buffer += yytext;}
+<STRING>{regular_char}+ {string_buffer += yytext;loc.step();}
 
 <STRING>\\ { /* A backslash must be followed by escape_sequence */
     print_error(loc.begin, "A backslash must be followed by escape_sequence");
@@ -314,13 +320,30 @@ operator            "{"|"}"|"("|")"|":"|";"|","|"+"|"-"|"*"|"/"|"^"|"."|"="|"<"|
 }
 
 <STRING><<EOF>> { /* All string-literal must be closed before the end of file  */
+    BEGIN(INITIAL);
     print_error(string_start.begin, "All string-literal must be closed before the end of file");
     return Parser::make_YYerror(string_start);
 }
 
 <STRING>\" {
     BEGIN(INITIAL);
-    return Parser::make_STRING_LITERAL(string_buffer, loc);
+    return Parser::make_STRING_LITERAL(string_buffer, string_start);
+}
+
+<NEW_LINE_STRING>{white_space} {
+    loc.step();
+    BEGIN(STRING);
+}
+
+<NEW_LINE_STRING>. {
+    yyless(0);
+    BEGIN(STRING);
+}
+
+<NEW_LINE_STRING><<EOF>> {
+    BEGIN(INITIAL);
+    print_error(string_start.begin, "All string-literal must be closed before the end of file");
+    return Parser::make_YYerror(string_start);
 }
 
 {operator} {

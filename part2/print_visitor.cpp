@@ -32,6 +32,8 @@ void* Print_visitor::visit(New* new_){
 }
 
 void* Print_visitor::visit(Self* self){
+    // to remove the warning
+    self->get_line();
     return TO_VOID("self");
 }
 

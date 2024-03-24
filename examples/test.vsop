@@ -1,7 +1,5 @@
-42
-(* Top-level comment
-  (* Unterminated comment
-  ^-- Error should point here
-    (* Terminated netsted comment *)
-    (* Another one (* (nested even deeper) *)
-     *)
+"Here i\
+ t is, the broken\n\
+ line.\n"
+"Another one,\n\
+without leading space.\n"
