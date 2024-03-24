@@ -1,13 +1,3 @@
-    /* This flex/bison example is provided to you as a starting point for your
-     * assignment. You are free to use its code in your project.
-     *
-     * This example implements a simple calculator. You can use the '-l' flag to
-     * list all the tokens found in the source file, and the '-p' flag (or no flag)
-     * to parse the file and to compute the result.
-     *
-     * Also, if you have any suggestions for improvements, please let us know.
-     */
-
 %{
     /* Includes */
     #include <string>
@@ -176,9 +166,9 @@ operator            "{"|"}"|"("|")"|":"|";"|","|"+"|"-"|"*"|"/"|"^"|"."|"="|"<"|
 
 {integer_literal} {  /* For integer literals, output the decimal value (whatever the input format was) */
     if(yytext[0] == '0' && yytext[1] == 'x')
-        return Parser::make_INTEGER_LITERAL(stoi(yytext, nullptr, 16), loc);
+        return Parser::make_INTEGER_LITERAL(std::stoi(yytext, nullptr, 16), loc);
     else
-        return Parser::make_INTEGER_LITERAL(stoi(yytext), loc);
+        return Parser::make_INTEGER_LITERAL(std::stoi(yytext), loc);
 }
 
 {integer_literal}{identifier} { /* An integer_literal cannot be directly followed by an identifier */
@@ -274,7 +264,7 @@ operator            "{"|"}"|"("|")"|":"|";"|","|"+"|"-"|"*"|"/"|"^"|"."|"="|"<"|
 
 <STRING>{escaped_char} {
     int hex_value;
-    string hex_string = "";
+    std::string hex_string = "";
     switch(yytext[1]){
         case 'b': string_buffer += "\\x08"; break;
         case 't': string_buffer += "\\x09"; break;
@@ -282,9 +272,11 @@ operator            "{"|"}"|"("|")"|":"|";"|","|"+"|"-"|"*"|"/"|"^"|"."|"="|"<"|
         case 'r': string_buffer += "\\x0d"; break;
         case '"': string_buffer += "\\x22"; break;
         case '\\': string_buffer += "\\x5c"; break;
-        case 'x': 
-            hex_string += yytext[2] + yytext[3];
-            hex_value = stoi(hex_string, 0, 16);
+        case 'x':
+            hex_string.push_back(yytext[2]);
+            hex_string.push_back(yytext[3]);
+            hex_value = std::stoi(hex_string, 0, 16);
+
             /* Replace non printable values */
             if((hex_value <= 0x1F && hex_value >= 0x00) || hex_value == 0x7F){
                 string_buffer += yytext;
