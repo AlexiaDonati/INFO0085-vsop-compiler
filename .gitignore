@@ -1,12 +1,9 @@
 *.o
 *.c
 *.h
-*.cpp
-*.hpp
+parser.cpp
+parser.hpp
+lexer.cpp
 !main.cpp
-!driver.cpp
-!driver.hpp
-!print_visitor.cpp
-!ast.hpp
 *.hh
 vsopc
