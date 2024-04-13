@@ -118,7 +118,7 @@ namespace AST
                 std::string result = "[";
 
                 for (size_t i = 0; i < size; i++){
-                    std::string expr_result = this->get_value_from_void(list->accept_one(this, i));
+                    std::string expr_result = TO_VALUE(list->accept_one(this, i));
                     result += expr_result;
                     result += (i+1 == size) ? "]" : ", ";
                 }
@@ -166,9 +166,6 @@ namespace AST
             size_t get_size() { return list.size(); }
 
             void add(T* expr) { list.push_back(expr);};
-            void reverse() { std::reverse(list.begin(), list.end()); };
-
-            unsigned long size() { return list.size();};
         private:
             std::vector<T*> list;
     };

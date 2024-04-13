@@ -96,30 +96,28 @@ void* Literals_visitor::visit(New* new_) {
 void* Literals_visitor::visit(String* string_) {
     // to remove the warning
     string_->get_line();
-    return NULL;
+    return new Table(STRING);
 }
 
 void* Literals_visitor::visit(Integer* integer) {
     // to remove the warning
     integer->get_line();
-    return NULL;
+    return new Table(INTEGER);
 }
 
 void* Literals_visitor::visit(Boolean* boolean) {
     // to remove the warning
     boolean->get_line();
-    return NULL;
+    return new Table(BOOLEAN);
 }
 
 void* Literals_visitor::visit(Unit* unit) {
     // to remove the warning
     unit->get_line();
-    return NULL;
+    return new Table(UNIT);
 }
 
 void* Literals_visitor::visit(Object* object) {
-    // to remove the warning
-    object->get_line();
-    return NULL;
+    return new Table(object->get_name());
 }
 
