@@ -17,9 +17,11 @@ OBJ	  			= $(SRC:.cpp=.o)
 
 all: $(EXEC)
 
-main.o: driver.hpp parser.hpp ast.hpp
+main.o: driver.hpp parser.hpp ast.hpp semantics_expressions.hpp
 
 ast.o: ast.hpp
+
+semantics_expressions.o: semantics_expressions.hpp
 
 driver.o: driver.hpp parser.hpp
 
