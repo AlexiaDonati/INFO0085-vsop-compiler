@@ -88,36 +88,34 @@ void* Literals_visitor::visit(Call* call) {
 }
 
 void* Literals_visitor::visit(New* new_) {
-    // to remove the warning
-    new_->get_line();
-    return NULL;
+    return new type::Table(new_->get_type());
 }
 
 void* Literals_visitor::visit(String* string_) {
     // to remove the warning
     string_->get_line();
-    return new Table(STRING);
+    return new type::Table(STRING);
 }
 
 void* Literals_visitor::visit(Integer* integer) {
     // to remove the warning
     integer->get_line();
-    return new Table(INTEGER);
+    return new type::Table(INTEGER);
 }
 
 void* Literals_visitor::visit(Boolean* boolean) {
     // to remove the warning
     boolean->get_line();
-    return new Table(BOOLEAN);
+    return new type::Table(BOOLEAN);
 }
 
 void* Literals_visitor::visit(Unit* unit) {
     // to remove the warning
     unit->get_line();
-    return new Table(UNIT);
+    return new type::Table(UNIT);
 }
 
 void* Literals_visitor::visit(Object* object) {
-    return new Table(object->get_name());
+    return new type::Table(object->get_name());
 }
 
