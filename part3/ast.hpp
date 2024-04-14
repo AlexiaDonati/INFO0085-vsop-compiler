@@ -131,6 +131,36 @@ namespace AST
             }    
     };
 
+    class Check_classes : public Visitor {
+        private:
+            std::map<std::string, Class*> class_map;
+            bool main_class_exists = false;
+
+        public:
+            void* visit(Program* program);
+            void* visit(Class* class_);
+            void* visit(Field* field);
+            void* visit(Method* method);
+            void* visit(Formal* formal);
+
+            bool get_value_from_void(void* void_value){
+                bool* value = (bool*) void_value;
+                bool return_value = *value;
+                delete value;
+                return return_value;
+            }
+
+            void* get_void_from_value(bool value){
+                return new bool(value);
+            }
+
+            void add_object_class(Program* program);
+
+            bool fill_class_map(List<Class>* class_list);
+            bool check_class_body_redefinition(Class* class_);
+            bool check_extend();
+    };
+
     // Data classes
 
     class Expr {
