@@ -82,8 +82,9 @@ void* Literals_visitor::visit(Binop* binop) {
 }
 
 void* Literals_visitor::visit(Call* call) {
-    // to remove the warning
-    call->get_line();
+    type::Table object_table = ACCEPT(call->get_object());
+    string method = call->get_method();
+    
     return NULL;
 }
 

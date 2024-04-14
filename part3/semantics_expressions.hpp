@@ -8,65 +8,78 @@
 
 #define UNIT "unit"
 #define BOOLEAN "boolean"
-#define INTEGER "integer"
+#define INTEGER "int32"
 #define STRING "string"
 #define NONE ""
 
 namespace AST{
 
     namespace type{
-        class Error {
-            public:
-                Error(int line, int column, std::string file_name, std::string message) : 
-                    line(line), column(column), file_name(file_name), message(message) {};
-                ~Error() = default;
-
-                int get_line() { return line; };
-                int get_column() { return column; };
-                std::string get_file_name() { return file_name; };
-                std::string get_message() { return message; };
-            private:
-                int line;
-                int column;
-                std::string file_name;
-                std::string message;
-        };
 
         class Variable {
             public:
-                Variable(std::string name, std::string type) :
-                    name(name), type(type) {};
-                ~Variable() = default;
-
-                bool operator==(Variable variable){
-                    return (variable.get_name() == name);
-                }
-
-                std::string get_name() { return name; };
-                std::string get_type() { return type; };
-            private:
                 std::string name;
-                std::string type;
-        };
+
+                Variable(std::string name) : name(name) {};
+
+                bool operator ==(const Variable &variable){
+                    return (name == variable.name);
+                }
+        } ;
 
         class Dispatch {
             public:
-                Dispatch(std::string method_name, std::string object_name, std::string return_type) :
-                    method_name(method_name), object_name(object_name), return_type(return_type) {};
-                ~Dispatch() = default;
-
-                bool operator==(Dispatch dispatch){
-                    return (dispatch.get_method_name() == method_name && 
-                            dispatch.get_object_name() == object_name);
-                }
-
-                std::string get_method_name() { return method_name; };
-                std::string get_object_name() { return object_name; };
-                std::string get_return_type() { return return_type; };
-            private:
                 std::string method_name;
                 std::string object_name;
-                std::string return_type;
+                // TODO handle bad args
+                //std::map<Variable*, std::string> args_variables;
+
+                Dispatch(std::string method_name, std::string object_name) :
+                    method_name(method_name), object_name(object_name){};
+                ~Dispatch() = default;
+
+                bool operator ==(const Dispatch &dispatch){
+                    return (method_name == dispatch.method_name) && 
+                           (object_name == dispatch.object_name) /*&&
+                           (compare_args(dispatch))*/;
+                }
+            /*
+            bool compare_args(Dispatch dispatch){
+                size_t size_1 = args_variables.size();
+                size_t size_2 = dispatch.args_variables.size();
+
+                if(size_1 != size_2)
+                    return false;
+
+                for(size_t i = 0; i < size_1; i++){
+                    std::string type_1 = args_variables[i].second;
+                    std::string type_2 = dispatch.args_variables[i].second;
+                    if(args_variables[i].type != NONE
+                    && dispatch.args_variables[i].type != NONE
+                    && args_variables[i].type != dispatch.args_variables[i].type)
+                        return false;
+                }
+
+                return true;
+            }
+            */
+        };
+
+        class Error {
+            Error(size_t line, size_t column, std::string file_name, std::string message) :
+                line(line), column(column), file_name(file_name), message(message) {};
+
+                std::string to_string() {
+                    // dum message to stop warning
+                    line = line +1 -1;
+                    column = column +1 -1;
+                    return "mocked";
+                }
+            private:
+                size_t line;
+                size_t column;
+                std::string file_name;
+                std::string message;
         };
 
         class Table {
@@ -78,34 +91,50 @@ namespace AST{
                 void add_error(Error error) { error_list.push_back(error); }
                 size_t number_of_error() { return error_list.size(); }
 
-                std::string get_variable_type(std::string variable_name){
-                    auto it = std::find(v_table.begin(), v_table.end(), new Variable(variable_name, NONE));
-                    if(it != v_table.end())
-                        return it->get_type();
-                    return NONE;
+                void set_type(std::string name, std::string type){
+                    Variable* new_variable = new Variable(name);
+
+                    // Delete previous stored variable if existing
+                    v_table.erase(new_variable);
+
+                    v_table[new_variable] = type;
                 }
 
-                void set_variable_type(std::string variable_name, std::string variable_type){
-                    v_table.push_back(new Variable(variable_name, variable_type));
+                void set_type(std::string method_name, std::string object_name, std::string type){
+                    Dispatch* new_dispatch = new Dispatch(method_name, object_name);
+
+                    // Delete previous stored dispatch if existing
+                    d_table.erase(new_dispatch);
+
+                    d_table[new_dispatch] = type;
                 }
 
-                std::string get_method_type(std::string object_name, std::string method_name){
-                    auto it = std::find(d_table.begin(), d_table.end(), new Dispatch(object_name, variable_name, NONE));
-                    if(it != d_table.end())
-                        return it->get_return_type();
-                    return NONE;
+                std::string get_type(std::string name) {
+                    Variable* new_variable = new Variable(name);
+
+                    std::string type = v_table.find(new_variable)->second;
+
+                    delete new_variable;
+
+                    return type;
                 }
 
-                void set_method_type(std::string object_name, std::string method_name, std::string return_type){
-                    d_table.push_back(new Dispatch(object_name, method_name, return_type));
+                std::string get_type(std::string method_name, std::string object_name) {
+                    Dispatch* new_dispatch = new Dispatch(method_name, object_name);
+
+                    std::string type = d_table.find(new_dispatch)->second;
+
+                    delete new_dispatch;
+
+                    return type;
                 }
 
                 std::string get_return_type() { return return_type; }
             private:
                 std::vector<Error> error_list;
                 std::string return_type;
-                std::vector<Variable> v_table;
-                std::vector<Dispatch> d_table;
+                std::map<Variable*, std::string, std::equal_to<Variable*>> v_table;
+                std::map<Dispatch*, std::string, std::equal_to<Dispatch*>> d_table;
         };
     }
 
