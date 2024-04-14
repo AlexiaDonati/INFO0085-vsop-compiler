@@ -82,10 +82,14 @@ void* Literals_visitor::visit(Binop* binop) {
 }
 
 void* Literals_visitor::visit(Call* call) {
-    type::Table object_table = ACCEPT(call->get_object());
+    string object = ACCEPT(call->get_object()).get_return_type();
     string method = call->get_method();
     
-    return NULL;
+    type::Table *returned_table = new type::Table(NONE);
+
+    returned_table->set_type(object, method, NONE);
+
+    return returned_table;
 }
 
 void* Literals_visitor::visit(New* new_) {

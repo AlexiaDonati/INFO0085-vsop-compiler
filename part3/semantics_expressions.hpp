@@ -91,6 +91,43 @@ namespace AST{
                 void add_error(Error error) { error_list.push_back(error); }
                 size_t number_of_error() { return error_list.size(); }
 
+                Table* concatenate(Table *table, std::string return_type){
+                    Table new_table = new Table(return_type);
+
+                    // concatenate v_table
+                    for(auto it = v_table.begin(); it != v_table.end(); it++)
+                        new_table->set_type(it->first->name, it->second);
+
+                    for(auto it = table->v_table.begin(); it != table->v_table.end(); it++){
+                        std::string name = it->first->name;
+                        if(are_different_types(get_type(name), table->get_type(name)))
+                            int a = 2; // TODO throw error
+
+                        new_table->set_type(name, it->second);
+                    }
+
+                    // concatenate d_table
+                    for(auto it = d_table.begin(); it != d_table.end(); it++)
+                        new_table->set_type(method, object, it->second);
+
+                    for(auto it = table->d_table.begin(); it != table->d_table.end(); it++){
+                        std::string method = it->first->method_name;
+                        std::string object = it->first->objetc_name;
+                        if(are_different_types(get_type(method, object), table->get_type(method, object)))
+                            int a = 2; // TODO throw error
+
+                        new_table->set_type(method, object, it->second);
+                    }
+
+                    return new_table;
+                }
+
+                bool are_different_types(std::string type_1, std::string type_2){
+                    return (type_1 != NONE) &&
+                           (type_2 != NONE) &&
+                           (type_1 != type_2);
+                }
+
                 void set_type(std::string name, std::string type){
                     Variable* new_variable = new Variable(name);
 
@@ -112,7 +149,11 @@ namespace AST{
                 std::string get_type(std::string name) {
                     Variable* new_variable = new Variable(name);
 
-                    std::string type = v_table.find(new_variable)->second;
+                    std::string type = NONE;
+                    auto it = v_table.find(new_variable);
+
+                    if(it != d_table.end())
+                        type = it->second;
 
                     delete new_variable;
 
@@ -122,11 +163,35 @@ namespace AST{
                 std::string get_type(std::string method_name, std::string object_name) {
                     Dispatch* new_dispatch = new Dispatch(method_name, object_name);
 
-                    std::string type = d_table.find(new_dispatch)->second;
+                    std::string type = NONE;
+                    auto it = d_table.find(new_dispatch);
+
+                    if(it != d_table.end())
+                        type = it->second;
 
                     delete new_dispatch;
 
                     return type;
+                }
+
+                bool exist(std::string name){
+                    Variable* new_variable = new Variable(name);
+
+                    bool exist = (v_table.count(new_variable)) ? true : false;
+
+                    delete new_variable;
+
+                    return exist;
+                }
+
+                bool exist(std::string method_name, std::string object_name){
+                    Dispatch* new_dispatch = new Dispatch(method_name, object_name);
+
+                    bool exist = (d_table.count(new_dispatch)) ? true : false;
+
+                    delete new_dispatch;
+
+                    return exist;
                 }
 
                 std::string get_return_type() { return return_type; }
@@ -174,10 +239,6 @@ namespace AST{
                 // Return the value as non pointer
                 return return_value;
             }   
-
-            void* get_void_from_value(type::Table* value){
-                return value;
-            }
 
             template <typename T>
             std::string accept_list(List<T>* list){
