@@ -86,15 +86,22 @@ void* Literals_visitor::visit(Let* let) {
 }
 
 void* Literals_visitor::visit(Assign* assign) {
-    // to remove the warning
-    assign->get_line();
-    return NULL;
+    string variable_name = assign->get_name();
+    type::Table expr_table = ACCEPT(assign->get_expr());
+
+    expr_table.set_type(variable_name, expr_table.get_type());
+
+    type::Table *returned_table = new type::Table(expr_table.get_type(), variable_name);
+
+    returned_table->concatenate(&expr_table);
+
+    return returned_table;
 }
 
 void* Literals_visitor::visit(Self* self) {
     // to remove the warning
     self->get_line();
-    return NULL;
+    return new type::Table(SELF);
 }
 
 void* Literals_visitor::visit(Unop* unop) {
@@ -141,8 +148,8 @@ void* Literals_visitor::visit(Binop* binop) {
     type::Table left_expr_table = ACCEPT(binop->get_left_expr());
     type::Table right_expr_table = ACCEPT(binop->get_right_expr());
 
-    std::string left_type = left_expr_table.get_return_type();
-    std::string right_type = right_expr_table.get_return_type();
+    std::string left_type = left_expr_table.get_type();
+    std::string right_type = right_expr_table.get_type();
 
     type::Table *returned_table;
 
@@ -150,8 +157,11 @@ void* Literals_visitor::visit(Binop* binop) {
     case EQ:   
         returned_table = new type::Table(BOOLEAN);
 
-        right_expr_table.set_type(left_type);
-        left_expr_table.set_type(right_type);
+        // Both type must be the same if primitive
+        if(is_primitive(left_type) || is_primitive(right_type)){
+            right_expr_table.set_type(left_type);
+            left_expr_table.set_type(right_type);
+        }
 
         break;
     case LT:
@@ -195,7 +205,7 @@ void* Literals_visitor::visit(Binop* binop) {
 }
 
 void* Literals_visitor::visit(Call* call) {
-    string object = ACCEPT(call->get_object()).get_return_type();
+    string object = ACCEPT(call->get_object()).get_type();
     string method = call->get_method();
     
     type::Table *returned_table = new type::Table(NONE, object, method);
@@ -261,6 +271,5 @@ bool is_primitive(std::string type){
     return is_unit(type)
         && is_boolean(type)
         && is_integer(type)
-        && is_string(type)
-        && is_none(type);
+        && is_string(type);
 }

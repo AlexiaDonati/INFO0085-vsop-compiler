@@ -11,6 +11,7 @@
 #define INTEGER "int32"
 #define STRING "string"
 #define NONE ""
+#define SELF "self"
 
 namespace AST{
 
@@ -198,7 +199,7 @@ namespace AST{
                         throw_error("Return_type have different types " + previous_type + " and " + type);
                     if(previous_type != NONE && type == NONE)
                         return;
-                        
+
                     if(return_variable != NULL){
                         return_type = type;
                         set_type(type, return_variable->name);
@@ -237,27 +238,8 @@ namespace AST{
                     return type;
                 }
 
-                bool exist(std::string name){
-                    Variable* new_variable = new Variable(name);
+                std::string get_type() { return return_type; }
 
-                    bool exist = (v_table.count(new_variable)) ? true : false;
-
-                    delete new_variable;
-
-                    return exist;
-                }
-
-                bool exist(std::string method_name, std::string object_name){
-                    Dispatch* new_dispatch = new Dispatch(method_name, object_name);
-
-                    bool exist = (d_table.count(new_dispatch)) ? true : false;
-
-                    delete new_dispatch;
-
-                    return exist;
-                }
-
-                std::string get_return_type() { return return_type; }
             private:
                 std::vector<Error*> error_list;
                 std::string return_type;
