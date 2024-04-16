@@ -160,6 +160,14 @@ namespace AST{
                     }
                 }
 
+                void remove_type(std::string name){
+                    Variable* new_variable = new Variable(name);
+
+                    v_table.erase(new_variable);
+
+                    delete new_variable;
+                }
+
                 void set_type(std::string name, std::string type){
                     std::string previous_type = get_type(name);
 

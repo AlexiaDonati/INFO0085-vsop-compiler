@@ -80,9 +80,22 @@ void* Literals_visitor::visit(While* while_) {
 }
 
 void* Literals_visitor::visit(Let* let) {
-    // to remove the warning
-    let->get_line();
-    return NULL;
+    string variable_name = let->get_name();
+    string variable_type = let->get_type();
+
+    type::Table init_expr_table = ACCEPT(let->get_init_expr());
+    type::Table scope_expr_table = ACCEPT(let->get_scope_expr());
+
+    scope_expr_table->set_type(variable_name, variable_type);
+
+    type::Table *returned_table = new type::Table(variable_type, variable_name);
+
+    returned_table->concatenate(&init_expr_table);
+    returned_table->concatenate(&scope_expr_table);
+
+    returned_table->remove_type(variable_type);
+
+    return returned_table;
 }
 
 void* Literals_visitor::visit(Assign* assign) {
