@@ -68,9 +68,35 @@ void* Literals_visitor::visit(Block* block) {
 }
 
 void* Literals_visitor::visit(If* if_) {
-    // to remove the warning
-    if_->get_line();
-    return NULL;
+    type::Table cond_expr_table = ACCEPT(if_->get_cond_expr());
+    type::Table then_expr_table = ACCEPT(if_->get_then_expr());
+    type::Table else_expr_table = ACCEPT(if_->get_else_expr());
+
+    cond_expr_table.set_type(BOOLEAN);
+
+    string then_type = then_expr_table.get_type();
+    string else_type = then_expr_table.get_type();
+
+    type::Table *returned_table;
+
+    if(is_unit(then_type) || is_unit(else_type)){
+        returned_table = new type::Table(UNIT);
+    } else if(is_primitive(then_type) || is_primitive(else_type)) {
+        then_expr_table.set_type(else_type);
+        else_expr_table.set_type(then_type);
+        returned_table = new type::Table(else_type);
+    } else if(is_none(then_type) && is_none(else_type)){
+        returned_table = new type::Table(NONE);
+    } else {
+        // TODO create common_class_type table
+        returned_table = new type::Table(NONE); // mocked
+    }
+
+    returned_table->concatenate(&cond_expr_table);
+    returned_table->concatenate(&then_expr_table);
+    returned_table->concatenate(&else_expr_table);
+
+    return returned_table;
 }
 
 void* Literals_visitor::visit(While* while_) {
