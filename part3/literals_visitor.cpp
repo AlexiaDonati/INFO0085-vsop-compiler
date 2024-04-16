@@ -115,7 +115,9 @@ void* Literals_visitor::visit(Binop* binop) {
                 + right_expr_table.get_return_type()
             );
 
-        if(left_expr_table.get_return_type() != right_expr_table.get_return_type())
+        if( is_primitive(left_expr_table.get_return_type())
+            && is_primitive(right_expr_table.get_return_type())
+            && left_expr_table.get_return_type() != right_expr_table.get_return_type())
             returned_table->throw_error(binop, 
                 "Both types must be the same: " 
                 + left_expr_table.get_return_type()
@@ -126,7 +128,15 @@ void* Literals_visitor::visit(Binop* binop) {
         break;
     case LT:
     case LEQ:
-        returned_table = new type::Table(BOOLEAN);
+    case ADD:
+    case SUB:
+    case MUL:
+    case DIV:
+    case POW:
+        if(binop_to_enum.at(op) == LT && binop_to_enum.at(op) == LEQ)
+            returned_table = new type::Table(BOOLEAN);
+        else
+            returned_table = new type::Table(INTEGER);
 
         if(is_none(left_expr_table.get_return_type()))
             left_expr_table.set_type(INTEGER);
@@ -141,13 +151,6 @@ void* Literals_visitor::visit(Binop* binop) {
                 + op
                 + right_expr_table.get_return_type()
             );
-        
-        break;
-    case ADD:
-    case SUB:
-    case MUL:
-    case DIV:
-    case POW:
         break;
     case AND:
         returned_table = new type::Table(BOOLEAN);
@@ -168,10 +171,20 @@ void* Literals_visitor::visit(Binop* binop) {
         
         break;
     default:
+        returned_table = new type::Table(NONE);
+
+        returned_table->throw_error(binop, 
+                "Binop not recognised: " 
+                + op
+            );
+
         break;
     }
 
-    return NULL;
+    returned_table->concatenate(&left_expr_table);
+    returned_table->concatenate(&right_expr_table);
+
+    return returned_table;
 }
 
 void* Literals_visitor::visit(Call* call) {

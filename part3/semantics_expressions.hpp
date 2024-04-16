@@ -109,6 +109,10 @@ namespace AST{
                         delete return_dispatch;
                 };
 
+                void throw_error(Error *error) { 
+                    error_list.push_back(error); 
+                }
+
                 void throw_error(std::string message) { 
                     Error *new_error = new Error(
                         0,
@@ -131,51 +135,39 @@ namespace AST{
 
                 size_t number_of_error() { return error_list.size(); }
 
-                Table* concatenate(const Table *table, std::string return_type){
-                    Table *new_table = new Table(return_type);
-
-                    // TODO concat errors
+                void concatenate(const Table *table){
+                    // concatenate error_list
+                    for(auto it = table->error_list.begin(); it != table->error_list.end(); it++){
+                        throw_error(*it);
+                    }
 
                     // concatenate v_table
-                    for(auto it = v_table.begin(); it != v_table.end(); it++)
-                        new_table->set_type(it->first->name, it->second);
-
                     for(auto it = table->v_table.begin(); it != table->v_table.end(); it++){
                         std::string name = it->first->name;
                         std::string type = it->second;
-                        if(are_different_types(get_type(name), type))
-                            throw_error("variable " + name + " have different types " + get_type(name) + " and " + type);
 
-                        new_table->set_type(name, type);
+                        set_type(name, type);
                     }
 
                     // concatenate d_table
-                    for(auto it = d_table.begin(); it != d_table.end(); it++)
-                        new_table->set_type(it->first->method_name, it->first->object_name, it->second);
-
                     for(auto it = table->d_table.begin(); it != table->d_table.end(); it++){
                         std::string method = it->first->method_name;
                         std::string object = it->first->object_name;
                         std::string return_type = it->second;
-                        if(are_different_types(get_type(method, object), return_type))
-                            throw_error("dispatch " + object + "." + method + "() have different return types " + get_type(method, object) + " and " + return_type);
 
-                        new_table->set_type(method, object, return_type);
+                        set_type(method, object, return_type);
                     }
-
-                    return new_table;
-                }
-
-                bool are_different_types(std::string type_1, std::string type_2){
-                    return (type_1 != NONE) &&
-                           (type_2 != NONE) &&
-                           (type_1 != type_2);
                 }
 
                 void set_type(std::string name, std::string type){
-                    Variable* new_variable = new Variable(name);
+                    std::string previous_type = get_type(name);
 
-                    // TODO if previous type is not the same as the new, error (if not NONE)
+                    if(previous_type != NONE && previous_type != type)
+                        throw_error("variable " + name + " have different types " + previous_type + " and " + type);
+                    if(previous_type != NONE && type == NONE)
+                        return;
+
+                    Variable* new_variable = new Variable(name);
 
                     // Delete previous stored variable if existing
                     v_table.erase(new_variable);
@@ -184,9 +176,14 @@ namespace AST{
                 }
 
                 void set_type(std::string method_name, std::string object_name, std::string type){
-                    Dispatch* new_dispatch = new Dispatch(method_name, object_name);
+                    std::string previous_type = get_type(method_name, object_name);
 
-                    // TODO if previous type is not the same as the new, error (if not NONE)
+                    if(previous_type != NONE && previous_type != type)
+                        throw_error("dispatch " + object_name + "." + method_name + " have different types " + previous_type + " and " + type);
+                    if(previous_type != NONE && type == NONE)
+                        return;
+
+                    Dispatch* new_dispatch = new Dispatch(method_name, object_name);
 
                     // Delete previous stored dispatch if existing
                     d_table.erase(new_dispatch);
