@@ -192,6 +192,13 @@ namespace AST{
                 }
 
                 void set_type(std::string type){
+                    std::string previous_type = return_type;
+
+                    if(previous_type != NONE && previous_type != type)
+                        throw_error("Return_type have different types " + previous_type + " and " + type);
+                    if(previous_type != NONE && type == NONE)
+                        return;
+                        
                     if(return_variable != NULL){
                         return_type = type;
                         set_type(type, return_variable->name);

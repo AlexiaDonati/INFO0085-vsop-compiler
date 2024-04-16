@@ -11,6 +11,7 @@ bool is_none(std::string type);
 bool is_primitive(std::string type);
 
 enum BINOP {EQ, LT, LEQ, ADD, SUB, MUL, DIV, POW, AND};
+enum UNOP {NOT, UNARY, ISNULL};
 
 const map<string, BINOP> binop_to_enum = {
     {"=", EQ},
@@ -22,7 +23,13 @@ const map<string, BINOP> binop_to_enum = {
     {"/", DIV},
     {"^", POW},
     {"and", AND},
-} ;
+};
+
+const map<string, UNOP> unop_to_enum = {
+    {"not", NOT},
+    {"-", UNARY},
+    {"isnull", ISNULL},
+};
 
 void* Literals_visitor::visit(Program* program) {
     // to remove the warning
@@ -91,9 +98,42 @@ void* Literals_visitor::visit(Self* self) {
 }
 
 void* Literals_visitor::visit(Unop* unop) {
-    // to remove the warning
-    unop->get_line();
-    return NULL;
+    string op = unop->get_op();
+    type::Table expr_table = ACCEPT(unop->get_expr());
+
+    type::Table *returned_table;
+
+    switch (unop_to_enum.at(op))
+    {
+    case NOT:
+        returned_table = new type::Table(BOOLEAN);
+
+        expr_table.set_type(BOOLEAN);
+
+        break;
+    case UNARY:
+        returned_table = new type::Table(INTEGER);
+
+        expr_table.set_type(INTEGER);
+
+        break;
+    case ISNULL:
+        returned_table = new type::Table(NONE);
+        break;
+    default:
+        returned_table = new type::Table(NONE);
+
+        returned_table->throw_error(unop, 
+                "Unop not recognised: " 
+                + op
+            );
+
+        break;
+    }
+
+    returned_table->concatenate(&expr_table);
+
+    return returned_table;
 }
 
 void* Literals_visitor::visit(Binop* binop) {
@@ -101,29 +141,17 @@ void* Literals_visitor::visit(Binop* binop) {
     type::Table left_expr_table = ACCEPT(binop->get_left_expr());
     type::Table right_expr_table = ACCEPT(binop->get_right_expr());
 
+    std::string left_type = left_expr_table.get_return_type();
+    std::string right_type = right_expr_table.get_return_type();
+
     type::Table *returned_table;
 
     switch (binop_to_enum.at(op)){
     case EQ:   
         returned_table = new type::Table(BOOLEAN);
 
-        if(is_primitive(left_expr_table.get_return_type()) != is_primitive(right_expr_table.get_return_type()))
-            returned_table->throw_error(binop, 
-                "Both types must be classes: " 
-                + left_expr_table.get_return_type()
-                + op
-                + right_expr_table.get_return_type()
-            );
-
-        if( is_primitive(left_expr_table.get_return_type())
-            && is_primitive(right_expr_table.get_return_type())
-            && left_expr_table.get_return_type() != right_expr_table.get_return_type())
-            returned_table->throw_error(binop, 
-                "Both types must be the same: " 
-                + left_expr_table.get_return_type()
-                + op
-                + right_expr_table.get_return_type()
-            );
+        right_expr_table.set_type(left_type);
+        left_expr_table.set_type(right_type);
 
         break;
     case LT:
@@ -138,36 +166,15 @@ void* Literals_visitor::visit(Binop* binop) {
         else
             returned_table = new type::Table(INTEGER);
 
-        if(is_none(left_expr_table.get_return_type()))
-            left_expr_table.set_type(INTEGER);
-        if(is_none(right_expr_table.get_return_type()))
-            right_expr_table.set_type(INTEGER);
+        left_expr_table.set_type(INTEGER);
+        right_expr_table.set_type(INTEGER);
 
-        if(!is_integer(left_expr_table.get_return_type())
-        && !is_integer(right_expr_table.get_return_type()))
-            returned_table->throw_error(binop, 
-                "Both types must be integer: " 
-                + left_expr_table.get_return_type()
-                + op
-                + right_expr_table.get_return_type()
-            );
         break;
     case AND:
         returned_table = new type::Table(BOOLEAN);
 
-        if(is_none(left_expr_table.get_return_type()))
-            left_expr_table.set_type(BOOLEAN);
-        if(is_none(right_expr_table.get_return_type()))
-            right_expr_table.set_type(BOOLEAN);
-
-        if(!is_boolean(left_expr_table.get_return_type())
-        && !is_boolean(right_expr_table.get_return_type()))
-            returned_table->throw_error(binop, 
-                "Both types must be integer: " 
-                + left_expr_table.get_return_type()
-                + op
-                + right_expr_table.get_return_type()
-            );
+        left_expr_table.set_type(BOOLEAN);
+        right_expr_table.set_type(BOOLEAN);
         
         break;
     default:
@@ -191,9 +198,7 @@ void* Literals_visitor::visit(Call* call) {
     string object = ACCEPT(call->get_object()).get_return_type();
     string method = call->get_method();
     
-    type::Table *returned_table = new type::Table(NONE);
-
-    returned_table->set_type(object, method, NONE);
+    type::Table *returned_table = new type::Table(NONE, object, method);
 
     return returned_table;
 }
