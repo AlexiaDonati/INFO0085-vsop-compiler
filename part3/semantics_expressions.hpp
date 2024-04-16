@@ -66,8 +66,9 @@ namespace AST{
         };
 
         class Error {
-            Error(size_t line, size_t column, std::string file_name, std::string message) :
-                line(line), column(column), file_name(file_name), message(message) {};
+            public:
+                Error(size_t line, size_t column, std::string file_name, std::string message) :
+                    line(line), column(column), file_name(file_name), message(message) {};
 
                 std::string to_string() {
                     // dum message to stop warning
@@ -85,14 +86,55 @@ namespace AST{
         class Table {
             public:
                 Table(std::string return_type) : 
-                    return_type(return_type) {};
-                ~Table() = default;
+                    return_type(return_type) {
+                        return_variable = NULL;
+                        return_dispatch = NULL;
+                    };
+                Table(std::string return_type, std::string name) : 
+                    return_type(return_type) {
+                        return_variable = new Variable(name);
+                        set_type(return_type, name);
+                        return_dispatch = NULL;
+                    };
+                Table(std::string return_type, std::string method_name, std::string object_name) : 
+                    return_type(return_type) {
+                        return_variable = NULL;
+                        return_dispatch = new Dispatch(method_name, object_name);
+                        set_type(return_type, method_name, object_name);
+                    };
+                ~Table() {
+                    if(return_variable != NULL)
+                        delete return_variable;
+                    if(return_dispatch != NULL)
+                        delete return_dispatch;
+                };
 
-                void add_error(Error error) { error_list.push_back(error); }
+                void throw_error(std::string message) { 
+                    Error *new_error = new Error(
+                        0,
+                        0,
+                        "mocked",
+                        message
+                    );
+                    error_list.push_back(new_error); 
+                }
+
+                void throw_error(Expr *expr, std::string message) { 
+                    Error *new_error = new Error(
+                        expr->get_line(),
+                        expr->get_column(),
+                        expr->get_file_name(),
+                        message
+                    );
+                    error_list.push_back(new_error); 
+                }
+
                 size_t number_of_error() { return error_list.size(); }
 
-                Table* concatenate(Table *table, std::string return_type){
-                    Table new_table = new Table(return_type);
+                Table* concatenate(const Table *table, std::string return_type){
+                    Table *new_table = new Table(return_type);
+
+                    // TODO concat errors
 
                     // concatenate v_table
                     for(auto it = v_table.begin(); it != v_table.end(); it++)
@@ -100,23 +142,25 @@ namespace AST{
 
                     for(auto it = table->v_table.begin(); it != table->v_table.end(); it++){
                         std::string name = it->first->name;
-                        if(are_different_types(get_type(name), table->get_type(name)))
-                            int a = 2; // TODO throw error
+                        std::string type = it->second;
+                        if(are_different_types(get_type(name), type))
+                            throw_error("variable " + name + " have different types " + get_type(name) + " and " + type);
 
-                        new_table->set_type(name, it->second);
+                        new_table->set_type(name, type);
                     }
 
                     // concatenate d_table
                     for(auto it = d_table.begin(); it != d_table.end(); it++)
-                        new_table->set_type(method, object, it->second);
+                        new_table->set_type(it->first->method_name, it->first->object_name, it->second);
 
                     for(auto it = table->d_table.begin(); it != table->d_table.end(); it++){
                         std::string method = it->first->method_name;
-                        std::string object = it->first->objetc_name;
-                        if(are_different_types(get_type(method, object), table->get_type(method, object)))
-                            int a = 2; // TODO throw error
+                        std::string object = it->first->object_name;
+                        std::string return_type = it->second;
+                        if(are_different_types(get_type(method, object), return_type))
+                            throw_error("dispatch " + object + "." + method + "() have different return types " + get_type(method, object) + " and " + return_type);
 
-                        new_table->set_type(method, object, it->second);
+                        new_table->set_type(method, object, return_type);
                     }
 
                     return new_table;
@@ -131,6 +175,8 @@ namespace AST{
                 void set_type(std::string name, std::string type){
                     Variable* new_variable = new Variable(name);
 
+                    // TODO if previous type is not the same as the new, error (if not NONE)
+
                     // Delete previous stored variable if existing
                     v_table.erase(new_variable);
 
@@ -140,10 +186,23 @@ namespace AST{
                 void set_type(std::string method_name, std::string object_name, std::string type){
                     Dispatch* new_dispatch = new Dispatch(method_name, object_name);
 
+                    // TODO if previous type is not the same as the new, error (if not NONE)
+
                     // Delete previous stored dispatch if existing
                     d_table.erase(new_dispatch);
 
                     d_table[new_dispatch] = type;
+                }
+
+                void set_type(std::string type){
+                    if(return_variable != NULL){
+                        return_type = type;
+                        set_type(type, return_variable->name);
+                    }
+                    if(return_dispatch != NULL){
+                        return_type = type;
+                        set_type(type, return_dispatch->method_name, return_dispatch->object_name);
+                    }
                 }
 
                 std::string get_type(std::string name) {
@@ -152,7 +211,7 @@ namespace AST{
                     std::string type = NONE;
                     auto it = v_table.find(new_variable);
 
-                    if(it != d_table.end())
+                    if(it != v_table.end())
                         type = it->second;
 
                     delete new_variable;
@@ -196,8 +255,10 @@ namespace AST{
 
                 std::string get_return_type() { return return_type; }
             private:
-                std::vector<Error> error_list;
+                std::vector<Error*> error_list;
                 std::string return_type;
+                Variable* return_variable;
+                Dispatch* return_dispatch;
                 std::map<Variable*, std::string, std::equal_to<Variable*>> v_table;
                 std::map<Dispatch*, std::string, std::equal_to<Dispatch*>> d_table;
         };
