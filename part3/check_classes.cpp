@@ -37,24 +37,21 @@ void* Check_classes::visit(Method* method){
 }
 
 bool Check_classes::check_class_body_redefinition(Class* class_){
-    map<string, Field*> field_map;
     List<Field>* field_list = class_->get_field_list();
-    
     size_t field_size = field_list->get_size();
     for (size_t i = 0; i < field_size; i++){
         Field* field = (Field *) field_list->accept_one(this, i);
 
         string name = field->get_name();
-        if (field_map.find(name) != field_map.end()){
+        if (class_->field_map.find(name) != class_->field_map.end()){
             cout << field->get_file_name() << ":" << field->get_line() << ":" << field->get_column() << ": semantic error: Field with name " << name << " already exists." << endl;
             return false;
         }
-        field_map[name] = field;
+        class_->field_map[name] = field;
     }
 
-    map<string, Method*> method_map;
-    List<Method>* method_list = class_->get_method_list();
 
+    List<Method>* method_list = class_->get_method_list();
     size_t method_size = method_list->get_size();
     for (size_t i = 0; i < method_size; i++){
         Method* method = (Method *) method_list->accept_one(this, i);
@@ -63,11 +60,11 @@ bool Check_classes::check_class_body_redefinition(Class* class_){
             }
 
         string name = method->get_name();
-        if (method_map.find(name) != method_map.end()){
+        if (class_->method_map.find(name) != class_->method_map.end()){
             cout << method->get_file_name() << ":" << method->get_line() << ":" << method->get_column() << ": semantic error: Method with name " << name << " already exists." << endl;
             return false;
         }
-        method_map[name] = method;
+        class_->method_map[name] = method;
     }
 
     return true;
@@ -90,25 +87,15 @@ void* Check_classes::visit(Class* class_){
     if (name == "Main") { // Check for Main class existence
         main_class_exists = true;
         
-        bool main_method_exists = false; // Check for main method existence
-        List<Method>* method_list = class_->get_method_list();
-
-        size_t method_size = method_list->get_size();
-        for (size_t i = 0; i < method_size; i++) {
-            Method* method = (Method*) method_list->accept_one(this, i);
-            if (method->get_name() == "main") {
-                main_method_exists = true;
-
-                if(method->get_return_type() != "int32" && method->get_formal_list()->get_size() != 0){
-                    cout << method->get_file_name() << ":" << method->get_line() << ":" << method->get_column() << ": semantic error: main method invalid in Main class." << endl;
-                    return TO_VOID(false);
-                }
-                break;
-            }
-        }
-        if (!main_method_exists) {
+        if(class_->method_map.find("main") == class_->method_map.end()){
             cout << class_->get_file_name() << ":" << class_->get_line() << ":" << class_->get_column() << ": semantic error: main method not found in Main class." << endl;
             return TO_VOID(false);
+        } else{
+            Method* method = class_->method_map["main"];
+            if(method->get_return_type() != "int32" && method->get_formal_list()->get_size() != 0){
+                cout << method->get_file_name() << ":" << method->get_line() << ":" << method->get_column() << ": semantic error: main method invalid in Main class." << endl;
+                return TO_VOID(false);
+            }
         }
     }
 
@@ -120,10 +107,71 @@ bool Check_classes::fill_class_map(List<Class>* class_list){
     for (size_t i = 0; i < size; i++){
         if (!TO_VALUE(class_list->accept_one(this, i))){
             return false;
-        }  
+        }
     }
 
     return true;
+}
+
+bool Check_classes::check_override_field(Class* class_) {
+    for (auto it = class_->field_map.begin(); it != class_->field_map.end(); it++){
+        string name = it->first;
+        Field* field = it->second;
+
+        Class* parent = class_map[class_->get_parent()];
+        while (parent->get_name() != "Object"){
+            if (parent->field_map.find(name) != parent->field_map.end()){
+                cout << field->get_file_name() << ":" << field->get_line() << ":" << field->get_column() << ": semantic error: Field with name " << name << " already exists in parent class." << endl;
+                return false;
+            }
+
+            parent = class_map[parent->get_parent()];
+        }
+    }
+
+    return true;      
+}
+
+bool Check_classes::check_override_method(Class* class_) {
+    for (auto it = class_->method_map.begin(); it != class_->method_map.end(); it++){
+        string name = it->first;
+        Method* method = it->second;
+
+        Class* parent = class_map[class_->get_parent()];
+        while (parent->get_name() != "Object"){
+            if (parent->method_map.find(name) != parent->method_map.end()){
+
+                // Check return type
+                Method* parent_method = parent->method_map[name];
+                if (method->get_return_type() != parent_method->get_return_type()){
+                    cout << method->get_file_name() << ":" << method->get_line() << ":" << method->get_column() << ": semantic error: Method with name " << name << " has different return type in parent class." << endl;
+                    return false;
+                }
+
+                // Check formals
+                List<Formal>* formals = method->get_formal_list();
+                List<Formal>* parent_formals = parent_method->get_formal_list();
+                if (formals->get_size() != parent_formals->get_size()){
+                    cout << method->get_file_name() << ":" << method->get_line() << ":" << method->get_column() << ": semantic error: Method with name " << name << " has different number of formals in parent class." << endl;
+                    return false;
+                }
+
+                size_t formals_size = formals->get_size();
+                for (size_t i = 0; i < formals_size; i++){
+                    Formal* formal = (Formal *) formals->accept_one(this, i);
+                    Formal* parent_formal = (Formal *) parent_formals->accept_one(this, i);
+                    if (formal->get_type() != parent_formal->get_type()){
+                        cout << method->get_file_name() << ":" << method->get_line() << ":" << method->get_column() << ": semantic error: Method with name " << name << " has different type of formal in parent class." << endl;
+                        return false;
+                    }
+                }
+            }
+
+            parent = class_map[parent->get_parent()];
+        }
+    }  
+
+    return true;    
 }
 
 bool Check_classes::check_extend(){
@@ -143,7 +191,16 @@ bool Check_classes::check_extend(){
                 cout << it->second->get_file_name() << ":" << it->second->get_line() << ":" << it->second->get_column() << ": semantic error: Inheritance cycle detected." << endl;
                 return false;
             }
+
+
             parent = class_map[next_parent_name];
+        }
+    
+        if(!check_override_field(it->second)){
+            return false;
+        }
+        if(!check_override_method(it->second)){
+            return false;
         }
     }
 
@@ -190,15 +247,17 @@ void* Check_classes::visit(Program* program){
     add_object_class(program);
 
     List<Class>* class_list = program->get_class_list();
-    fill_class_map(class_list);
+    if(!fill_class_map(class_list)){
+        return TO_VOID(false); // Error in class definition
+    }
 
     if (!main_class_exists) {
         cout << program->get_file_name() << program->get_line() << program->get_column() << ": semantic error: Main class not found." << endl;
-        return TO_VOID(false);
+        return TO_VOID(false); // Error in main class definition
     }
 
     if(!check_extend()){
-        return TO_VOID(false);
+        return TO_VOID(false); // Error in class inheritance
     }
 
     return TO_VOID(true);

@@ -158,6 +158,8 @@ namespace AST
 
             bool fill_class_map(List<Class>* class_list);
             bool check_class_body_redefinition(Class* class_);
+            bool check_override_field(Class* class_);
+            bool check_override_method(Class* class_);
             bool check_extend();
     };
 
@@ -498,6 +500,9 @@ namespace AST
             std::string get_parent() { return parent; }
             List<Field>* get_field_list() { return field_list; }
             List<Method>* get_method_list() { return method_list; }
+
+            map<string, Field*> field_map;
+            map<string, Method*> method_map;
         private:
             std::string name;
             std::string parent;
