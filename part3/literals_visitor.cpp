@@ -74,9 +74,17 @@ void* Literals_visitor::visit(If* if_) {
 }
 
 void* Literals_visitor::visit(While* while_) {
-    // to remove the warning
-    while_->get_line();
-    return NULL;
+    type::Table cond_expr_table = ACCEPT(while_->get_cond_expr());
+    type::Table body_expr_table = ACCEPT(while_->get_body_expr());
+
+    cond_expr_table.set_type(BOOLEAN);
+
+    type::Table *returned_table = new type::Table(UNIT);
+
+    returned_table->concatenate(&cond_expr_table);
+    returned_table->concatenate(&body_expr_table);
+
+    return returned_table;
 }
 
 void* Literals_visitor::visit(Let* let) {
@@ -86,7 +94,7 @@ void* Literals_visitor::visit(Let* let) {
     type::Table init_expr_table = ACCEPT(let->get_init_expr());
     type::Table scope_expr_table = ACCEPT(let->get_scope_expr());
 
-    scope_expr_table->set_type(variable_name, variable_type);
+    scope_expr_table.set_type(variable_name, variable_type);
 
     type::Table *returned_table = new type::Table(variable_type, variable_name);
 
