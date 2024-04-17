@@ -50,27 +50,51 @@ void* Literals_visitor::visit(Field* field) {
 }
 
 void* Literals_visitor::visit(Method* method) {
-    // to remove the warning
-    method->get_line();
-    return NULL;
+    string return_type = method->get_type();
+    string name = method->get_name();
+    type::Table body_block_table = ACCEPT(method->get_body_block());
+    vector<type::Table> formal_list_tables = ACCEPT_LIST(method->get_formal_list());
+
+    type::Table *returned_table = new type::Table(return_type, name, SELF);
+
+    body_block_table.set_type(return_type);
+    returned_table->concatenate(body_block_table);
+
+    for(size_t i = 0; i < formal_list_tables.size(); i++)
+        returned_table->concatenate(formal_list_tables[i]);
+
+    return returned_table;
 }
 
 void* Literals_visitor::visit(Formal* formal) {
-    // to remove the warning
-    formal->get_line();
-    return NULL;
+    string type = formal->get_type();
+    string name = formal->get_name();
+
+    type::Table *returned_table = new type::Table(type, name);
+
+    return returned_table;
 }
 
 void* Literals_visitor::visit(Block* block) {
-    // to remove the warning
-    block->get_line();
-    return NULL;
+    vector<type::Table> expr_list_tables = ACCEPT_LIST(block->get_expr_list());
+
+    string last_type = expr_list_tables[expr_list_tables.size()-1].get_type(); 
+
+    type::Table *returned_table = new type::Table(last_type);
+
+    for(size_t i = 0; i < expr_list_tables.size(); i++)
+        returned_table->concatenate(expr_list_tables[i]);
+
+    return returned_table;
 }
 
 void* Literals_visitor::visit(If* if_) {
     type::Table cond_expr_table = ACCEPT(if_->get_cond_expr());
     type::Table then_expr_table = ACCEPT(if_->get_then_expr());
-    type::Table else_expr_table = ACCEPT(if_->get_else_expr());
+    type::Table else_expr_table = TO_VALUE(new type::Table(NONE));
+
+    if(if_->has_else_expr())
+        else_expr_table = ACCEPT(if_->get_else_expr());
 
     cond_expr_table.set_type(BOOLEAN);
 
@@ -122,7 +146,7 @@ void* Literals_visitor::visit(Let* let) {
 
     scope_expr_table.set_type(variable_name, variable_type);
 
-    type::Table *returned_table = new type::Table(variable_type, variable_name);
+    type::Table *returned_table = new type::Table(variable_type);
 
     returned_table->concatenate(&init_expr_table);
     returned_table->concatenate(&scope_expr_table);

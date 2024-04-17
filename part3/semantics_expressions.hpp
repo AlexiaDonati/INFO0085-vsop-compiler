@@ -296,21 +296,16 @@ namespace AST{
             }   
 
             template <typename T>
-            std::string accept_list(List<T>* list){
+            std::vector<type::Table> accept_list(List<T>* list){
                 size_t size = list->get_size();
-                std::string result = "[";
+                std::vector<type::Table> result_vector;
 
                 for (size_t i = 0; i < size; i++){
-                    std::string expr_result = this->get_value_from_void(list->accept_one(this, i));
-                    result += expr_result;
-                    result += (i+1 == size) ? "]" : ", ";
+                    type::Table expr_result = this->get_value_from_void(list->accept_one(this, i));
+                    result_vector.push_back(expr_result);
                 }
 
-                if(size == 0){
-                    result += "]";
-                }
-
-                return result;
+                return result_vector;
             }    
     };
 }
