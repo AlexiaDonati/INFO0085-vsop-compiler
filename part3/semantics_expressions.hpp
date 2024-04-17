@@ -168,6 +168,14 @@ namespace AST{
                     delete new_variable;
                 }
 
+                void remove_type(std::string method_name, std::string object_name){
+                    Dispatch* new_dispatch = new Dispatch(method_name, object_name);
+
+                    d_table.erase(new_dispatch);
+
+                    delete new_dispatch;
+                }
+
                 void set_type(std::string name, std::string type){
                     std::string previous_type = get_type(name);
 
@@ -252,6 +260,19 @@ namespace AST{
                     if(return_variable == NULL)
                         return NONE;
                     return return_variable->name;
+                }
+
+                void replace_self_by_name(std::string object_name){
+                    for(auto it = d_table.begin(); it != d_table.end(); it++){
+                        std::string method = it->first->method_name;
+                        std::string object = it->first->object_name;
+                        std::string return_type = it->second;
+
+                        if(object == SELF){
+                            set_type(method, object_name, return_type);
+                            remove_type(method, object);
+                        }
+                    }
                 }
 
             private:

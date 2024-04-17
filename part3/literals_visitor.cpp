@@ -32,9 +32,14 @@ const map<string, UNOP> unop_to_enum = {
 };
 
 void* Literals_visitor::visit(Program* program) {
-    // to remove the warning
-    program->get_line();
-    return NULL;
+    vector<type::Table> class_list_tables = ACCEPT_LIST(program->get_class_list());
+
+    type::Table *returned_table = new type::Table(NONE);
+
+    for(size_t i = 0; i < class_list_tables.size(); i++)
+        returned_table->concatenate(&class_list_tables[i]);
+
+    return returned_table;
 }
 
 void* Literals_visitor::visit(Class* class_) {
@@ -45,15 +50,16 @@ void* Literals_visitor::visit(Class* class_) {
 
     type::Table *returned_table = new type::Table(name);
 
-    for(size_t i = 0; i < method_list_tables.size(); i++){
+    for(size_t i = 0; i < method_list_tables.size(); i++)
         returned_table->concatenate(&method_list_tables[i]);
-    }
 
     for(size_t i = 0; i < field_list_tables.size(); i++){
         returned_table->concatenate(&field_list_tables[i]);
         // Class variables must be removed from the table
         returned_table->remove_type(field_list_tables[i].get_return_variable_name());
     }
+
+    returned_table->replace_self_by_name(name);
 
     return returned_table;
 }
