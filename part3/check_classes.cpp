@@ -241,7 +241,7 @@ void Check_classes::add_object_class(Program* program){
     method_list->add(inputInt);
 
     Class* object_class = new Class(line, column, file_name, "Object", "", field_list, method_list);
-    program->get_class_list()->add(object_class);
+    class_map["Object"] = object_class;
 }
 
 void* Check_classes::visit(Program* program){
