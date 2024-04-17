@@ -38,19 +38,45 @@ void* Literals_visitor::visit(Program* program) {
 }
 
 void* Literals_visitor::visit(Class* class_) {
-    // to remove the warning
-    class_->get_line();
-    return NULL;
+    string name = class_->get_name();
+    string parent_type = class_->get_parent();
+    vector<type::Table> field_list_tables = ACCEPT_LIST(class_->get_field_list());
+    vector<type::Table> method_list_tables = ACCEPT_LIST(class_->get_method_list());
+
+    type::Table *returned_table = new type::Table(name);
+
+    for(size_t i = 0; i < method_list_tables.size(); i++){
+        returned_table->concatenate(&method_list_tables[i]);
+    }
+
+    for(size_t i = 0; i < field_list_tables.size(); i++){
+        returned_table->concatenate(&field_list_tables[i]);
+        // Class variables must be removed from the table
+        returned_table->remove_type(field_list_tables[i].get_return_variable_name());
+    }
+
+    return returned_table;
 }
 
 void* Literals_visitor::visit(Field* field) {
-    // to remove the warning
-    field->get_line();
-    return NULL;
+    string name = field->get_name();
+    string type = field->get_type();
+    type::Table init_expr_table = TO_VALUE(new type::Table(NONE));
+    
+    if(field->has_init_expr())
+        init_expr_table = ACCEPT(field->get_init_expr());
+
+    type::Table *returned_table = new type::Table(type, name);
+
+    returned_table->set_type(init_expr_table.get_type());
+    
+    returned_table->concatenate(&init_expr_table);
+
+    return returned_table;
 }
 
 void* Literals_visitor::visit(Method* method) {
-    string return_type = method->get_type();
+    string return_type = method->get_return_type();
     string name = method->get_name();
     type::Table body_block_table = ACCEPT(method->get_body_block());
     vector<type::Table> formal_list_tables = ACCEPT_LIST(method->get_formal_list());
@@ -58,10 +84,13 @@ void* Literals_visitor::visit(Method* method) {
     type::Table *returned_table = new type::Table(return_type, name, SELF);
 
     body_block_table.set_type(return_type);
-    returned_table->concatenate(body_block_table);
+    returned_table->concatenate(&body_block_table);
 
-    for(size_t i = 0; i < formal_list_tables.size(); i++)
-        returned_table->concatenate(formal_list_tables[i]);
+    for(size_t i = 0; i < formal_list_tables.size(); i++){
+        returned_table->concatenate(&formal_list_tables[i]);
+        // Method arguments must be removed from the table
+        returned_table->remove_type(formal_list_tables[i].get_return_variable_name());
+    }
 
     return returned_table;
 }
@@ -83,7 +112,7 @@ void* Literals_visitor::visit(Block* block) {
     type::Table *returned_table = new type::Table(last_type);
 
     for(size_t i = 0; i < expr_list_tables.size(); i++)
-        returned_table->concatenate(expr_list_tables[i]);
+        returned_table->concatenate(&expr_list_tables[i]);
 
     return returned_table;
 }

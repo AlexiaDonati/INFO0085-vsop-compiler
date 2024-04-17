@@ -248,6 +248,12 @@ namespace AST{
 
                 std::string get_type() { return return_type; }
 
+                std::string get_return_variable_name() { 
+                    if(return_variable == NULL)
+                        return NONE;
+                    return return_variable->name;
+                }
+
             private:
                 std::vector<Error*> error_list;
                 std::string return_type;
