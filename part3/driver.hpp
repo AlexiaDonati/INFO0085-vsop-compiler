@@ -70,6 +70,13 @@ namespace VSOP
         int parse();
 
         /**
+         * @brief Run the semantic analyser on the AST.
+         * 
+         * @return int 0 if no semantic error.
+         */
+        int semantic_analysis();
+
+        /**
          * @brief Print all the tokens.
          */
         void print_tokens();

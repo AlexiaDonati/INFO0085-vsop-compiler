@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <algorithm>
+#include <map>
 
 #define TO_VALUE(void_pointer) this->get_value_from_void(void_pointer)
 #define TO_VOID(value) this->get_void_from_value(value)
@@ -139,9 +140,27 @@ namespace AST
         public:
             void* visit(Program* program);
             void* visit(Class* class_);
-            void* visit(Field* field);
+            
             void* visit(Method* method);
-            void* visit(Formal* formal);
+            void* visit(Formal* formal){ return formal;}
+            void* visit(Field* field){ return field;}
+
+            // Not used but added to avoid errors
+            void* visit(Block* block){ return block;}
+            void* visit(If* if_){ return if_;}
+            void* visit(While* while_){ return while_;}
+            void* visit(Let* let){ return let;}
+            void* visit(Assign* assign){ return assign;}
+            void* visit(Self* self){ return self;}
+            void* visit(Unop* unop){ return unop;}
+            void* visit(Binop* binop){ return binop;}
+            void* visit(Call* call){ return call;}
+            void* visit(New* new_){ return new_;}
+            void* visit(String* string_){ return string_;}
+            void* visit(Integer* integer){ return integer;}
+            void* visit(Boolean* boolean){ return boolean;}
+            void* visit(Unit* unit){ return unit;}
+            void* visit(Object* object){ return object;}
 
             bool get_value_from_void(void* void_value){
                 bool* value = (bool*) void_value;
@@ -501,8 +520,8 @@ namespace AST
             List<Field>* get_field_list() { return field_list; }
             List<Method>* get_method_list() { return method_list; }
 
-            map<string, Field*> field_map;
-            map<string, Method*> method_map;
+            std::map<std::string, Field*>  field_map;
+            std::map<std::string, Method*> method_map;
         private:
             std::string name;
             std::string parent;

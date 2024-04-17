@@ -136,6 +136,17 @@ int Driver::parse()
     return res;
 }
 
+int Driver::semantic_analysis()
+{
+    AST::Check_classes check_classes;
+    bool res = ast->accept(&check_classes);
+
+    if (!res)
+        return 1;
+
+    return 0;
+}
+
 void Driver::print_tokens()
 {
     for (auto token : tokens)

@@ -5,14 +5,6 @@
 using namespace AST;
 using namespace std;
 
-void* Check_classes::visit(Formal* formal){
-    return formal;
-}
-
-void* Check_classes::visit(Field* field){
-    return field;
-}
-
 void* Check_classes::visit(Method* method){
 
     map<string, Formal*> formals_map; // Check formal redefinition in current method
@@ -57,7 +49,7 @@ bool Check_classes::check_class_body_redefinition(Class* class_){
         Method* method = (Method *) method_list->accept_one(this, i);
         if(!method){
             return false;
-            }
+        }
 
         string name = method->get_name();
         if (class_->method_map.find(name) != class_->method_map.end()){
@@ -91,9 +83,14 @@ void* Check_classes::visit(Class* class_){
             cout << class_->get_file_name() << ":" << class_->get_line() << ":" << class_->get_column() << ": semantic error: main method not found in Main class." << endl;
             return TO_VOID(false);
         } else{
+            cout << class_->method_map["main"]->get_return_type() << endl;
             Method* method = class_->method_map["main"];
-            if(method->get_return_type() != "int32" && method->get_formal_list()->get_size() != 0){
-                cout << method->get_file_name() << ":" << method->get_line() << ":" << method->get_column() << ": semantic error: main method invalid in Main class." << endl;
+            if(method->get_return_type() != "int32"){
+                cout << method->get_file_name() << ":" << method->get_line() << ":" << method->get_column() << ": semantic error: main method should return int32." << endl;
+                return TO_VOID(false);
+            }
+            if(method->get_formal_list()->get_size() != 0){
+                cout << method->get_file_name() << ":" << method->get_line() << ":" << method->get_column() << ": semantic error: main method should not have any formals." << endl;
                 return TO_VOID(false);
             }
         }
