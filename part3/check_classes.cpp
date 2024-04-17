@@ -83,7 +83,6 @@ void* Check_classes::visit(Class* class_){
             cout << class_->get_file_name() << ":" << class_->get_line() << ":" << class_->get_column() << ": semantic error: main method not found in Main class." << endl;
             return TO_VOID(false);
         } else{
-            cout << class_->method_map["main"]->get_return_type() << endl;
             Method* method = class_->method_map["main"];
             if(method->get_return_type() != "int32"){
                 cout << method->get_file_name() << ":" << method->get_line() << ":" << method->get_column() << ": semantic error: main method should return int32." << endl;
@@ -172,25 +171,30 @@ bool Check_classes::check_override_method(Class* class_) {
 }
 
 bool Check_classes::check_extend(){
+    map<string, Class*> extend_path;
     for (auto it = class_map.begin(); it != class_map.end(); it++){
-        
+        string name = it->first;
+        extend_path[name] = it->second;
+
         string parent_name = it->second->get_parent();
+
         if (parent_name == "Object" || class_map.find(parent_name) == class_map.end()){
             continue;
         }
 
         Class* parent = class_map[parent_name];
+        extend_path[parent_name] = parent;
 
         while (parent->get_name() != "Object"){
             string next_parent_name = parent->get_parent();
 
-            if (next_parent_name == it->second->get_name()){
+            if (extend_path.find(next_parent_name) != extend_path.end()){
                 cout << it->second->get_file_name() << ":" << it->second->get_line() << ":" << it->second->get_column() << ": semantic error: Inheritance cycle detected." << endl;
                 return false;
             }
 
-
             parent = class_map[next_parent_name];
+            extend_path[next_parent_name] = parent;
         }
     
         if(!check_override_field(it->second)){
