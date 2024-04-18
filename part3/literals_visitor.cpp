@@ -204,7 +204,7 @@ void* Literals_visitor::visit(Let* let) {
     returned_table->concatenate(init_expr_table);
     returned_table->concatenate(scope_expr_table);
 
-    returned_table->remove_type(variable_type);
+    returned_table->remove_type(variable_name);
 
     delete init_expr_table;
     delete scope_expr_table;

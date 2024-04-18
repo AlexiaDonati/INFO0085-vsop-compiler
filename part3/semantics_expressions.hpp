@@ -8,7 +8,7 @@
 #include "ast.hpp"
 
 #define S_UNIT "unit"
-#define S_BOOLEAN "boolean"
+#define S_BOOLEAN "bool"
 #define S_INTEGER "int32"
 #define S_STRING "string"
 #define S_NONE ""

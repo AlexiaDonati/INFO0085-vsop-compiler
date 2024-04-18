@@ -1,16 +1,19 @@
 class Main {
+    i : int32;
+    n : bool;
     factorial(n : int32) : int32 {
         if n = 1 then 1
         else n * factorial(n - 1)
     }
     main() : int32 {
         print("Enter an integer greater-than or equal to 0: ");
+        n <- true;
         let n : int32 <- inputInt32() in
         if n < 0 then {
-            -1
+            i
         } else {
-            print("The factorial of ").printInt32(n).print(" is ");
-            printInt32(factorial(n)).print("\n");
+           // print("The factorial of ").printInt32(n).print(" is ");
+           printInt32(factorial(n)).print("\n");
             0
         }
     }
