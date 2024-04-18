@@ -199,7 +199,7 @@ void* Literals_visitor::visit(Let* let) {
 
     scope_expr_table->set_type(variable_name, variable_type);
 
-    type::Table *returned_table = new type::Table(LOC(let), variable_type);
+    type::Table *returned_table = new type::Table(LOC(let), init_expr_table->get_type());
 
     returned_table->concatenate(init_expr_table);
     returned_table->concatenate(scope_expr_table);

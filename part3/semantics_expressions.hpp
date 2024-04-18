@@ -12,7 +12,7 @@
 #define S_INTEGER "int32"
 #define S_STRING "string"
 #define S_NONE ""
-#define S_SELF "self"
+#define S_SELF S_NONE
 
 namespace AST{
 
@@ -37,46 +37,10 @@ namespace AST{
             public:
                 std::string method_name;
                 std::string object_name;
-                // TODO handle bad args
-                //std::map<Variable*, std::string> args_variables;
 
                 Dispatch(std::string method_name, std::string object_name) :
                     method_name(method_name), object_name(object_name){};
                 ~Dispatch() = default;
-
-                bool operator ==(const Dispatch &dispatch){
-                    return (method_name == dispatch.method_name) && 
-                           (object_name == dispatch.object_name) /*&&
-                           (compare_args(dispatch))*/;
-                }
-
-                bool operator <(const Dispatch &dispatch) const{
-                    if (method_name != dispatch.method_name) {
-                        return method_name < dispatch.method_name;
-                    } else {
-                        return object_name < dispatch.object_name;
-                    }
-                }
-            /*
-            bool compare_args(Dispatch dispatch){
-                size_t size_1 = args_variables.size();
-                size_t size_2 = dispatch.args_variables.size();
-
-                if(size_1 != size_2)
-                    return false;
-
-                for(size_t i = 0; i < size_1; i++){
-                    std::string type_1 = args_variables[i].second;
-                    std::string type_2 = dispatch.args_variables[i].second;
-                    if(args_variables[i].type != NONE
-                    && dispatch.args_variables[i].type != NONE
-                    && args_variables[i].type != dispatch.args_variables[i].type)
-                        return false;
-                }
-
-                return true;
-            }
-            */
         };
 
         class Error {
