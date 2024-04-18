@@ -7,6 +7,7 @@ using namespace std;
 #define TO_VOID(value) get_void_from_value(value)
 #define ACCEPT(expr) (type::Table*) expr->accept(this)
 #define ACCEPT_LIST(list) accept_list(list)
+#define LOC(expr) expr->get_line(), expr->get_column(), expr->get_file_name()
 
 bool is_unit(std::string type);
 bool is_boolean(std::string type);
@@ -39,7 +40,7 @@ const map<string, UNOP> unop_to_enum = {
 void* Literals_visitor::visit(Program* program) {
     vector<type::Table*> class_list_tables = ACCEPT_LIST(program->get_class_list());
 
-    type::Table *returned_table = new type::Table(S_NONE);
+    type::Table *returned_table = new type::Table(LOC(program), S_NONE);
 
     for(size_t i = 0; i < class_list_tables.size(); i++)
         returned_table->concatenate(class_list_tables[i]);
@@ -53,7 +54,7 @@ void* Literals_visitor::visit(Class* class_) {
     vector<type::Table*> field_list_tables = ACCEPT_LIST(class_->get_field_list());
     vector<type::Table*> method_list_tables = ACCEPT_LIST(class_->get_method_list());
 
-    type::Table *returned_table = new type::Table(name);
+    type::Table *returned_table = new type::Table(LOC(class_), name);
 
     for(size_t i = 0; i < method_list_tables.size(); i++)
         returned_table->concatenate(method_list_tables[i]);
@@ -71,12 +72,12 @@ void* Literals_visitor::visit(Class* class_) {
 void* Literals_visitor::visit(Field* field) {
     string name = field->get_name();
     string type = field->get_type();
-    type::Table *init_expr_table = new type::Table(S_NONE);
+    type::Table *init_expr_table = new type::Table(LOC(field), S_NONE);
     
     if(field->has_init_expr())
         init_expr_table = ACCEPT(field->get_init_expr());
 
-    type::Table *returned_table = new type::Table(type, name);
+    type::Table *returned_table = new type::Table(LOC(field), type, name);
 
     returned_table->set_type(init_expr_table->get_type());
     
@@ -93,7 +94,7 @@ void* Literals_visitor::visit(Method* method) {
     type::Table *body_block_table = ACCEPT(method->get_body_block());
     vector<type::Table*> formal_list_tables = ACCEPT_LIST(method->get_formal_list());
 
-    type::Table *returned_table = new type::Table(return_type, name, S_SELF);
+    type::Table *returned_table = new type::Table(LOC(method), return_type, name, S_SELF);
 
     body_block_table->set_type(return_type);
     returned_table->concatenate(body_block_table);
@@ -113,7 +114,7 @@ void* Literals_visitor::visit(Formal* formal) {
     string type = formal->get_type();
     string name = formal->get_name();
 
-    type::Table *returned_table = new type::Table(type, name);
+    type::Table *returned_table = new type::Table(LOC(formal), type, name);
 
     return returned_table;
 }
@@ -123,7 +124,7 @@ void* Literals_visitor::visit(Block* block) {
 
     string last_type = expr_list_tables[expr_list_tables.size()-1]->get_type(); 
 
-    type::Table *returned_table = new type::Table(last_type);
+    type::Table *returned_table = new type::Table(LOC(block), last_type);
 
     for(size_t i = 0; i < expr_list_tables.size(); i++)
         returned_table->concatenate(expr_list_tables[i]);
@@ -134,7 +135,7 @@ void* Literals_visitor::visit(Block* block) {
 void* Literals_visitor::visit(If* if_) {
     type::Table *cond_expr_table = ACCEPT(if_->get_cond_expr());
     type::Table *then_expr_table = ACCEPT(if_->get_then_expr());
-    type::Table *else_expr_table = new type::Table(S_NONE);
+    type::Table *else_expr_table = new type::Table(LOC(if_), S_NONE);
 
     if(if_->has_else_expr())
         else_expr_table = ACCEPT(if_->get_else_expr());
@@ -147,16 +148,16 @@ void* Literals_visitor::visit(If* if_) {
     type::Table *returned_table;
 
     if(is_unit(then_type) || is_unit(else_type)){
-        returned_table = new type::Table(S_UNIT);
+        returned_table = new type::Table(LOC(if_), S_UNIT);
     } else if(is_primitive(then_type) || is_primitive(else_type)) {
         then_expr_table->set_type(else_type);
         else_expr_table->set_type(then_type);
-        returned_table = new type::Table(else_type);
+        returned_table = new type::Table(LOC(if_), else_type);
     } else if(is_none(then_type) && is_none(else_type)){
-        returned_table = new type::Table(S_NONE);
+        returned_table = new type::Table(LOC(if_), S_NONE);
     } else {
         // TODO create common_class_type table
-        returned_table = new type::Table(S_NONE); // mocked
+        returned_table = new type::Table(LOC(if_), S_NONE); // mocked
     }
 
     returned_table->concatenate(cond_expr_table);
@@ -176,7 +177,7 @@ void* Literals_visitor::visit(While* while_) {
 
     cond_expr_table->set_type(S_BOOLEAN);
 
-    type::Table *returned_table = new type::Table(S_UNIT);
+    type::Table *returned_table = new type::Table(LOC(while_), S_UNIT);
 
     returned_table->concatenate(cond_expr_table);
     returned_table->concatenate(body_expr_table);
@@ -192,13 +193,13 @@ void* Literals_visitor::visit(Let* let) {
     string variable_type = let->get_type();
 
     type::Table *scope_expr_table = ACCEPT(let->get_scope_expr());
-    type::Table *init_expr_table = new type::Table(S_NONE);
+    type::Table *init_expr_table = new type::Table(LOC(let), S_NONE);
     if(let->has_init_expr())
         init_expr_table = ACCEPT(let->get_init_expr());
 
     scope_expr_table->set_type(variable_name, variable_type);
 
-    type::Table *returned_table = new type::Table(variable_type);
+    type::Table *returned_table = new type::Table(LOC(let), variable_type);
 
     returned_table->concatenate(init_expr_table);
     returned_table->concatenate(scope_expr_table);
@@ -217,7 +218,7 @@ void* Literals_visitor::visit(Assign* assign) {
 
     expr_table->set_type(variable_name, expr_table->get_type());
 
-    type::Table *returned_table = new type::Table(expr_table->get_type(), variable_name);
+    type::Table *returned_table = new type::Table(LOC(assign), expr_table->get_type(), variable_name);
 
     returned_table->concatenate(expr_table);
 
@@ -229,7 +230,7 @@ void* Literals_visitor::visit(Assign* assign) {
 void* Literals_visitor::visit(Self* self) {
     // to remove the warning
     self->get_line();
-    return new type::Table(S_SELF);
+    return new type::Table(LOC(self), S_SELF);
 }
 
 void* Literals_visitor::visit(Unop* unop) {
@@ -241,22 +242,22 @@ void* Literals_visitor::visit(Unop* unop) {
     switch (unop_to_enum.at(op))
     {
     case NOT:
-        returned_table = new type::Table(S_BOOLEAN);
+        returned_table = new type::Table(LOC(unop), S_BOOLEAN);
 
         expr_table->set_type(S_BOOLEAN);
 
         break;
     case UNARY:
-        returned_table = new type::Table(S_INTEGER);
+        returned_table = new type::Table(LOC(unop), S_INTEGER);
 
         expr_table->set_type(S_INTEGER);
 
         break;
     case ISNULL:
-        returned_table = new type::Table(S_NONE);
+        returned_table = new type::Table(LOC(unop), S_NONE);
         break;
     default:
-        returned_table = new type::Table(S_NONE);
+        returned_table = new type::Table(LOC(unop), S_NONE);
 
         returned_table->throw_error(unop, 
                 "Unop not recognised: " 
@@ -283,7 +284,7 @@ void* Literals_visitor::visit(Binop* binop) {
 
     switch (binop_to_enum.at(op)){
     case EQ:   
-        returned_table = new type::Table(S_BOOLEAN);
+        returned_table = new type::Table(LOC(binop), S_BOOLEAN);
 
         // Both type must be the same if primitive
         if(is_primitive(left_type) || is_primitive(right_type)){
@@ -300,23 +301,23 @@ void* Literals_visitor::visit(Binop* binop) {
     case DIV:
     case POW:
         if(binop_to_enum.at(op) == LT || binop_to_enum.at(op) == LEQ)
-            returned_table = new type::Table(S_BOOLEAN);
+            returned_table = new type::Table(LOC(binop), S_BOOLEAN);
         else
-            returned_table = new type::Table(S_INTEGER);
+            returned_table = new type::Table(LOC(binop), S_INTEGER);
 
         left_expr_table->set_type(S_INTEGER);
         right_expr_table->set_type(S_INTEGER);
 
         break;
     case AND:
-        returned_table = new type::Table(S_BOOLEAN);
+        returned_table = new type::Table(LOC(binop), S_BOOLEAN);
 
         left_expr_table->set_type(S_BOOLEAN);
         right_expr_table->set_type(S_BOOLEAN);
         
         break;
     default:
-        returned_table = new type::Table(S_NONE);
+        returned_table = new type::Table(LOC(binop), S_NONE);
 
         returned_table->throw_error(binop, 
                 "Binop not recognised: " 
@@ -341,7 +342,7 @@ void* Literals_visitor::visit(Call* call) {
     string method = call->get_method();
     vector<type::Table*> arg_expr_list_tables = ACCEPT_LIST(call->get_arg_expr_list());
     
-    type::Table *returned_table = new type::Table(S_NONE, method, object);
+    type::Table *returned_table = new type::Table(LOC(call), S_NONE, method, object);
     
     for(size_t i = 0; i < arg_expr_list_tables.size(); i++)
         returned_table->concatenate(arg_expr_list_tables[i]);
@@ -352,35 +353,35 @@ void* Literals_visitor::visit(Call* call) {
 }
 
 void* Literals_visitor::visit(New* new_) {
-    return new type::Table(new_->get_type());
+    return new type::Table(LOC(new_), new_->get_type());
 }
 
 void* Literals_visitor::visit(String* string_) {
     // to remove the warning
     string_->get_line();
-    return new type::Table(S_STRING);
+    return new type::Table(LOC(string_), S_STRING);
 }
 
 void* Literals_visitor::visit(Integer* integer) {
     // to remove the warning
     integer->get_line();
-    return new type::Table(S_INTEGER);
+    return new type::Table(LOC(integer), S_INTEGER);
 }
 
 void* Literals_visitor::visit(Boolean* boolean) {
     // to remove the warning
     boolean->get_line();
-    return new type::Table(S_BOOLEAN);
+    return new type::Table(LOC(boolean), S_BOOLEAN);
 }
 
 void* Literals_visitor::visit(Unit* unit) {
     // to remove the warning
     unit->get_line();
-    return new type::Table(S_UNIT);
+    return new type::Table(LOC(unit), S_UNIT);
 }
 
 void* Literals_visitor::visit(Object* object) {
-    return new type::Table(S_NONE, object->get_name());
+    return new type::Table(LOC(object), S_NONE, object->get_name());
 }
 
 /* Local Functions */

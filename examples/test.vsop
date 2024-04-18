@@ -7,7 +7,6 @@ class Main {
         print("Enter an integer greater-than or equal to 0: ");
         let n : int32 <- inputInt32() in
         if n < 0 then {
-            n <- true;
             -1
         } else {
             print("The factorial of ").printInt32(n).print(" is ");

@@ -85,10 +85,7 @@ namespace AST{
                     line(line), column(column), file_name(file_name), message(message) {};
 
                 std::string to_string() {
-                    // dum message to stop warning
-                    line = line +1 -1;
-                    column = column +1 -1;
-                    return message;
+                    return file_name + ":" + std::to_string(line) + ":" + std::to_string(column) + ": semantic error: " + message;
                 }
             private:
                 size_t line;
@@ -99,19 +96,19 @@ namespace AST{
 
         class Table {
             public:
-                Table(std::string return_type) : 
-                    return_type(return_type) {
+                Table(size_t line, size_t column, std::string file_name, std::string return_type) : 
+                    line(line), column(column), file_name(file_name), return_type(return_type) {
                         return_variable = NULL;
                         return_dispatch = NULL;
                     };
-                Table(std::string return_type, std::string name) : 
-                    return_type(return_type) {
+                Table(size_t line, size_t column, std::string file_name, std::string return_type, std::string name) : 
+                    line(line), column(column), file_name(file_name), return_type(return_type) {
                         return_variable = new Variable(name);
                         set_type(name, return_type);
                         return_dispatch = NULL;
                     };
-                Table(std::string return_type, std::string method_name, std::string object_name) : 
-                    return_type(return_type) {
+                Table(size_t line, size_t column, std::string file_name, std::string return_type, std::string method_name, std::string object_name) : 
+                    line(line), column(column), file_name(file_name), return_type(return_type) {
                         return_variable = NULL;
                         return_dispatch = new Dispatch(method_name, object_name);
                         set_type(method_name, object_name, return_type);
@@ -129,9 +126,9 @@ namespace AST{
 
                 void throw_error(std::string message) { 
                     Error *new_error = new Error(
-                        0,
-                        0,
-                        "mocked",
+                        line,
+                        column,
+                        file_name,
                         message
                     );
                     error_list.push_back(new_error); 
@@ -342,6 +339,9 @@ namespace AST{
                 }
 
             private:
+                size_t line;
+                size_t column;
+                std::string file_name;
                 std::vector<Error*> error_list;
                 std::string return_type;
                 Variable* return_variable;
