@@ -65,7 +65,6 @@ void* Literals_visitor::visit(Class* class_) {
     }
 
     returned_table->replace_self_by_name(name);
-
     return returned_table;
 }
 

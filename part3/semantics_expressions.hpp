@@ -28,8 +28,8 @@ namespace AST{
                     return (name == variable.name);
                 }
 
-                bool operator <(const Variable &variable){
-                    return name < variable.name;
+                bool operator <(const Variable *variable) const{
+                    return name < variable->name;
                 }
         } ;
 
@@ -50,7 +50,7 @@ namespace AST{
                            (compare_args(dispatch))*/;
                 }
 
-                bool operator <(const Dispatch &dispatch){
+                bool operator <(const Dispatch &dispatch) const{
                     if (method_name != dispatch.method_name) {
                         return method_name < dispatch.method_name;
                     } else {
@@ -160,6 +160,40 @@ namespace AST{
                     return result;
                 }
 
+                std::string to_string(){
+                    std::string result = "";
+
+                    result += "---- Return type ---\n";
+
+                    result += return_type + "\n";
+
+                    result += "---- Error List ----\n";
+
+                    for(size_t i = 0; i < error_list.size(); i++)
+                        result += error_list[i]->to_string() + "\n";
+
+                    result += "------ v table -----\n";
+
+                    for(auto it = v_table.begin(); it != v_table.end(); it++){
+                        std::string name = it->first->name;
+                        std::string type = it->second;
+
+                        result += name + " : " + type + "\n";
+                    }
+
+                    result += "------ d table -----\n";
+
+                    for(auto it = d_table.begin(); it != d_table.end(); it++){
+                        std::string method = it->first->method_name;
+                        std::string object = it->first->object_name;
+                        std::string return_type = it->second;
+
+                        result += object + "." + method + " : " + return_type + "\n";
+                    }
+
+                    return result;
+                }
+
                 void concatenate(const Table *table){
                     // concatenate error_list
                     for(auto it = table->error_list.begin(); it != table->error_list.end(); it++){
@@ -185,19 +219,30 @@ namespace AST{
                 }
 
                 void remove_type(std::string name){
-                    Variable* new_variable = new Variable(name);
+                    for(auto it = v_table.begin(); it != v_table.end(); it++){
+                        std::string name_ = it->first->name;
+                        std::string type = it->second;
 
-                    v_table.erase(new_variable);
-
-                    delete new_variable;
+                        if(name == name_){
+                            delete it->first;
+                            v_table.erase(it);
+                            break;
+                        }
+                    }
                 }
 
                 void remove_type(std::string method_name, std::string object_name){
-                    Dispatch* new_dispatch = new Dispatch(method_name, object_name);
+                    for(auto it = d_table.begin(); it != d_table.end(); it++){
+                        std::string method = it->first->method_name;
+                        std::string object = it->first->object_name;
+                        std::string return_type = it->second;
 
-                    d_table.erase(new_dispatch);
-
-                    delete new_dispatch;
+                        if(method_name == method && object_name == object){
+                            delete it->first;
+                            d_table.erase(it);
+                            break;
+                        }
+                    }
                 }
 
                 void set_type(std::string name, std::string type){
@@ -211,9 +256,9 @@ namespace AST{
                     Variable* new_variable = new Variable(name);
 
                     // Delete previous stored variable if existing
-                    v_table.erase(new_variable);
+                    remove_type(name);
 
-                    v_table[new_variable] = type;
+                    v_table.insert({new_variable, type});
                 }
 
                 void set_type(std::string method_name, std::string object_name, std::string type){
@@ -227,9 +272,9 @@ namespace AST{
                     Dispatch* new_dispatch = new Dispatch(method_name, object_name);
 
                     // Delete previous stored dispatch if existing
-                    d_table.erase(new_dispatch);
+                    remove_type(method_name, object_name);
 
-                    d_table[new_dispatch] = type;
+                    d_table.insert({new_dispatch, type});
                 }
 
                 void set_type(std::string type){
@@ -242,40 +287,35 @@ namespace AST{
 
                     if(return_variable != NULL){
                         return_type = type;
-                        set_type(type, return_variable->name);
+                        set_type(return_variable->name, type);
                     }
                     if(return_dispatch != NULL){
                         return_type = type;
-                        set_type(type, return_dispatch->method_name, return_dispatch->object_name);
+                        set_type(return_dispatch->method_name, return_dispatch->object_name, type);
                     }
                 }
 
                 std::string get_type(std::string name) {
-                    Variable* new_variable = new Variable(name);
+                    for(auto it = v_table.begin(); it != v_table.end(); it++){
+                        std::string name_ = it->first->name;
+                        std::string type = it->second;
 
-                    std::string type = S_NONE;
-                    auto it = v_table.find(new_variable);
-
-                    if(it != v_table.end())
-                        type = it->second;
-
-                    delete new_variable;
-
-                    return type;
+                        if(name == name_)
+                            return type;
+                    }
+                    return S_NONE;
                 }
 
                 std::string get_type(std::string method_name, std::string object_name) {
-                    Dispatch* new_dispatch = new Dispatch(method_name, object_name);
+                    for(auto it = d_table.begin(); it != d_table.end(); it++){
+                        std::string method = it->first->method_name;
+                        std::string object = it->first->object_name;
+                        std::string return_type = it->second;
 
-                    std::string type = S_NONE;
-                    auto it = d_table.find(new_dispatch);
-
-                    if(it != d_table.end())
-                        type = it->second;
-
-                    delete new_dispatch;
-
-                    return type;
+                        if(method_name == method && object_name == object)
+                            return return_type;
+                    }
+                    return S_NONE;
                 }
 
                 std::string get_type() { return return_type; }
@@ -293,8 +333,10 @@ namespace AST{
                         std::string return_type = it->second;
 
                         if(object == S_SELF){
-                            set_type(method, object_name, return_type);
                             remove_type(method, object);
+                            set_type(method, object_name, return_type);
+                            replace_self_by_name(object_name);
+                            return;
                         }
                     }
                 }
@@ -332,10 +374,10 @@ namespace AST{
             void* visit(Unit* unit);
             void* visit(Object* object);
 
-            std::string errors_to_string(AST::Program *ast){
+            std::string to_string(AST::Program *ast){
                 type::Table table = ACCEPT(ast);
 
-                return table.errors_to_string();
+                return table.to_string();
             }
 
             type::Table get_value_from_void(void* void_value){

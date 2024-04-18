@@ -51,7 +51,7 @@ namespace VSOP
 
         void verify_ast(){
             AST::Literals_visitor visitor;
-            std::cout << visitor.errors_to_string(ast) << std::endl;
+            std::cout << visitor.to_string(ast) << std::endl;
         }
 
         /**
