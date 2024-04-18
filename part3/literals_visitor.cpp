@@ -45,6 +45,8 @@ void* Literals_visitor::visit(Program* program) {
     for(size_t i = 0; i < class_list_tables.size(); i++)
         returned_table->concatenate(class_list_tables[i]);
 
+    returned_table->v_table_must_be_empty();
+
     return returned_table;
 }
 
@@ -54,18 +56,19 @@ void* Literals_visitor::visit(Class* class_) {
     vector<type::Table*> field_list_tables = ACCEPT_LIST(class_->get_field_list());
     vector<type::Table*> method_list_tables = ACCEPT_LIST(class_->get_method_list());
 
-    type::Table *returned_table = new type::Table(LOC(class_), name);
+    type::Table *returned_table = new type::Table(LOC(class_), name, S_SELF);
 
     for(size_t i = 0; i < method_list_tables.size(); i++)
         returned_table->concatenate(method_list_tables[i]);
 
     for(size_t i = 0; i < field_list_tables.size(); i++){
         returned_table->concatenate(field_list_tables[i]);
-        // Class variables must be removed from the table
+        // Class variables must be removed from the tab
         returned_table->remove_type(field_list_tables[i]->get_return_variable_name());
     }
 
-    returned_table->replace_self_by_name(name);
+    returned_table->remove_type(S_SELF);
+    
     return returned_table;
 }
 
@@ -230,7 +233,7 @@ void* Literals_visitor::visit(Assign* assign) {
 void* Literals_visitor::visit(Self* self) {
     // to remove the warning
     self->get_line();
-    return new type::Table(LOC(self), S_SELF);
+    return new type::Table(LOC(self), S_NONE, S_SELF);
 }
 
 void* Literals_visitor::visit(Unop* unop) {
@@ -339,6 +342,8 @@ void* Literals_visitor::visit(Binop* binop) {
 void* Literals_visitor::visit(Call* call) {
     type::Table *object_table = ACCEPT(call->get_object());
     string object = object_table->get_type();
+    if(object == S_NONE)
+        object = object_table->get_return_variable_name();
     string method = call->get_method();
     vector<type::Table*> arg_expr_list_tables = ACCEPT_LIST(call->get_arg_expr_list());
     

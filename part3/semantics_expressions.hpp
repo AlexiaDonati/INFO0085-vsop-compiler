@@ -12,7 +12,8 @@
 #define S_INTEGER "int32"
 #define S_STRING "string"
 #define S_NONE ""
-#define S_SELF S_NONE
+#define S_SELF "Self"
+#define S_OBJECT "Object"
 
 namespace AST{
 
@@ -185,6 +186,7 @@ namespace AST{
                         std::string type = it->second;
 
                         if(name == name_){
+                            replace_object_by_name(name_, (type != S_NONE) ? type : name_);
                             delete it->first;
                             v_table.erase(it);
                             break;
@@ -287,19 +289,31 @@ namespace AST{
                     return return_variable->name;
                 }
 
-                void replace_self_by_name(std::string object_name){
+                void replace_object_by_name(std::string old_name, std::string new_name){
+                    std::map<Dispatch*, std::string> to_remove;
                     for(auto it = d_table.begin(); it != d_table.end(); it++){
                         std::string method = it->first->method_name;
                         std::string object = it->first->object_name;
                         std::string return_type = it->second;
 
-                        if(object == S_SELF){
-                            remove_type(method, object);
-                            set_type(method, object_name, return_type);
-                            replace_self_by_name(object_name);
-                            return;
-                        }
+                        if(object == old_name)
+                            to_remove.insert({it->first, it->second});
                     }
+
+                    for(auto it = to_remove.begin(); it != to_remove.end(); it++){
+                        std::string method = it->first->method_name;
+                        std::string object = it->first->object_name;
+                        std::string return_type = it->second;
+
+                        remove_type(method, object);
+                        set_type(method, new_name, return_type);
+                    }
+                }
+
+                void v_table_must_be_empty(){
+                    if(v_table.empty())
+                        return;
+                    throw_error("Variable non defined");
                 }
 
             private:
