@@ -166,6 +166,8 @@ namespace AST
             size_t get_size() { return list.size(); }
 
             void add(T* expr) { list.push_back(expr);};
+            void reverse() { std::reverse(list.begin(), list.end()); };
+            
         private:
             std::vector<T*> list;
     };

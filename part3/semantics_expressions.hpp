@@ -4,14 +4,15 @@
 #include <vector>
 #include <map>
 #include <string>
+#include <iostream>
 #include "ast.hpp"
 
-#define UNIT "unit"
-#define BOOLEAN "boolean"
-#define INTEGER "int32"
-#define STRING "string"
-#define NONE ""
-#define SELF "self"
+#define S_UNIT "unit"
+#define S_BOOLEAN "boolean"
+#define S_INTEGER "int32"
+#define S_STRING "string"
+#define S_NONE ""
+#define S_SELF "self"
 
 namespace AST{
 
@@ -25,6 +26,10 @@ namespace AST{
 
                 bool operator ==(const Variable &variable){
                     return (name == variable.name);
+                }
+
+                bool operator <(const Variable &variable){
+                    return name < variable.name;
                 }
         } ;
 
@@ -43,6 +48,14 @@ namespace AST{
                     return (method_name == dispatch.method_name) && 
                            (object_name == dispatch.object_name) /*&&
                            (compare_args(dispatch))*/;
+                }
+
+                bool operator <(const Dispatch &dispatch){
+                    if (method_name != dispatch.method_name) {
+                        return method_name < dispatch.method_name;
+                    } else {
+                        return object_name < dispatch.object_name;
+                    }
                 }
             /*
             bool compare_args(Dispatch dispatch){
@@ -75,7 +88,7 @@ namespace AST{
                     // dum message to stop warning
                     line = line +1 -1;
                     column = column +1 -1;
-                    return "mocked";
+                    return message;
                 }
             private:
                 size_t line;
@@ -94,14 +107,14 @@ namespace AST{
                 Table(std::string return_type, std::string name) : 
                     return_type(return_type) {
                         return_variable = new Variable(name);
-                        set_type(return_type, name);
+                        set_type(name, return_type);
                         return_dispatch = NULL;
                     };
                 Table(std::string return_type, std::string method_name, std::string object_name) : 
                     return_type(return_type) {
                         return_variable = NULL;
                         return_dispatch = new Dispatch(method_name, object_name);
-                        set_type(return_type, method_name, object_name);
+                        set_type(method_name, object_name, return_type);
                     };
                 ~Table() {
                     if(return_variable != NULL)
@@ -134,7 +147,18 @@ namespace AST{
                     error_list.push_back(new_error); 
                 }
 
-                size_t number_of_error() { return error_list.size(); }
+                std::string errors_to_string(){
+                    std::string result = "";
+
+                    result += "---- Error List ----\n";
+
+                    for(size_t i = 0; i < error_list.size(); i++)
+                        result += error_list[i]->to_string() + "\n";
+
+                    result += "--------------------\n";
+
+                    return result;
+                }
 
                 void concatenate(const Table *table){
                     // concatenate error_list
@@ -179,9 +203,9 @@ namespace AST{
                 void set_type(std::string name, std::string type){
                     std::string previous_type = get_type(name);
 
-                    if(previous_type != NONE && previous_type != type)
+                    if(previous_type != S_NONE && previous_type != type)
                         throw_error("variable " + name + " have different types " + previous_type + " and " + type);
-                    if(previous_type != NONE && type == NONE)
+                    if(previous_type != S_NONE && type == S_NONE)
                         return;
 
                     Variable* new_variable = new Variable(name);
@@ -195,10 +219,11 @@ namespace AST{
                 void set_type(std::string method_name, std::string object_name, std::string type){
                     std::string previous_type = get_type(method_name, object_name);
 
-                    if(previous_type != NONE && previous_type != type)
+                    if(previous_type != S_NONE && previous_type != type)
                         throw_error("dispatch " + object_name + "." + method_name + " have different types " + previous_type + " and " + type);
-                    if(previous_type != NONE && type == NONE)
+                    if(previous_type != S_NONE && type == S_NONE){
                         return;
+                    }
 
                     Dispatch* new_dispatch = new Dispatch(method_name, object_name);
 
@@ -211,10 +236,11 @@ namespace AST{
                 void set_type(std::string type){
                     std::string previous_type = return_type;
 
-                    if(previous_type != NONE && previous_type != type)
+                    if(previous_type != S_NONE && previous_type != type)
                         throw_error("Return_type have different types " + previous_type + " and " + type);
-                    if(previous_type != NONE && type == NONE)
+                    if(previous_type != S_NONE && type == S_NONE){
                         return;
+                    }
 
                     if(return_variable != NULL){
                         return_type = type;
@@ -229,7 +255,7 @@ namespace AST{
                 std::string get_type(std::string name) {
                     Variable* new_variable = new Variable(name);
 
-                    std::string type = NONE;
+                    std::string type = S_NONE;
                     auto it = v_table.find(new_variable);
 
                     if(it != v_table.end())
@@ -243,7 +269,7 @@ namespace AST{
                 std::string get_type(std::string method_name, std::string object_name) {
                     Dispatch* new_dispatch = new Dispatch(method_name, object_name);
 
-                    std::string type = NONE;
+                    std::string type = S_NONE;
                     auto it = d_table.find(new_dispatch);
 
                     if(it != d_table.end())
@@ -258,7 +284,7 @@ namespace AST{
 
                 std::string get_return_variable_name() { 
                     if(return_variable == NULL)
-                        return NONE;
+                        return S_NONE;
                     return return_variable->name;
                 }
 
@@ -268,7 +294,7 @@ namespace AST{
                         std::string object = it->first->object_name;
                         std::string return_type = it->second;
 
-                        if(object == SELF){
+                        if(object == S_SELF){
                             set_type(method, object_name, return_type);
                             remove_type(method, object);
                         }
@@ -280,8 +306,8 @@ namespace AST{
                 std::string return_type;
                 Variable* return_variable;
                 Dispatch* return_dispatch;
-                std::map<Variable*, std::string, std::equal_to<Variable*>> v_table;
-                std::map<Dispatch*, std::string, std::equal_to<Dispatch*>> d_table;
+                std::map<Variable*, std::string> v_table;
+                std::map<Dispatch*, std::string> d_table;
         };
     }
 
@@ -308,6 +334,12 @@ namespace AST{
             void* visit(Unit* unit);
             void* visit(Object* object);
 
+            std::string errors_to_string(AST::Program *ast){
+                type::Table table = ACCEPT(ast);
+
+                return table.errors_to_string();
+            }
+
             type::Table get_value_from_void(void* void_value){
                 // Specifiate the type of the value
                 type::Table* value = (type::Table*) void_value;
@@ -323,15 +355,14 @@ namespace AST{
             }   
 
             template <typename T>
-            std::vector<type::Table> accept_list(List<T>* list){
+            std::vector<type::Table*> accept_list(List<T>* list){
                 size_t size = list->get_size();
-                std::vector<type::Table> result_vector;
+                std::vector<type::Table*> result_vector;
 
                 for (size_t i = 0; i < size; i++){
-                    type::Table expr_result = this->get_value_from_void(list->accept_one(this, i));
+                    type::Table *expr_result = (type::Table*) list->accept_one(this, i);
                     result_vector.push_back(expr_result);
                 }
-
                 return result_vector;
             }    
     };

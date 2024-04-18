@@ -7,6 +7,7 @@
 
 #include "ast.hpp"
 #include "parser.hpp"
+#include "semantics_expressions.hpp"
 
 // Give prototype of yylex() function, then declare it.
 #define YY_DECL VSOP::Parser::symbol_type yylex()
@@ -46,6 +47,11 @@ namespace VSOP
             std::string* str = (std::string*) ast->accept(&visitor);
             std::cout << *str << std::endl;
             delete str;
+        }
+
+        void verify_ast(){
+            AST::Literals_visitor visitor;
+            std::cout << visitor.errors_to_string(ast) << std::endl;
         }
 
         /**
