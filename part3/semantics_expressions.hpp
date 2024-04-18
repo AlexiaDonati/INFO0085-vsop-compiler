@@ -203,10 +203,10 @@ namespace AST{
                 void set_type(std::string name, std::string type){
                     std::string previous_type = get_type(name);
 
-                    if(previous_type != S_NONE && previous_type != type)
-                        throw_error("variable " + name + " have different types " + previous_type + " and " + type);
                     if(previous_type != S_NONE && type == S_NONE)
                         return;
+                    if(previous_type != S_NONE && previous_type != type)
+                        throw_error("variable " + name + " have different types " + previous_type + " and " + type);
 
                     Variable* new_variable = new Variable(name);
 
@@ -219,11 +219,10 @@ namespace AST{
                 void set_type(std::string method_name, std::string object_name, std::string type){
                     std::string previous_type = get_type(method_name, object_name);
 
+                    if(previous_type != S_NONE && type == S_NONE)
+                        return;
                     if(previous_type != S_NONE && previous_type != type)
                         throw_error("dispatch " + object_name + "." + method_name + " have different types " + previous_type + " and " + type);
-                    if(previous_type != S_NONE && type == S_NONE){
-                        return;
-                    }
 
                     Dispatch* new_dispatch = new Dispatch(method_name, object_name);
 
@@ -236,11 +235,10 @@ namespace AST{
                 void set_type(std::string type){
                     std::string previous_type = return_type;
 
+                    if(previous_type != S_NONE && type == S_NONE)
+                        return;
                     if(previous_type != S_NONE && previous_type != type)
                         throw_error("Return_type have different types " + previous_type + " and " + type);
-                    if(previous_type != S_NONE && type == S_NONE){
-                        return;
-                    }
 
                     if(return_variable != NULL){
                         return_type = type;

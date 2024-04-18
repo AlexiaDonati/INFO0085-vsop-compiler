@@ -143,7 +143,7 @@ void* Literals_visitor::visit(If* if_) {
     cond_expr_table->set_type(S_BOOLEAN);
 
     string then_type = then_expr_table->get_type();
-    string else_type = then_expr_table->get_type();
+    string else_type = else_expr_table->get_type();
 
     type::Table *returned_table;
 
@@ -192,8 +192,10 @@ void* Literals_visitor::visit(Let* let) {
     string variable_name = let->get_name();
     string variable_type = let->get_type();
 
-    type::Table *init_expr_table = ACCEPT(let->get_init_expr());
     type::Table *scope_expr_table = ACCEPT(let->get_scope_expr());
+    type::Table *init_expr_table = new type::Table(S_NONE);
+    if(let->has_init_expr())
+        init_expr_table = ACCEPT(let->get_init_expr());
 
     scope_expr_table->set_type(variable_name, variable_type);
 
@@ -298,7 +300,7 @@ void* Literals_visitor::visit(Binop* binop) {
     case MUL:
     case DIV:
     case POW:
-        if(binop_to_enum.at(op) == LT && binop_to_enum.at(op) == LEQ)
+        if(binop_to_enum.at(op) == LT || binop_to_enum.at(op) == LEQ)
             returned_table = new type::Table(S_BOOLEAN);
         else
             returned_table = new type::Table(S_INTEGER);
@@ -379,7 +381,7 @@ void* Literals_visitor::visit(Unit* unit) {
 }
 
 void* Literals_visitor::visit(Object* object) {
-    return new type::Table(object->get_name());
+    return new type::Table(S_NONE, object->get_name());
 }
 
 /* Local Functions */
@@ -406,7 +408,7 @@ bool is_none(string type){
 
 bool is_primitive(string type){
     return is_unit(type)
-        && is_boolean(type)
-        && is_integer(type)
-        && is_string(type);
+        || is_boolean(type)
+        || is_integer(type)
+        || is_string(type);
 }
