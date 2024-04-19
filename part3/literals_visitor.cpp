@@ -85,8 +85,10 @@ void* Literals_visitor::visit(Field* field) {
     string type = field->get_type();
     type::Table *init_expr_table = new type::Table(LOC(field), S_TYPE_NONE);
     
-    if(field->has_init_expr())
+    if(field->has_init_expr()){
+        delete init_expr_table;
         init_expr_table = ACCEPT(field->get_init_expr());
+    }
 
     type::Table *returned_table = new type::Table(LOC(field), type, name);
 
@@ -138,9 +140,23 @@ void* Literals_visitor::visit(Formal* formal) {
 void* Literals_visitor::visit(Block* block) {
     vector<type::Table*> expr_list_tables = ACCEPT_LIST(block->get_expr_list());
 
-    string last_type = expr_list_tables[expr_list_tables.size()-1]->get_type(); 
+    type::Table* last_table = expr_list_tables[expr_list_tables.size()-1]; 
 
-    type::Table *returned_table = new type::Table(LOC(block), last_type);
+    type::Table *returned_table = new type::Table(LOC(block), last_table->get_type());
+
+    if(last_table->is_return_a_dispatch()){
+        delete returned_table;
+        returned_table = new type::Table(LOC(block)
+                                        , last_table->get_type()
+                                        , last_table->get_return_dispatch_method_name()
+                                        , last_table->get_return_dispatch_object_name());
+    } else if(last_table->is_return_a_variable()){
+        delete returned_table;
+        returned_table = new type::Table(LOC(block)
+                                        , last_table->get_type()
+                                        , last_table->get_return_variable_name());
+    }
+
 
     for(size_t i = 0; i < expr_list_tables.size(); i++){
         returned_table->concatenate(expr_list_tables[i]);
@@ -155,8 +171,10 @@ void* Literals_visitor::visit(If* if_) {
     type::Table *then_expr_table = ACCEPT(if_->get_then_expr());
     type::Table *else_expr_table = new type::Table(LOC(if_), S_TYPE_NONE);
 
-    if(if_->has_else_expr())
+    if(if_->has_else_expr()){
+        delete else_expr_table;
         else_expr_table = ACCEPT(if_->get_else_expr());
+    }
 
     cond_expr_table->set_type(S_TYPE_BOOLEAN);
 
@@ -212,8 +230,11 @@ void* Literals_visitor::visit(Let* let) {
 
     type::Table *scope_expr_table = ACCEPT(let->get_scope_expr());
     type::Table *init_expr_table = new type::Table(LOC(let), S_TYPE_NONE);
-    if(let->has_init_expr())
+
+    if(let->has_init_expr()){
+        delete init_expr_table;
         init_expr_table = ACCEPT(let->get_init_expr());
+    }
 
     scope_expr_table->set_type(variable_name, variable_type);
 

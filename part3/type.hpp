@@ -115,6 +115,12 @@ namespace AST{
                     return result;
                 }
 
+                std::string type_to_string(std::string name);
+
+                std::string type_to_string(std::string method_name, std::string object_name);
+
+                std::string type_to_string();
+
                 std::string to_string(){
                     std::string result = "";
 
@@ -278,11 +284,15 @@ namespace AST{
 
                 std::string get_type() { return return_type; }
 
-                std::string get_return_variable_name() { 
-                    if(return_variable == NULL)
-                        return S_TYPE_NONE;
-                    return return_variable->name;
-                }
+                bool is_return_a_variable();
+
+                bool is_return_a_dispatch();
+
+                std::string get_return_variable_name();
+
+                std::string get_return_dispatch_object_name();
+
+                std::string get_return_dispatch_method_name();
 
                 void replace_object_by_name(std::string old_name, std::string new_name){
                     std::map<Dispatch*, std::string> to_remove;
@@ -338,39 +348,9 @@ namespace AST{
                     }
                 }
 
-                void update_children(std::string name, std::string type){
-                    std::string previous_type = get_type(name);
+                void update_children(std::string name, std::string type);
 
-                    if(type == S_TYPE_NONE)
-                        return;
-
-                    Variable* new_variable = new Variable(name);
-
-                    // Delete previous stored variable if existing
-                    remove_type(name);
-
-                    v_table.insert({new_variable, type});
-
-                    for (auto table : children)
-                        table->update_children(name, type);
-                }
-
-                void update_children(std::string method_name, std::string object_name, std::string type){
-                    std::string previous_type = get_type(method_name, object_name);
-
-                    if(type == S_TYPE_NONE)
-                        return;
-
-                    Dispatch* new_dispatch = new Dispatch(method_name, object_name);
-
-                    // Delete previous stored dispatch if existing
-                    remove_type(method_name, object_name);
-
-                    d_table.insert({new_dispatch, type});
-
-                    for (auto table : children)
-                        table->update_children(method_name, object_name, type);
-                }
+                void update_children(std::string method_name, std::string object_name, std::string type);
 
                 std::string print_children(){
                     size_t i = 0;
