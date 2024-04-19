@@ -1,30 +1,46 @@
 #include "ast.hpp"
+#include "semantics_expressions.hpp"
 #include <iostream>
 
 using namespace AST;
 using namespace std;
 
 void* Print_visitor::visit(String* string_){
-    string result = "\"" + string_->get_value() + "\"";
+    string result = "\"" + string_->get_value() + "\"" + " : " + S_STRING;
     return TO_VOID(result);
 }
 
 void* Print_visitor::visit(Integer* integer){
-    return TO_VOID(to_string(integer->get_value()));
+    string result = to_string(integer->get_value()) + " : " + S_INTEGER;
+    return TO_VOID(result);
 }
 
 void* Print_visitor::visit(Boolean* boolean){
-    return TO_VOID(boolean->get_value() ? "true" : "false");
+    string result = (boolean->get_value() ? "true" : "false");
+    result += " : ";
+    result += S_BOOLEAN;
+    return TO_VOID(result);
 }
 
 void* Print_visitor::visit(Unit* unit){
     // to remove the warning
     unit->get_line();
-    return TO_VOID("()");
+    string result = "() : ";
+    result += S_UNIT;
+    return TO_VOID(result);
 }
 
 void* Print_visitor::visit(Object* object){
-    return TO_VOID(object->get_name());
+    string result = object->get_name();
+
+    /*Literals_visitor visitor;
+    type::Table *object_table = (type::Table *) visitor.visit(object);
+
+    result += " : " + object_table->get_type();
+
+    delete object_table;*/
+
+    return TO_VOID(result);
 }
 
 void* Print_visitor::visit(New* new_){

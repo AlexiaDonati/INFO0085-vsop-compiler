@@ -61,19 +61,19 @@ namespace AST{
 
         class Table {
             public:
-                Table(size_t line, size_t column, std::string file_name, std::string return_type) : 
-                    line(line), column(column), file_name(file_name), return_type(return_type) {
+                Table(size_t line, size_t column, std::string file_name, Expr *owner, std::string return_type) : 
+                    line(line), column(column), file_name(file_name), return_type(return_type), owner(owner) {
                         return_variable = NULL;
                         return_dispatch = NULL;
                     };
-                Table(size_t line, size_t column, std::string file_name, std::string return_type, std::string name) : 
-                    line(line), column(column), file_name(file_name), return_type(return_type) {
+                Table(size_t line, size_t column, std::string file_name, Expr *owner, std::string return_type, std::string name) : 
+                    line(line), column(column), file_name(file_name), return_type(return_type), owner(owner) {
                         return_variable = new Variable(name);
                         set_type(name, return_type);
                         return_dispatch = NULL;
                     };
-                Table(size_t line, size_t column, std::string file_name, std::string return_type, std::string method_name, std::string object_name) : 
-                    line(line), column(column), file_name(file_name), return_type(return_type) {
+                Table(size_t line, size_t column, std::string file_name, Expr *owner, std::string return_type, std::string method_name, std::string object_name) : 
+                    line(line), column(column), file_name(file_name), return_type(return_type), owner(owner) {
                         return_variable = NULL;
                         return_dispatch = new Dispatch(method_name, object_name);
                         set_type(method_name, object_name, return_type);
@@ -152,6 +152,8 @@ namespace AST{
 
                         result += object + "." + method + " : " + return_type + "\n";
                     }
+
+                    result += print_children();
 
                     return result;
                 }
@@ -316,6 +318,81 @@ namespace AST{
                     throw_error("Variable non defined");
                 }
 
+                // Table tree
+
+                void add_child(Table *child){
+                    children.push_back(child);
+                }
+
+                void update_children(){
+                    // update v_table
+                    for(auto it = v_table.begin(); it != v_table.end(); it++){
+                        std::string name = it->first->name;
+                        std::string type = it->second;
+
+                        for (auto table : children)
+                            table->update_children(name, type);
+                    }
+
+                    // update d_table
+                    for(auto it = d_table.begin(); it != d_table.end(); it++){
+                        std::string method = it->first->method_name;
+                        std::string object = it->first->object_name;
+                        std::string return_type = it->second;
+
+                        for (auto table : children)
+                            table->update_children(method, object, return_type);
+                    }
+                }
+
+                void update_children(std::string name, std::string type){
+                    std::string previous_type = get_type(name);
+
+                    if(type == S_NONE)
+                        return;
+
+                    Variable* new_variable = new Variable(name);
+
+                    // Delete previous stored variable if existing
+                    remove_type(name);
+
+                    std::cerr << name << " " << type << " " << std::to_string(children.size()) << "\n";
+
+                    v_table.insert({new_variable, type});
+
+                    for (auto table : children)
+                        table->update_children(name, type);
+                }
+
+                void update_children(std::string method_name, std::string object_name, std::string type){
+                    std::string previous_type = get_type(method_name, object_name);
+
+                    if(type == S_NONE)
+                        return;
+
+                    Dispatch* new_dispatch = new Dispatch(method_name, object_name);
+
+                    // Delete previous stored dispatch if existing
+                    remove_type(method_name, object_name);
+
+                    d_table.insert({new_dispatch, type});
+
+                    for (auto table : children)
+                        table->update_children(method_name, object_name, type);
+                }
+
+                std::string print_children(){
+                    size_t i = 0;
+                    std::string result = "";
+                    for (auto table : children){
+                        result += "************" + std::to_string(i) + "/" + std::to_string(children.size()) + "************\n";
+                        result += table->to_string();
+                        i++;
+                    }
+                    
+                    return result;
+                }
+
             private:
                 size_t line;
                 size_t column;
@@ -326,6 +403,10 @@ namespace AST{
                 Dispatch* return_dispatch;
                 std::map<Variable*, std::string> v_table;
                 std::map<Dispatch*, std::string> d_table;
+
+                // Table tree
+                std::vector<Table*> children;
+                Expr *owner;
         };
     }
 

@@ -7,7 +7,7 @@ using namespace std;
 #define TO_VOID(value) get_void_from_value(value)
 #define ACCEPT(expr) (type::Table*) expr->accept(this)
 #define ACCEPT_LIST(list) accept_list(list)
-#define LOC(expr) expr->get_line(), expr->get_column(), expr->get_file_name()
+#define LOC(expr) expr->get_line(), expr->get_column(), expr->get_file_name(), expr
 
 bool is_unit(std::string type);
 bool is_boolean(std::string type);
@@ -42,8 +42,10 @@ void* Literals_visitor::visit(Program* program) {
 
     type::Table *returned_table = new type::Table(LOC(program), S_NONE);
 
-    for(size_t i = 0; i < class_list_tables.size(); i++)
+    for(size_t i = 0; i < class_list_tables.size(); i++){
         returned_table->concatenate(class_list_tables[i]);
+        returned_table->add_child(class_list_tables[i]);
+    }
 
     returned_table->v_table_must_be_empty();
 
@@ -58,15 +60,21 @@ void* Literals_visitor::visit(Class* class_) {
 
     type::Table *returned_table = new type::Table(LOC(class_), name, S_SELF);
 
-    for(size_t i = 0; i < method_list_tables.size(); i++)
+    for(size_t i = 0; i < method_list_tables.size(); i++){
         returned_table->concatenate(method_list_tables[i]);
+        returned_table->add_child(method_list_tables[i]);
+    }
 
     for(size_t i = 0; i < field_list_tables.size(); i++){
         returned_table->concatenate(field_list_tables[i]);
-        // Class variables must be removed from the tab
-        returned_table->remove_type(field_list_tables[i]->get_return_variable_name());
+        returned_table->add_child(field_list_tables[i]);
     }
 
+    returned_table->update_children();
+
+    // Class variables must be removed from the tab
+    for(size_t i = 0; i < field_list_tables.size(); i++)
+        returned_table->remove_type(field_list_tables[i]->get_return_variable_name());
     returned_table->remove_type(S_SELF);
     
     return returned_table;
@@ -86,7 +94,7 @@ void* Literals_visitor::visit(Field* field) {
     
     returned_table->concatenate(init_expr_table);
 
-    delete init_expr_table;
+    returned_table->add_child(init_expr_table);
 
     return returned_table;
 }
@@ -104,11 +112,16 @@ void* Literals_visitor::visit(Method* method) {
 
     for(size_t i = 0; i < formal_list_tables.size(); i++){
         returned_table->concatenate(formal_list_tables[i]);
-        // Method arguments must be removed from the table
-        returned_table->remove_type(formal_list_tables[i]->get_return_variable_name());
+        returned_table->add_child(formal_list_tables[i]);
     }
 
-    delete body_block_table;
+    returned_table->add_child(body_block_table);
+
+    returned_table->update_children();
+
+        // Method arguments must be removed from the table
+    for(size_t i = 0; i < formal_list_tables.size(); i++)
+        returned_table->remove_type(formal_list_tables[i]->get_return_variable_name());
 
     return returned_table;
 }
@@ -129,8 +142,10 @@ void* Literals_visitor::visit(Block* block) {
 
     type::Table *returned_table = new type::Table(LOC(block), last_type);
 
-    for(size_t i = 0; i < expr_list_tables.size(); i++)
+    for(size_t i = 0; i < expr_list_tables.size(); i++){
         returned_table->concatenate(expr_list_tables[i]);
+        returned_table->add_child(expr_list_tables[i]);
+    }
 
     return returned_table;
 }
@@ -167,9 +182,9 @@ void* Literals_visitor::visit(If* if_) {
     returned_table->concatenate(then_expr_table);
     returned_table->concatenate(else_expr_table);
 
-    delete cond_expr_table;
-    delete then_expr_table;
-    delete else_expr_table;
+    returned_table->add_child(cond_expr_table);
+    returned_table->add_child(then_expr_table);
+    returned_table->add_child(else_expr_table);
 
     return returned_table;
 }
@@ -185,8 +200,8 @@ void* Literals_visitor::visit(While* while_) {
     returned_table->concatenate(cond_expr_table);
     returned_table->concatenate(body_expr_table);
 
-    delete cond_expr_table;
-    delete body_expr_table;
+    returned_table->add_child(cond_expr_table);
+    returned_table->add_child(body_expr_table);
 
     return returned_table;
 }
@@ -207,10 +222,11 @@ void* Literals_visitor::visit(Let* let) {
     returned_table->concatenate(init_expr_table);
     returned_table->concatenate(scope_expr_table);
 
-    returned_table->remove_type(variable_name);
+    returned_table->add_child(init_expr_table);
+    returned_table->add_child(scope_expr_table);
 
-    delete init_expr_table;
-    delete scope_expr_table;
+    returned_table->update_children();
+    returned_table->remove_type(variable_name);
 
     return returned_table;
 }
@@ -225,7 +241,7 @@ void* Literals_visitor::visit(Assign* assign) {
 
     returned_table->concatenate(expr_table);
 
-    delete expr_table;
+    returned_table->add_child(expr_table);
 
     return returned_table;
 }
@@ -271,7 +287,9 @@ void* Literals_visitor::visit(Unop* unop) {
     }
 
     returned_table->concatenate(expr_table);
-    delete expr_table;
+
+    returned_table->add_child(expr_table);
+
     return returned_table;
 }
 
@@ -333,8 +351,8 @@ void* Literals_visitor::visit(Binop* binop) {
     returned_table->concatenate(left_expr_table);
     returned_table->concatenate(right_expr_table);
 
-    delete left_expr_table;
-    delete right_expr_table;
+    returned_table->add_child(left_expr_table);
+    returned_table->add_child(right_expr_table);
 
     return returned_table;
 }
@@ -349,10 +367,12 @@ void* Literals_visitor::visit(Call* call) {
     
     type::Table *returned_table = new type::Table(LOC(call), S_NONE, method, object);
     
-    for(size_t i = 0; i < arg_expr_list_tables.size(); i++)
+    for(size_t i = 0; i < arg_expr_list_tables.size(); i++){
         returned_table->concatenate(arg_expr_list_tables[i]);
+        returned_table->add_child(arg_expr_list_tables[i]);
+    }
 
-    delete object_table;
+    returned_table->add_child(object_table);
 
     return returned_table;
 }
