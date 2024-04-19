@@ -209,55 +209,11 @@ namespace AST{
                     }
                 }
 
-                void set_type(std::string name, std::string type){
-                    std::string previous_type = get_type(name);
+                void set_type(std::string name, std::string type);
 
-                    if(previous_type != S_TYPE_NONE && type == S_TYPE_NONE)
-                        return;
-                    if(previous_type != S_TYPE_NONE && previous_type != type)
-                        throw_error("variable " + name + " have different types " + previous_type + " and " + type);
+                void set_type(std::string method_name, std::string object_name, std::string type);
 
-                    Variable* new_variable = new Variable(name);
-
-                    // Delete previous stored variable if existing
-                    remove_type(name);
-
-                    v_table.insert({new_variable, type});
-                }
-
-                void set_type(std::string method_name, std::string object_name, std::string type){
-                    std::string previous_type = get_type(method_name, object_name);
-
-                    if(previous_type != S_TYPE_NONE && type == S_TYPE_NONE)
-                        return;
-                    if(previous_type != S_TYPE_NONE && previous_type != type)
-                        throw_error("dispatch " + object_name + "." + method_name + " have different types " + previous_type + " and " + type);
-
-                    Dispatch* new_dispatch = new Dispatch(method_name, object_name);
-
-                    // Delete previous stored dispatch if existing
-                    remove_type(method_name, object_name);
-
-                    d_table.insert({new_dispatch, type});
-                }
-
-                void set_type(std::string type){
-                    std::string previous_type = return_type;
-
-                    if(previous_type != S_TYPE_NONE && type == S_TYPE_NONE)
-                        return;
-                    if(previous_type != S_TYPE_NONE && previous_type != type)
-                        throw_error("Return_type have different types " + previous_type + " and " + type);
-
-                    if(return_variable != NULL){
-                        return_type = type;
-                        set_type(return_variable->name, type);
-                    }
-                    if(return_dispatch != NULL){
-                        return_type = type;
-                        set_type(return_dispatch->method_name, return_dispatch->object_name, type);
-                    }
-                }
+                void set_type(std::string type);
 
                 std::string get_type(std::string name) {
                     for(auto it = v_table.begin(); it != v_table.end(); it++){
@@ -288,32 +244,19 @@ namespace AST{
 
                 bool is_return_a_dispatch();
 
+                bool is_return(std::string name);
+
+                bool is_return(std::string method_name, std::string object_name);
+
                 std::string get_return_variable_name();
 
                 std::string get_return_dispatch_object_name();
 
                 std::string get_return_dispatch_method_name();
 
-                void replace_object_by_name(std::string old_name, std::string new_name){
-                    std::map<Dispatch*, std::string> to_remove;
-                    for(auto it = d_table.begin(); it != d_table.end(); it++){
-                        std::string method = it->first->method_name;
-                        std::string object = it->first->object_name;
-                        std::string return_type = it->second;
+                void replace_object_by_name(std::string old_name, std::string new_name);
 
-                        if(object == old_name)
-                            to_remove.insert({it->first, it->second});
-                    }
-
-                    for(auto it = to_remove.begin(); it != to_remove.end(); it++){
-                        std::string method = it->first->method_name;
-                        std::string object = it->first->object_name;
-                        std::string return_type = it->second;
-
-                        remove_type(method, object);
-                        set_type(method, new_name, return_type);
-                    }
-                }
+                void replace_object_by_name_in_children(std::string old_name, std::string new_name);
 
                 void v_table_must_be_empty(){
                     if(v_table.empty())
