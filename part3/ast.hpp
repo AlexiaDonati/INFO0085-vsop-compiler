@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <algorithm>
+#include "type.hpp"
 
 #define TO_VALUE(void_pointer) this->get_value_from_void(void_pointer)
 #define TO_VOID(value) this->get_void_from_value(value)
@@ -12,6 +13,10 @@
 
 namespace AST
 {
+    namespace type{
+        class Table;
+    }
+
     class Expr;
     template <typename T>
     class List;
@@ -73,6 +78,10 @@ namespace AST
 
     class Print_visitor : public Visitor {
         public:
+            type::Table *table;
+
+            Print_visitor(type::Table *table) : table(table) {};
+
             void* visit(Program* program);
             void* visit(Class* class_);
             void* visit(Field* field);

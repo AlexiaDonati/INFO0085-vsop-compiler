@@ -6,19 +6,19 @@ using namespace AST;
 using namespace std;
 
 void* Print_visitor::visit(String* string_){
-    string result = "\"" + string_->get_value() + "\"" + " : " + S_STRING;
+    string result = "\"" + string_->get_value() + "\"" + " : " + S_TYPE_STRING;
     return TO_VOID(result);
 }
 
 void* Print_visitor::visit(Integer* integer){
-    string result = to_string(integer->get_value()) + " : " + S_INTEGER;
+    string result = to_string(integer->get_value()) + " : " + S_TYPE_INTEGER;
     return TO_VOID(result);
 }
 
 void* Print_visitor::visit(Boolean* boolean){
     string result = (boolean->get_value() ? "true" : "false");
     result += " : ";
-    result += S_BOOLEAN;
+    result += S_TYPE_BOOLEAN;
     return TO_VOID(result);
 }
 
@@ -26,7 +26,7 @@ void* Print_visitor::visit(Unit* unit){
     // to remove the warning
     unit->get_line();
     string result = "() : ";
-    result += S_UNIT;
+    result += S_TYPE_UNIT;
     return TO_VOID(result);
 }
 
