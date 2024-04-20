@@ -171,8 +171,8 @@ bool Check_classes::check_override_method(Class* class_) {
 }
 
 bool Check_classes::check_extend(){
-    map<string, Class*> extend_path;
     for (auto it = class_map.begin(); it != class_map.end(); it++){
+        map<string, Class*> extend_path;
         string name = it->first;
         extend_path[name] = it->second;
 
