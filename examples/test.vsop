@@ -1,13 +1,7 @@
-class A {
-    select(i : int32, j : int32, b : bool) : int32 {
-        if b then i
-        else j
-    }
-}
-class B {
-    getTheTruth() : bool { true }
-}
+class Child extends Parent { }
+class Parent extends GrandParent { }
+class GrandParent { }
 class MyClass {
-    myField : int32 <- (new A).select(0, 42, (new B).getTheTruth());
+    myMethod() : GrandParent { new Child }
 }
 class Main { main() : int32 { 0 } }

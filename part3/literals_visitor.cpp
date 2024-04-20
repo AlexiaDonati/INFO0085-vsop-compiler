@@ -252,13 +252,17 @@ void* Literals_visitor::visit(Let* let) {
     scope_expr_table->set_type(variable_name, variable_type);
 
     type::Table *returned_table;
-    if(scope_expr_table->is_return_a_variable())
+    if(scope_expr_table->is_return_a_variable() && scope_expr_table->get_return_variable_name() != variable_name)
         returned_table = new type::Table(LOC(let), (scope_expr_table->get_return_variable_name() == variable_name) ? variable_type : scope_expr_table->get_type()
                                                 , scope_expr_table->get_return_variable_name());
     else if(scope_expr_table->is_return_a_dispatch())
         returned_table = new type::Table(LOC(let), scope_expr_table->get_type()
                                                 , scope_expr_table->get_return_dispatch_method_name()
                                                 , scope_expr_table->get_return_dispatch_object_name());
+    else if(scope_expr_table->get_return_variable_name() == variable_name){
+        scope_expr_table->update_children(variable_name, variable_type);
+        returned_table = new type::Table(LOC(let), scope_expr_table->get_type());
+    }
     else
         returned_table = new type::Table(LOC(let), scope_expr_table->get_type());
         
@@ -317,7 +321,7 @@ void* Literals_visitor::visit(Unop* unop) {
 
         break;
     case ISNULL:
-        returned_table = new type::Table(LOC(unop), S_TYPE_NONE);
+        returned_table = new type::Table(LOC(unop), S_TYPE_BOOLEAN);
         break;
     default:
         returned_table = new type::Table(LOC(unop), S_TYPE_NONE);
