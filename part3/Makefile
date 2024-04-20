@@ -11,16 +11,23 @@ SRC				= main.cpp \
 				  parser.cpp \
 				  lexer.cpp \
 				  print_visitor.cpp \
+				  literals_visitor.cpp \
+				  type.cpp \
 				  check_classes.cpp
+
 
 OBJ	  			= $(SRC:.cpp=.o)
 
 
 all: $(EXEC)
 
-main.o: driver.hpp parser.hpp ast.hpp
+main.o: driver.hpp parser.hpp ast.hpp semantics_expressions.hpp type.hpp
 
 ast.o: ast.hpp
+
+semantics_expressions.o: semantics_expressions.hpp
+
+type.o: type.hpp
 
 driver.o: driver.hpp parser.hpp
 

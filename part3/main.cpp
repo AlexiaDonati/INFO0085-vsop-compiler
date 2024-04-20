@@ -63,6 +63,9 @@ int main(int argc, char const *argv[])
 
         if (res == 0){
             driver.print_ast();
+            fprintf(stderr, "\n-- begin --\n");
+            driver.verify_ast();
+            fprintf(stderr, "\n--  end  --\n");
             driver.delete_ast();
         }
 
