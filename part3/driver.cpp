@@ -144,19 +144,21 @@ int Driver::semantic_analysis()
     if (!res)
         return 1;
 
-    AST::Literals_visitor type_visitor;
-    AST::type::Table *table = (AST::type::Table *) ast->accept(&type_visitor);
+    make_type_table();
 
-    set_type_table(table);
-
-    std::cerr << "\n" << table->to_string() << "\n";
-
-    if(table->has_error()){
-        std::cerr << "\n" << table->errors_to_string() << "\n";
+    if(type_table->has_error()){
+        std::cerr << "\n" << type_table->errors_to_string() << "\n";
         return 1;
     }
 
     return 0;
+}
+
+void Driver::make_type_table(){
+    AST::Literals_visitor type_visitor;
+    AST::type::Table *table = (AST::type::Table *) ast->accept(&type_visitor);
+
+    set_type_table(table);
 }
 
 void Driver::print_tokens()

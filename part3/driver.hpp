@@ -91,6 +91,8 @@ namespace VSOP
          */
         int semantic_analysis();
 
+        void make_type_table();
+
         /**
          * @brief Print all the tokens.
          */

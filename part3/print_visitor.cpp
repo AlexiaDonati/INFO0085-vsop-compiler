@@ -199,7 +199,8 @@ void* Print_visitor::visit(Formal* formal){
 
     string result = "" 
                   + name 
-                  + type_to_string(formal);
+                  + " : "
+                  + type;
 
     return TO_VOID(result);
 }
