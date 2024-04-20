@@ -387,6 +387,7 @@ void* Literals_visitor::visit(Call* call) {
     vector<type::Table*> arg_expr_list_tables = T_ACCEPT_LIST(call->get_arg_expr_list());
     
     type::Table *returned_table = new type::Table(LOC(call), S_TYPE_NONE, method, object);
+    returned_table->concatenate(object_table);
     
     for(size_t i = 0; i < arg_expr_list_tables.size(); i++){
         returned_table->concatenate(arg_expr_list_tables[i]);

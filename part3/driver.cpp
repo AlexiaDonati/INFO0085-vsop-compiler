@@ -149,6 +149,8 @@ int Driver::semantic_analysis()
 
     set_type_table(table);
 
+    std::cerr << "\n" << table->to_string() << "\n";
+
     if(table->has_error()){
         std::cerr << "\n" << table->errors_to_string() << "\n";
         return 1;
