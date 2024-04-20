@@ -40,19 +40,20 @@ namespace VSOP
         void set_ast(AST::Program *_ast) { ast = _ast; }
 
         /**
+         * @brief Set the type_table.
+         * 
+         * @param _type_table The type_table.
+        */
+        void set_type_table(AST::type::Table *_type_table) { type_table = _type_table; }
+
+        /**
          * @brief Print the AST.
          */
         void print_ast() {
-            AST::Literals_visitor type_visitor;
-            AST::Print_visitor *visitor = new AST::Print_visitor((AST::type::Table *) ast->accept(&type_visitor));
+            AST::Print_visitor *visitor = new AST::Print_visitor(type_table);
             std::string* str = (std::string*) ast->accept(visitor);
             std::cout << *str << std::endl;
             delete str;
-        }
-
-        void verify_ast(){
-            AST::Literals_visitor visitor;
-            std::cout << visitor.to_string(ast) << std::endl;
         }
 
         /**
@@ -60,6 +61,13 @@ namespace VSOP
          */
         void delete_ast() {
             delete ast;
+        }
+
+        /**
+         * @brief Delete the type_table.
+         */
+        void delete_type_table() {
+            delete type_table;
         }
         
         /**
@@ -108,6 +116,11 @@ namespace VSOP
          * @brief The AST.
          */
         AST::Program *ast;
+
+        /**
+         * @brief The type_table.
+         */
+        AST::type::Table *type_table = NULL;
 
         /**
          * @brief Start the lexer.

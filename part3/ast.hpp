@@ -81,7 +81,14 @@ namespace AST
         public:
             type::Table *table;
 
+            Print_visitor() { table = NULL; };
             Print_visitor(type::Table *table) : table(table) {};
+
+            bool must_use_table();
+
+            std::string type_to_string(Expr *expr);
+
+            std::string type_to_string(Expr *expr, std::string name);
 
             void* visit(Program* program);
             void* visit(Class* class_);

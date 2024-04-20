@@ -63,11 +63,8 @@ int main(int argc, char const *argv[])
 
         if (res == 0){
             driver.print_ast();
-            fprintf(stderr, "\n-- begin --\n");
-            driver.verify_ast();
-            fprintf(stderr, "\n--  end  --\n");
             driver.delete_ast();
-        }
+        } 
 
         return res;
 
@@ -76,7 +73,9 @@ int main(int argc, char const *argv[])
 
         if (res == 0){
             res = driver.semantic_analysis();
+            driver.print_ast();
             driver.delete_ast();
+            driver.delete_type_table();
         }
 
         return res;

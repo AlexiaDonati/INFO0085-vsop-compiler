@@ -144,6 +144,14 @@ int Driver::semantic_analysis()
     if (!res)
         return 1;
 
+    AST::Literals_visitor type_visitor;
+    AST::type::Table *table = (AST::type::Table *) ast->accept(&type_visitor);
+
+    set_type_table(table);
+
+    if(table->has_error())
+        return 1;
+
     return 0;
 }
 

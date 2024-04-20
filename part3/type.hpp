@@ -102,15 +102,15 @@ namespace AST{
 
                 void throw_error(Expr *expr, std::string message);
 
+                bool has_error(){
+                    return error_list.size() > 0;
+                }
+
                 std::string errors_to_string(){
                     std::string result = "";
 
-                    result += "---- Error List ----\n";
-
                     for(size_t i = 0; i < error_list.size(); i++)
                         result += error_list[i]->to_string() + "\n";
-
-                    result += "--------------------\n";
 
                     return result;
                 }
