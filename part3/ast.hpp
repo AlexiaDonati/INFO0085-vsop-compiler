@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <algorithm>
+#include <map>
 #include "type.hpp"
 
 #define TO_VALUE(void_pointer) this->get_value_from_void(void_pointer)
@@ -138,6 +139,56 @@ namespace AST
 
                 return result;
             }    
+    };
+
+    class Check_classes : public Visitor {
+        private:
+            std::map<std::string, Class*> class_map;
+            bool main_class_exists = false;
+
+        public:
+            void* visit(Program* program);
+            void* visit(Class* class_);
+            
+            void* visit(Method* method);
+            void* visit(Formal* formal){ return formal;}
+            void* visit(Field* field){ return field;}
+
+            // Not used but added to avoid errors
+            void* visit(Block* block){ return block;}
+            void* visit(If* if_){ return if_;}
+            void* visit(While* while_){ return while_;}
+            void* visit(Let* let){ return let;}
+            void* visit(Assign* assign){ return assign;}
+            void* visit(Self* self){ return self;}
+            void* visit(Unop* unop){ return unop;}
+            void* visit(Binop* binop){ return binop;}
+            void* visit(Call* call){ return call;}
+            void* visit(New* new_){ return new_;}
+            void* visit(String* string_){ return string_;}
+            void* visit(Integer* integer){ return integer;}
+            void* visit(Boolean* boolean){ return boolean;}
+            void* visit(Unit* unit){ return unit;}
+            void* visit(Object* object){ return object;}
+
+            bool get_value_from_void(void* void_value){
+                bool* value = (bool*) void_value;
+                bool return_value = *value;
+                delete value;
+                return return_value;
+            }
+
+            void* get_void_from_value(bool value){
+                return new bool(value);
+            }
+
+            void add_object_class(Program* program);
+
+            bool fill_class_map(List<Class>* class_list);
+            bool check_class_body_redefinition(Class* class_);
+            bool check_override_field(Class* class_);
+            bool check_override_method(Class* class_);
+            bool check_extend();
     };
 
     // Data classes
@@ -476,6 +527,9 @@ namespace AST
             std::string get_parent() { return parent; }
             List<Field>* get_field_list() { return field_list; }
             List<Method>* get_method_list() { return method_list; }
+
+            std::map<std::string, Field*>  field_map;
+            std::map<std::string, Method*> method_map;
         private:
             std::string name;
             std::string parent;

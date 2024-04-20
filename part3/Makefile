@@ -12,7 +12,9 @@ SRC				= main.cpp \
 				  lexer.cpp \
 				  print_visitor.cpp \
 				  literals_visitor.cpp \
-				  type.cpp
+				  type.cpp \
+				  check_classes.cpp
+
 
 OBJ	  			= $(SRC:.cpp=.o)
 

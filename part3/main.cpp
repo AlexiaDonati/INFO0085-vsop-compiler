@@ -10,12 +10,14 @@ using namespace AST;
 enum class Mode
 {
     LEX,
-    PARSE
+    PARSE,
+    SEMANTIC_ANALYSIS
 };
 
 static const map<string, Mode> flag_to_mode = {
     {"-l", Mode::LEX},
     {"-p", Mode::PARSE},
+    {"-c", Mode::SEMANTIC_ANALYSIS}
 };
 
 int main(int argc, char const *argv[])
@@ -40,7 +42,7 @@ int main(int argc, char const *argv[])
     }
     else
     {
-        cerr << "Usage: " << argv[0] << " [-l|-p] <source_file>" << endl;
+        cerr << "Usage: " << argv[0] << " [-l|-p|-c] <source_file>" << endl;
         return -1;
     }
 
@@ -64,6 +66,16 @@ int main(int argc, char const *argv[])
             fprintf(stderr, "\n-- begin --\n");
             driver.verify_ast();
             fprintf(stderr, "\n--  end  --\n");
+            driver.delete_ast();
+        }
+
+        return res;
+
+    case Mode::SEMANTIC_ANALYSIS:
+        res = driver.parse();
+
+        if (res == 0){
+            res = driver.semantic_analysis();
             driver.delete_ast();
         }
 
