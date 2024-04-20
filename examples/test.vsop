@@ -1,8 +1,13 @@
-class MyClass {
-    myField : int32 <- let x : int32 <- 42 in x;
+class A {
+    select(i : int32, j : int32, b : bool) : int32 {
+        if b then i
+        else j
+    }
 }
-class Main { main() : int32 { 
-    
-
-    0
- } }
+class B {
+    getTheTruth() : bool { true }
+}
+class MyClass {
+    myField : int32 <- (new A).select(0, 42, (new B).getTheTruth());
+}
+class Main { main() : int32 { 0 } }

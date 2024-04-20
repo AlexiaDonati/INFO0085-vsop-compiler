@@ -128,6 +128,11 @@ namespace AST{
 
                     result += return_type + "\n";
 
+                    if(is_return_a_variable())
+                        result += "> " + get_return_variable_name() + "\n";
+                    else if(is_return_a_dispatch())
+                        result += "> " + get_return_dispatch_object_name() + "." + get_return_dispatch_method_name() + "\n";
+
                     result += "---- Error List ----\n";
 
                     for(size_t i = 0; i < error_list.size(); i++)
