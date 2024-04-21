@@ -33,6 +33,7 @@ namespace AST{
             public:
                 std::string method_name;
                 std::string object_name;
+                std::vector<std::string> args_types;
 
                 Dispatch(std::string method_name, std::string object_name) :
                     method_name(method_name), object_name(object_name){};
@@ -186,6 +187,30 @@ namespace AST{
                             return return_type;
                     }
                     return S_TYPE_NONE;
+                }
+
+                std::string get_object_of_method(std::string method_name){
+                    for(auto it = d_table.begin(); it != d_table.end(); it++){
+                        std::string method = it->first->method_name;
+                        std::string object = it->first->object_name;
+                        std::string return_type = it->second;
+
+                        if(method_name == method)
+                            return object;
+                    }
+                    return S_TYPE_NONE;
+                }
+
+                bool is_method_known(std::string method_name) {
+                    for(auto it = d_table.begin(); it != d_table.end(); it++){
+                        std::string method = it->first->method_name;
+                        std::string object = it->first->object_name;
+                        std::string return_type = it->second;
+
+                        if(method_name == method && object != S_TYPE_SELF)
+                            return true;
+                    }
+                    return false;
                 }
 
                 std::string get_type() { return return_type; }

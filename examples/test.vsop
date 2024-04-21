@@ -1,5 +1,8 @@
+class A {
+    needsTwoArgs(i : int32, b : bool) : int32 { if b then i else 42 }
+}
 class MyClass {
-    myField : unit <- (new Object).noSuchMethod();
-
+    myField : int32 <- (new A).needsTwoArgs(45, 45);
+    needsTwoArgs(i : int32, b : bool) : int32 { if b then i else 42 }
 }
 class Main { main() : int32 { 0 } }

@@ -229,6 +229,9 @@ void* Print_visitor::visit(Call* call){
                   + ")"
                   + type_to_string(call);
 
+
+    must_have_the_same_amount_of_args(call);
+
     return TO_VOID(result);
 }
 
@@ -264,4 +267,18 @@ void Print_visitor::must_be_object(Expr *expr){
         table->throw_error(expr, 
             "" + aux->get_type() + " is not an Object" 
         );
+}
+
+void Print_visitor::must_have_the_same_amount_of_args(Call *call){
+    if(!must_use_table())
+        return;
+
+    type::Table *aux = table->find_expr_table(call);
+
+    if(Literals_visitor::number_of_args(aux->get_object_of_method(call->get_method()), call->get_method()) != call->get_arg_expr_list()->get_size()){
+
+    table->throw_error(call, 
+            "Call does not have the good number of args"
+        );
+    }
 }

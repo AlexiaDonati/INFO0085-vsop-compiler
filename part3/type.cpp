@@ -359,12 +359,14 @@ void Table::update_children(std::string method_name, std::string object_name, st
     if(is_return(method_name, object_name) && get_type() == S_TYPE_NONE)
         return_type = type;
 
-    // Delete previous stored dispatch if existing
-    remove_type(method_name, object_name);
+    if(!is_method_known(method_name)){
+            // Delete previous stored dispatch if existing
+            remove_type(method_name, object_name);
 
-    Dispatch* new_dispatch = new Dispatch(method_name, object_name);
+            Dispatch* new_dispatch = new Dispatch(method_name, object_name);
 
-    d_table.insert({new_dispatch, type});
+            d_table.insert({new_dispatch, type});
+    }
 
     for (auto table : children)
         table->update_children(method_name, object_name, type);

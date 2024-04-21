@@ -60,6 +60,12 @@ bool Check_classes::check_class_body_redefinition(Class* class_){
         }
         class_->method_map[name] = method;
         Literals_visitor::set_dispatch(class_->get_name(), method->get_name(), method->get_return_type());
+
+        List<Formal>* formal_list = method->get_formal_list();
+        for (size_t i = 0; i < formal_list->get_size(); i++){
+            Formal* formal = formal_list->get_element(i);
+            Literals_visitor::add_arg_to_dispatch(class_->get_name(), method->get_name(), formal->get_type());
+        }
     }
 
     return true;

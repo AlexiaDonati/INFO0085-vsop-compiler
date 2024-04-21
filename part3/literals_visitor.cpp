@@ -51,6 +51,16 @@ void Literals_visitor::set_dispatch(std::string object, std::string name, std::s
     d_table.insert({new type::Dispatch(name, object), type});
 }
 
+void Literals_visitor::add_arg_to_dispatch(std::string object, std::string name, std::string arg_type){
+    for(auto it = d_table.begin(); it != d_table.end(); it++){
+        std::string name_ = it->first->method_name;
+        std::string object_ = it->first->object_name;
+
+        if(name == name_ && object == object_)
+            it->first->args_types.push_back(arg_type);
+    }
+}
+
 bool Literals_visitor::is_child_of(std::string child, std::string parent){
     size_t is_child = 0;
     for(auto it = c_table.begin(); it != c_table.end(); it++){
@@ -63,6 +73,28 @@ bool Literals_visitor::is_child_of(std::string child, std::string parent){
             is_child++;
     }
     return is_child > 0;
+}
+
+size_t Literals_visitor::number_of_args(std::string object, std::string name){
+    std::vector<std::string> parents = get_parents(object);
+
+    parents.push_back(object);
+
+    for (auto parent_name : parents){
+        for(auto it = d_table.begin(); it != d_table.end(); it++){
+            std::string name_ = it->first->method_name;
+            std::string object_ = it->first->object_name;
+            std::string type = it->second;
+
+            if(name == name_ && parent_name == object_){
+                size_t counter = 0;
+                for (auto arg : it->first->args_types)
+                    counter++;
+                return counter;
+            }
+        }
+    }
+    return -1;
 }
 
 std::string Literals_visitor::get_variable_type(std::string object, std::string name){

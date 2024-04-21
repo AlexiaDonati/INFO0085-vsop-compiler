@@ -20,7 +20,11 @@ namespace AST{
             static void set_variable(std::string object, std::string name, std::string type);
             static void set_dispatch(std::string object, std::string name, std::string type);
 
+            static void add_arg_to_dispatch(std::string object, std::string name, std::string arg_type);
+
             static bool is_child_of(std::string child, std::string parent);
+
+            static size_t number_of_args(std::string object, std::string name);
             static std::string get_variable_type(std::string object, std::string name);
             static std::string get_dispatch_type(std::string object, std::string name);
 

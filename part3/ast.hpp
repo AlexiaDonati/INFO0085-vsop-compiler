@@ -84,6 +84,7 @@ namespace AST
             Print_visitor() { table = NULL; };
             Print_visitor(type::Table *table) : table(table) {};
             void must_be_object(Expr *expr);
+            void must_have_the_same_amount_of_args(Call *call);
 
             bool must_use_table();
 
@@ -237,6 +238,7 @@ namespace AST
 
             void add(T* expr) { list.push_back(expr);};
             void reverse() { std::reverse(list.begin(), list.end()); };
+            T* get_element(size_t index) {return list[index];}
             
         private:
             std::vector<T*> list;
