@@ -209,7 +209,7 @@ namespace AST{
 
                 void replace_object_by_name_in_children(std::string old_name, std::string new_name);
 
-                void v_table_must_be_resolved();
+                void v_table_must_be_empty();
 
                 // Table tree
 

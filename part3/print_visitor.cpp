@@ -162,6 +162,12 @@ void* Print_visitor::visit(Class* class_){
                   + method_list_result
                   + ")";
 
+    if(name == "Parerfesent"){
+        type::Table *aux = table->find_expr_table(class_);
+
+    std::cerr << aux->to_string();
+    }
+
     return TO_VOID(result);
 }
 

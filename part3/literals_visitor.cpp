@@ -90,8 +90,12 @@ std::vector<std::string> Literals_visitor::get_children(std::string parent){
         std::string child_ = it->first;
         std::string parent_ = it->second;
 
-        if(parent == parent_)
+        if(parent == parent_){
             children.push_back(child_);
+            std::vector<std::string> grand_children = get_children(child_);
+            for (auto grand_children_name : grand_children)
+                children.push_back(grand_children_name);
+        }
     }
 
     return children;
@@ -104,8 +108,12 @@ std::vector<std::string> Literals_visitor::get_parents(std::string child){
         std::string child_ = it->first;
         std::string parent_ = it->second;
 
-        if(child == child_)
+        if(child == child_){
             parents.push_back(parent_);
+            std::vector<std::string> grand_parents = get_parents(parent_);
+            for (auto grand_parents_name : grand_parents)
+                parents.push_back(grand_parents_name);
+        }
     }
 
     return parents;
@@ -121,7 +129,7 @@ void* Literals_visitor::visit(Program* program) {
         returned_table->add_child(class_list_tables[i]);
     }
 
-    returned_table->v_table_must_be_resolved();
+    returned_table->v_table_must_be_empty();
 
     returned_table->update_children();
 
@@ -145,7 +153,6 @@ void* Literals_visitor::visit(Class* class_) {
         returned_table->concatenate(field_list_tables[i]);
         returned_table->add_child(field_list_tables[i]);
     }
-
 
     // Class variables must be removed from the tab
     returned_table->update_class_variable(name);

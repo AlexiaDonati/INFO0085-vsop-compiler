@@ -246,7 +246,8 @@ void Table::remove_class_variable(std::string class_name){
             replace_object_by_name(name, (type != S_TYPE_NONE) ? type : name);
             delete it->first;
             v_table.erase(it);
-            break;
+            remove_class_variable(class_name);
+            return;
         } else if(class_variable_type != S_TYPE_NONE){
             throw_error("Variable " + class_name + "." + name + " must have type " + class_variable_type + " but have " + type);
         }
@@ -287,14 +288,10 @@ void Table::replace_object_by_name_in_children(std::string old_name, std::string
         table->replace_object_by_name(old_name, new_name);
 }
 
-void Table::v_table_must_be_resolved(){
-    for(auto it = v_table.begin(); it != v_table.end(); it++){
-        std::string name = it->first->name;
-        std::string type = it->second;
-
-        if(type == S_TYPE_NONE)
-            throw_error("Variable " + name + " non defined");
-    }
+void Table::v_table_must_be_empty(){
+    if(v_table.empty())
+        return;
+    throw_error("There is non initiated variable");
 }
 
 void Table::update_children(std::string name, std::string type){
