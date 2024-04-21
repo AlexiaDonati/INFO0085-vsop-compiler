@@ -1,5 +1,6 @@
 #include "type.hpp"
 #include "ast.hpp"
+#include "semantics_expressions.hpp"
 
 using namespace AST;
 using namespace AST::type;
@@ -41,6 +42,71 @@ std::string Table::type_to_string() {
     return result;
 }
 
+std::string Table::to_string(){
+    std::string result = "";
+
+    result += "---- Return type ---\n";
+
+    result += return_type + "\n";
+
+    if(is_return_a_variable())
+        result += "> " + get_return_variable_name() + "\n";
+    else if(is_return_a_dispatch())
+        result += "> " + get_return_dispatch_object_name() + "." + get_return_dispatch_method_name() + "\n";
+
+    result += "---- Error List ----\n";
+
+    for(size_t i = 0; i < error_list.size(); i++)
+        result += error_list[i]->to_string() + "\n";
+
+    result += "------ v table -----\n";
+
+    for(auto it = v_table.begin(); it != v_table.end(); it++){
+        std::string name = it->first->name;
+        std::string type = it->second;
+
+        result += name + " : " + type + "\n";
+    }
+
+    result += "------ d table -----\n";
+
+    for(auto it = d_table.begin(); it != d_table.end(); it++){
+        std::string method = it->first->method_name;
+        std::string object = it->first->object_name;
+        std::string return_type = it->second;
+
+        result += object + "." + method + " : " + return_type + "\n";
+    }
+
+    //result += print_children();
+
+    return result;
+}
+
+void Table::concatenate(const Table *table){
+    // concatenate error_list
+    for(auto it = table->error_list.begin(); it != table->error_list.end(); it++){
+        throw_error(*it);
+    }
+
+    // concatenate v_table
+    for(auto it = table->v_table.begin(); it != table->v_table.end(); it++){
+        std::string name = it->first->name;
+        std::string type = it->second;
+
+        set_type(name, type);
+    }
+
+    // concatenate d_table
+    for(auto it = table->d_table.begin(); it != table->d_table.end(); it++){
+        std::string method = it->first->method_name;
+        std::string object = it->first->object_name;
+        std::string return_type = it->second;
+
+        set_type(method, object, return_type);
+    }
+}
+
 void Table::set_type(std::string name, std::string type){
     std::string previous_type = get_type(name);
 
@@ -62,13 +128,15 @@ void Table::set_type(std::string method_name, std::string object_name, std::stri
 
     if(previous_type != S_TYPE_NONE && type == S_TYPE_NONE)
         return;
-    if(previous_type != S_TYPE_NONE && previous_type != type)
+    if(previous_type != S_TYPE_NONE && previous_type != type && (is_primitive(previous_type) || is_primitive(type)))
         throw_error("dispatch " + object_name + "." + method_name + " have different types " + previous_type + " and " + type);
-
-    Dispatch* new_dispatch = new Dispatch(method_name, object_name);
+    else if(previous_type != S_TYPE_NONE && previous_type != type && !Literals_visitor::is_child_of(type, previous_type))
+        throw_error("" + type + " is not a child of " + previous_type);
 
     // Delete previous stored dispatch if existing
     remove_type(method_name, object_name);
+
+    Dispatch* new_dispatch = new Dispatch(method_name, object_name);
 
     d_table.insert({new_dispatch, type});
 }
@@ -78,8 +146,11 @@ void Table::set_type(std::string type){
 
     if(previous_type != S_TYPE_NONE && type == S_TYPE_NONE)
         return;
-    if(previous_type != S_TYPE_NONE && previous_type != type)
+    if(previous_type != S_TYPE_NONE && previous_type != type && (is_primitive(previous_type) || is_primitive(type)))
         throw_error("Return_type have different types " + previous_type + " and " + type);
+    else if (previous_type != S_TYPE_NONE && previous_type != type){
+        set_type(return_type);
+    }
 
     if(return_variable != NULL){
         return_type = type;
@@ -168,6 +239,12 @@ void Table::replace_object_by_name(std::string old_name, std::string new_name){
 void Table::replace_object_by_name_in_children(std::string old_name, std::string new_name){
     for (auto table : children)
         table->replace_object_by_name(old_name, new_name);
+}
+
+void Table::v_table_must_be_empty(){
+    if(v_table.empty())
+        return;
+    throw_error("Variable non defined");
 }
 
 void Table::update_children(std::string name, std::string type){

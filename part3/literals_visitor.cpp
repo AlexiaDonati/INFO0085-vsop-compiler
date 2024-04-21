@@ -3,16 +3,11 @@
 using namespace AST;
 using namespace std;
 
+std::map<std::string, std::string> AST::Literals_visitor::c_table;
+
 #define T_ACCEPT(expr) (type::Table*) expr->accept(this)
 #define T_ACCEPT_LIST(list) accept_list(list)
 #define LOC(expr) expr->get_line(), expr->get_column(), expr->get_file_name(), expr
-
-bool iS_TYPE_UNIT(std::string type);
-bool iS_TYPE_BOOLEAN(std::string type);
-bool iS_TYPE_INTEGER(std::string type);
-bool iS_TYPE_STRING(std::string type);
-bool iS_TYPE_NONE(std::string type);
-bool is_primitive(std::string type);
 
 enum BINOP {EQ, LT, LEQ, ADD, SUB, MUL, DIV, POW, AND};
 enum UNOP {NOT, UNARY, ISNULL};
@@ -34,6 +29,31 @@ const map<string, UNOP> unop_to_enum = {
     {"-", UNARY},
     {"isnull", ISNULL},
 };
+
+bool is_primitive(std::string type){
+    return S_TYPE_UNIT == type
+        || S_TYPE_BOOLEAN == type
+        || S_TYPE_INTEGER == type
+        || S_TYPE_STRING == type;
+}
+
+void Literals_visitor::set_parent(std::string child, std::string parent){
+    c_table.insert({child, parent});
+}
+
+bool Literals_visitor::is_child_of(std::string child, std::string parent){
+    size_t is_child = 0;
+    for(auto it = c_table.begin(); it != c_table.end(); it++){
+        std::string child_ = it->first;
+        std::string parent_ = it->second;
+
+        if(child == child_ && parent == parent_)
+            return true;
+        if(child == child_ && is_child_of(parent_, parent))
+            is_child++;
+    }
+    return is_child > 0;
+}
 
 void* Literals_visitor::visit(Program* program) {
     vector<type::Table*> class_list_tables = T_ACCEPT_LIST(program->get_class_list());
@@ -109,8 +129,8 @@ void* Literals_visitor::visit(Method* method) {
 
     type::Table *returned_table = new type::Table(LOC(method), return_type, name, S_TYPE_SELF);
 
-    body_block_table->set_type(return_type);
     returned_table->concatenate(body_block_table);
+    returned_table->set_type(body_block_table->get_type());
 
     for(size_t i = 0; i < formal_list_tables.size(); i++){
         returned_table->concatenate(formal_list_tables[i]);
@@ -183,9 +203,9 @@ void* Literals_visitor::visit(If* if_) {
 
     type::Table *returned_table;
 
-    if(iS_TYPE_UNIT(then_type) || iS_TYPE_UNIT(else_type)){
+    if(S_TYPE_UNIT == then_type || S_TYPE_UNIT == else_type){
         returned_table = new type::Table(LOC(if_), S_TYPE_UNIT);
-    } else if(iS_TYPE_NONE(then_type) || iS_TYPE_NONE(else_type) || is_primitive(then_type) || is_primitive(else_type)){
+    } else if(S_TYPE_NONE == then_type || S_TYPE_NONE == else_type || is_primitive(then_type) || is_primitive(else_type)){
         then_expr_table->set_type(else_type);
         else_expr_table->set_type(then_type);
         if(then_expr_table->is_return_a_variable())
@@ -456,33 +476,4 @@ void* Literals_visitor::visit(Unit* unit) {
 
 void* Literals_visitor::visit(Object* object) {
     return new type::Table(LOC(object), S_TYPE_NONE, object->get_name());
-}
-
-/* Local Functions */
-
-bool iS_TYPE_UNIT(string type){
-    return type == S_TYPE_UNIT;
-}
-
-bool iS_TYPE_BOOLEAN(string type){
-    return type == S_TYPE_BOOLEAN;
-}
-
-bool iS_TYPE_INTEGER(string type){
-    return type == S_TYPE_INTEGER;
-}
-
-bool iS_TYPE_STRING(string type){
-    return type == S_TYPE_STRING;
-}
-
-bool iS_TYPE_NONE(string type){
-    return type == S_TYPE_NONE;
-}
-
-bool is_primitive(string type){
-    return iS_TYPE_UNIT(type)
-        || iS_TYPE_BOOLEAN(type)
-        || iS_TYPE_INTEGER(type)
-        || iS_TYPE_STRING(type);
 }

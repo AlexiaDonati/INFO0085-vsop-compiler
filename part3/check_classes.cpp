@@ -1,4 +1,5 @@
 #include "ast.hpp"
+#include "semantics_expressions.hpp"
 #include <iostream>
 #include <map>
 
@@ -71,6 +72,7 @@ void* Check_classes::visit(Class* class_){
     }
 
     class_map[name] = class_;
+    Literals_visitor::set_parent(name, class_->get_parent());
 
     if(!check_class_body_redefinition(class_)){
         return TO_VOID(false);

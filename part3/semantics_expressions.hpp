@@ -12,6 +12,12 @@ namespace AST{
 
     class Literals_visitor : public Visitor {
         public:
+            static std::map<std::string, std::string> c_table;
+
+            static void set_parent(std::string child, std::string parent);
+
+            static bool is_child_of(std::string child, std::string parent);
+
             void* visit(Program* program);
             void* visit(Class* class_);
             void* visit(Field* field);

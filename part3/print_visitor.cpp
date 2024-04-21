@@ -140,7 +140,12 @@ void* Print_visitor::visit(If* if_){
     return TO_VOID(result);
 }
 
-void* Print_visitor::visit(Program* program){
+void* Print_visitor::visit(Program* program){/*
+            type::Table *aux = table->find_expr_table(program);
+
+    std::cerr << aux->to_string();*/
+    
+
     return TO_VOID(ACCEPT_LIST(program->get_class_list()));
 }
 
