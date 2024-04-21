@@ -1,8 +1,13 @@
-class Parent {
-    i() : int32 { 2 }
+class A {
+    select(i : int32, j : int32, b : bool) : int32 {
+        if b then i
+        else j
+    }
 }
-class Child extends Parent {
-    a : int32;
-    theAnswer : int32 <- 40 + 1;
+class B {
+    getTheTruth() : bool { true }
+}
+class MyClass {
+    myField : int32 <- (new A).select(0, 42, (new B).getTheTruth());
 }
 class Main { main() : int32 { 0 } }

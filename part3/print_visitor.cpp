@@ -140,6 +140,8 @@ void* Print_visitor::visit(If* if_){
                   + ")"
                   + type_to_string(if_);
 
+    verify_if(if_);
+
     return TO_VOID(result);
 }
 
@@ -294,5 +296,27 @@ void Print_visitor::must_have_the_same_amount_of_args(Call *call){
             table->throw_error(call, 
                 arg_table->get_type() + " is not the right arg type of " + call->get_method() + " at position " + to_string(i+1) 
             );
+    }
+}
+
+void Print_visitor::verify_if(If *if_){
+    if(!must_use_table())
+        return;
+
+    if(!if_->has_else_expr())
+        return;
+
+    type::Table *then_table = table->find_expr_table(if_->get_then_expr());
+    type::Table *else_table = table->find_expr_table(if_->get_else_expr());
+
+    string then_type = then_table->get_type();
+    string else_type = else_table->get_type();
+
+    if((then_table->is_primitive(then_type) || then_table->is_primitive(else_type))
+    && !(then_type == S_TYPE_UNIT || else_type == S_TYPE_UNIT)
+    && then_type != else_type){
+        table->throw_error(if_, 
+            "wrong types in condition"
+        );
     }
 }

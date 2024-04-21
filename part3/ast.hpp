@@ -85,6 +85,7 @@ namespace AST
             Print_visitor(type::Table *table) : table(table) {};
             void must_be_object(Expr *expr);
             void must_have_the_same_amount_of_args(Call *call);
+            void verify_if(If *if_);
 
             bool must_use_table();
 

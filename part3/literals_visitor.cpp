@@ -348,8 +348,10 @@ void* Literals_visitor::visit(If* if_) {
     } else if(S_TYPE_UNIT == then_type || S_TYPE_UNIT == else_type){
         returned_table = new type::Table(LOC(if_), S_TYPE_UNIT);
     } else if(S_TYPE_NONE == then_type || S_TYPE_NONE == else_type || is_primitive(then_type) || is_primitive(else_type)){
-        then_expr_table->set_type(else_type);
-        else_expr_table->set_type(then_type);
+        if(!(S_TYPE_NONE == then_type) && !(S_TYPE_NONE == else_type)){
+            then_expr_table->set_type(else_type);
+            else_expr_table->set_type(then_type);
+        }
         if(then_expr_table->is_return_a_variable())
             returned_table = new type::Table(LOC(if_), then_type
                                                     , then_expr_table->get_return_variable_name());
