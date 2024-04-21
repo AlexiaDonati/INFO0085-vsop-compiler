@@ -23,16 +23,10 @@ namespace AST{
         class Variable {
             public:
                 std::string name;
+                std::string object_name;
 
-                Variable(std::string name) : name(name) {};
-
-                bool operator ==(const Variable &variable){
-                    return (name == variable.name);
-                }
-
-                bool operator <(const Variable *variable) const{
-                    return name < variable->name;
-                }
+                Variable(std::string name) : name(name) {object_name = S_TYPE_NONE;};
+                Variable(std::string name, std::string object_name) : name(name), object_name(object_name) {};
         } ;
 
         class Dispatch {
@@ -201,15 +195,21 @@ namespace AST{
 
                 std::string get_return_variable_name();
 
+                std::string get_return_variable_object_name();
+
                 std::string get_return_dispatch_object_name();
 
                 std::string get_return_dispatch_method_name();
+
+                void update_class_variable(std::string class_name);
+
+                void remove_class_variable(std::string class_name);
 
                 void replace_object_by_name(std::string old_name, std::string new_name);
 
                 void replace_object_by_name_in_children(std::string old_name, std::string new_name);
 
-                void v_table_must_be_empty();
+                void v_table_must_be_resolved();
 
                 // Table tree
 
@@ -278,8 +278,6 @@ namespace AST{
                 std::map<Variable*, std::string> v_table;
                 // map soring dispatches
                 std::map<Dispatch*, std::string> d_table;
-                // map soring classes
-                std::map<std::string, std::string> c_table;
 
                 // Table tree
                 std::vector<Table*> children;

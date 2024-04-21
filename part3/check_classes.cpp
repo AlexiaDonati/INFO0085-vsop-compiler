@@ -41,6 +41,7 @@ bool Check_classes::check_class_body_redefinition(Class* class_){
             return false;
         }
         class_->field_map[name] = field;
+        Literals_visitor::set_variable(class_->get_name(), field->get_name(), field->get_type());
     }
 
 
@@ -58,6 +59,7 @@ bool Check_classes::check_class_body_redefinition(Class* class_){
             return false;
         }
         class_->method_map[name] = method;
+        Literals_visitor::set_dispatch(class_->get_name(), method->get_name(), method->get_return_type());
     }
 
     return true;

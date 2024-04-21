@@ -201,6 +201,12 @@ std::string Table::get_return_variable_name() {
     return return_variable->name;
 }
 
+std::string Table::get_return_variable_object_name() { 
+    if(return_variable == NULL)
+        return S_TYPE_NONE;
+    return return_variable->object_name;
+}
+
 std::string Table::get_return_dispatch_object_name() { 
     if(return_dispatch == NULL)
         return S_TYPE_NONE;
@@ -211,6 +217,40 @@ std::string Table::get_return_dispatch_method_name() {
     if(return_dispatch == NULL)
         return S_TYPE_NONE;
     return return_dispatch->method_name;
+}
+
+void Table::update_class_variable(std::string class_name){
+    for(auto it = v_table.begin(); it != v_table.end(); it++){
+        std::string name = it->first->name;
+        std::string type = it->second;
+
+        std::string class_variable_type = Literals_visitor::get_variable_type(class_name, name);
+
+        if(class_variable_type != S_TYPE_NONE && type == S_TYPE_NONE){
+            set_type(name, class_variable_type);
+            break;
+        } else if(class_variable_type != S_TYPE_NONE && class_variable_type != type){
+            throw_error("Variable " + class_name + "." + name + " must have type " + class_variable_type + " but have " + type);
+        }
+    }
+}
+
+void Table::remove_class_variable(std::string class_name){
+    for(auto it = v_table.begin(); it != v_table.end(); it++){
+        std::string name = it->first->name;
+        std::string type = it->second;
+
+        std::string class_variable_type = Literals_visitor::get_variable_type(class_name, name);
+
+        if(class_variable_type != S_TYPE_NONE && class_variable_type == type){
+            replace_object_by_name(name, (type != S_TYPE_NONE) ? type : name);
+            delete it->first;
+            v_table.erase(it);
+            break;
+        } else if(class_variable_type != S_TYPE_NONE){
+            throw_error("Variable " + class_name + "." + name + " must have type " + class_variable_type + " but have " + type);
+        }
+    }
 }
 
 void Table::replace_object_by_name(std::string old_name, std::string new_name){
@@ -247,10 +287,14 @@ void Table::replace_object_by_name_in_children(std::string old_name, std::string
         table->replace_object_by_name(old_name, new_name);
 }
 
-void Table::v_table_must_be_empty(){
-    if(v_table.empty())
-        return;
-    throw_error("Variable non defined");
+void Table::v_table_must_be_resolved(){
+    for(auto it = v_table.begin(); it != v_table.end(); it++){
+        std::string name = it->first->name;
+        std::string type = it->second;
+
+        if(type == S_TYPE_NONE)
+            throw_error("Variable " + name + " non defined");
+    }
 }
 
 void Table::update_children(std::string name, std::string type){

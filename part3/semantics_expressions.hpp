@@ -13,12 +13,18 @@ namespace AST{
     class Literals_visitor : public Visitor {
         public:
             static std::map<std::string, std::string> c_table;
+            static std::map<type::Variable*, std::string> v_table;
+            static std::map<type::Dispatch*, std::string> d_table;
 
             static void set_parent(std::string child, std::string parent);
+            static void set_variable(std::string object, std::string name, std::string type);
+            static void set_dispatch(std::string object, std::string name, std::string type);
 
             static bool is_child_of(std::string child, std::string parent);
+            static std::string get_variable_type(std::string object, std::string name);
 
             static std::vector<std::string> get_children(std::string parent);
+            static std::vector<std::string> get_parents(std::string child);
 
             void* visit(Program* program);
             void* visit(Class* class_);

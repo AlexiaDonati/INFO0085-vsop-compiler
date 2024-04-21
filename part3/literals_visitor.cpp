@@ -4,6 +4,8 @@ using namespace AST;
 using namespace std;
 
 std::map<std::string, std::string> AST::Literals_visitor::c_table;
+std::map<type::Variable*, std::string> AST::Literals_visitor::v_table;
+std::map<type::Dispatch*, std::string> AST::Literals_visitor::d_table;
 
 #define T_ACCEPT(expr) (type::Table*) expr->accept(this)
 #define T_ACCEPT_LIST(list) accept_list(list)
@@ -41,6 +43,14 @@ void Literals_visitor::set_parent(std::string child, std::string parent){
     c_table.insert({child, parent});
 }
 
+void Literals_visitor::set_variable(std::string object, std::string name, std::string type){
+    v_table.insert({new type::Variable(name, object), type});
+}
+
+void Literals_visitor::set_dispatch(std::string object, std::string name, std::string type){
+    d_table.insert({new type::Dispatch(name, object), type});
+}
+
 bool Literals_visitor::is_child_of(std::string child, std::string parent){
     size_t is_child = 0;
     for(auto it = c_table.begin(); it != c_table.end(); it++){
@@ -53,6 +63,24 @@ bool Literals_visitor::is_child_of(std::string child, std::string parent){
             is_child++;
     }
     return is_child > 0;
+}
+
+std::string Literals_visitor::get_variable_type(std::string object, std::string name){
+    std::vector<std::string> parents = get_parents(object);
+
+    parents.push_back(object);
+
+    for (auto parent_name : parents){
+        for(auto it = v_table.begin(); it != v_table.end(); it++){
+            std::string name_ = it->first->name;
+            std::string object_ = it->first->object_name;
+            std::string type = it->second;
+
+            if(name == name_ && parent_name == object_)
+                return type;
+        }
+    }
+    return S_TYPE_NONE;
 }
 
 std::vector<std::string> Literals_visitor::get_children(std::string parent){
@@ -69,6 +97,20 @@ std::vector<std::string> Literals_visitor::get_children(std::string parent){
     return children;
 }
 
+std::vector<std::string> Literals_visitor::get_parents(std::string child){
+    std::vector<std::string> parents;
+
+    for(auto it = c_table.begin(); it != c_table.end(); it++){
+        std::string child_ = it->first;
+        std::string parent_ = it->second;
+
+        if(child == child_)
+            parents.push_back(parent_);
+    }
+
+    return parents;
+}
+
 void* Literals_visitor::visit(Program* program) {
     vector<type::Table*> class_list_tables = T_ACCEPT_LIST(program->get_class_list());
 
@@ -79,7 +121,7 @@ void* Literals_visitor::visit(Program* program) {
         returned_table->add_child(class_list_tables[i]);
     }
 
-    returned_table->v_table_must_be_empty();
+    returned_table->v_table_must_be_resolved();
 
     returned_table->update_children();
 
@@ -104,11 +146,11 @@ void* Literals_visitor::visit(Class* class_) {
         returned_table->add_child(field_list_tables[i]);
     }
 
-    returned_table->update_children();
 
     // Class variables must be removed from the tab
-    for(size_t i = 0; i < field_list_tables.size(); i++)
-        returned_table->remove_type(field_list_tables[i]->get_return_variable_name());
+    returned_table->update_class_variable(name);
+    returned_table->update_children();
+    returned_table->remove_class_variable(name);
     returned_table->remove_type(S_TYPE_SELF);
     
     return returned_table;

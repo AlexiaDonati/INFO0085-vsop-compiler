@@ -226,10 +226,6 @@ void* Print_visitor::visit(Call* call){
                   + ")"
                   + type_to_string(call);
 
-type::Table *aux = table->find_expr_table(call);
-
-    std::cerr << aux->to_string();
-
     return TO_VOID(result);
 }
 
