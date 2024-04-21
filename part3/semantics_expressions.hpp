@@ -23,6 +23,7 @@ namespace AST{
             static void add_arg_to_dispatch(std::string object, std::string name, std::string arg_type);
 
             static bool is_child_of(std::string child, std::string parent);
+            static bool is_same_arg_type(std::string object, std::string name, std::string type, size_t position);
 
             static size_t number_of_args(std::string object, std::string name);
             static std::string get_variable_type(std::string object, std::string name);

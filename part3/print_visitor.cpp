@@ -282,9 +282,17 @@ void Print_visitor::must_have_the_same_amount_of_args(Call *call){
         object_name = "Object";
 
     if(Literals_visitor::number_of_args(object_name, call->get_method()) != call->get_arg_expr_list()->get_size()){
-
-    table->throw_error(call, 
+        table->throw_error(call, 
             call->get_method() + " does not have the good number of args : " + to_string(Literals_visitor::number_of_args(aux->get_object_of_method(call->get_method()), call->get_method()))
         );
+    }
+
+    List<Expr>* Expr_list = call->get_arg_expr_list();
+    for (size_t i = 0; i < Expr_list->get_size(); i++){
+        type::Table *arg_table = table->find_expr_table(Expr_list->get_element(i));
+        if(!Literals_visitor::is_same_arg_type(object_name, call->get_method(), arg_table->get_type(), i))
+            table->throw_error(call, 
+                arg_table->get_type() + " is not the right arg type of " + call->get_method() + " at position " + to_string(i) 
+            );
     }
 }

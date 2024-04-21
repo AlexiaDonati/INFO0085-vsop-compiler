@@ -211,6 +211,7 @@ namespace AST
             virtual ~Expr() = default;
 
             virtual void* accept(Visitor* visitor) = 0;
+            virtual std::string getType() const = 0;
 
             int get_line() { return line; }
             int get_column() { return column; }
@@ -251,6 +252,7 @@ namespace AST
             ~String() = default;
 
             void* accept(Visitor* visitor) { return visitor->visit(this); }
+            std::string getType() const  {return "String";}
 
             std::string get_value() { return value; }
         private:
@@ -264,6 +266,7 @@ namespace AST
             ~Integer() = default;
 
             void* accept(Visitor* visitor) { return visitor->visit(this); }
+            std::string getType() const  {return "Integer";}
 
             int get_value() { return value; }
         private:
@@ -277,6 +280,7 @@ namespace AST
             ~Boolean() = default;
 
             void* accept(Visitor* visitor) { return visitor->visit(this); }
+            std::string getType() const  {return "Boolean";}
 
             bool get_value() { return value; }
         private:
@@ -291,6 +295,7 @@ namespace AST
             ~Unit() = default;
 
             void* accept(Visitor* visitor) { return visitor->visit(this); }
+            std::string getType() const  {return "Unit";}
     };
 
     class Object : public Expr {
@@ -300,6 +305,7 @@ namespace AST
             ~Object() = default;
 
             void* accept(Visitor* visitor) { return visitor->visit(this); }
+            std::string getType() const  {return "Object";}
 
             std::string get_name() { return name; }
         private:
@@ -313,6 +319,7 @@ namespace AST
             ~New() = default;
 
             void* accept(Visitor* visitor) { return visitor->visit(this); }
+            std::string getType() const  {return "New";}
 
             std::string get_type() { return type; }
         private:
@@ -326,6 +333,7 @@ namespace AST
             ~Self() = default;
 
             void* accept(Visitor* visitor) { return visitor->visit(this); }
+            std::string getType() const  {return "Self";}
     };
 
     class Binop : public Expr {
@@ -338,6 +346,7 @@ namespace AST
             };
 
             void* accept(Visitor* visitor) { return visitor->visit(this); }
+            std::string getType() const  {return "Binop";}
 
             std::string get_op() { return op; }
             Expr* get_left_expr() { return left_expr; }
@@ -357,6 +366,7 @@ namespace AST
             };
 
             void* accept(Visitor* visitor) { return visitor->visit(this); }
+            std::string getType() const  {return "Unop";}
 
             std::string get_op() { return op; }
             Expr* get_expr() { return expr; }
@@ -374,6 +384,7 @@ namespace AST
             };
 
             void* accept(Visitor* visitor) { return visitor->visit(this); }
+            std::string getType() const  {return "Assign";}
 
             std::string get_name() { return name; }
             Expr* get_expr() { return expr; }
@@ -395,6 +406,7 @@ namespace AST
             };
 
             void* accept(Visitor* visitor) { return visitor->visit(this); }
+            std::string getType() const  {return "Let";}
 
             bool has_init_expr() { return init_expr != nullptr; }
             std::string get_name() { return name; }
@@ -418,6 +430,7 @@ namespace AST
             };
 
             void* accept(Visitor* visitor) { return visitor->visit(this); }
+            std::string getType() const  {return "While";}
 
             Expr* get_cond_expr() { return cond_expr; }
             Expr* get_body_expr() { return body_expr; }
@@ -440,6 +453,7 @@ namespace AST
             };
 
             void* accept(Visitor* visitor) { return visitor->visit(this); }
+            std::string getType() const  {return "If";}
 
             bool has_else_expr() { return else_expr != nullptr; }
             Expr* get_cond_expr() { return cond_expr; }
@@ -460,6 +474,7 @@ namespace AST
             };
 
             void* accept(Visitor* visitor) { return visitor->visit(this); }
+            std::string getType() const  {return "Block";}
 
             List<Expr>* get_expr_list() { return expr_list; }
         private:
@@ -473,6 +488,7 @@ namespace AST
             ~Formal() = default;
 
             void* accept(Visitor* visitor) { return visitor->visit(this); }
+            std::string getType() const  {return "Formal";}
 
             std::string get_name() { return name; }
             std::string get_type() { return type; }
@@ -491,6 +507,7 @@ namespace AST
             };
 
             void* accept(Visitor* visitor) { return visitor->visit(this); }
+            std::string getType() const  {return "Method";}
 
             std::string get_name() { return name; }
             List<Formal>* get_formal_list() { return formal_list; }
@@ -513,6 +530,7 @@ namespace AST
             };
 
             void* accept(Visitor* visitor) { return visitor->visit(this); }
+            std::string getType() const  {return "Field";}
 
             bool has_init_expr() { return init_expr != nullptr; }
             std::string get_name() { return name; }
@@ -534,6 +552,7 @@ namespace AST
             };
 
             void* accept(Visitor* visitor) { return visitor->visit(this); }
+            std::string getType() const  {return "Class";}
 
             std::string get_name() { return name; }
             std::string get_parent() { return parent; }
@@ -558,6 +577,7 @@ namespace AST
             };
 
             void* accept(Visitor* visitor) { return visitor->visit(this); }
+            std::string getType() const  {return "Program";}
 
             List<Class>* get_class_list() { return class_list; }
         private:
@@ -574,6 +594,7 @@ namespace AST
             };
 
             void* accept(Visitor* visitor) { return visitor->visit(this); }
+            std::string getType() const  {return "Call";}
 
             Expr* get_object() { return object; }
             std::string get_method() { return method; }

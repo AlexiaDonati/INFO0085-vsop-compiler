@@ -75,6 +75,31 @@ bool Literals_visitor::is_child_of(std::string child, std::string parent){
     return is_child > 0;
 }
 
+bool Literals_visitor::is_same_arg_type(std::string object, std::string name, std::string type, size_t position){
+    std::vector<std::string> parents = get_parents(object);
+
+    parents.push_back(object);
+
+    for (auto parent_name : parents){
+        for(auto it = d_table.begin(); it != d_table.end(); it++){
+            std::string name_ = it->first->method_name;
+            std::string object_ = it->first->object_name;
+            std::string type_ = it->second;
+
+            if(name == name_ && parent_name == object_){
+                size_t i = 0;
+                for (auto arg : it->first->args_types){
+                    if(i == position)
+                        return type == arg;
+                    i++;
+                }
+                return false;
+            }
+        }
+    }
+    return false;
+}
+
 size_t Literals_visitor::number_of_args(std::string object, std::string name){
     std::vector<std::string> parents = get_parents(object);
 
