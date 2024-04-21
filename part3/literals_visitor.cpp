@@ -352,25 +352,24 @@ void* Literals_visitor::visit(If* if_) {
             then_expr_table->set_type(else_type);
             else_expr_table->set_type(then_type);
         }
-        if(then_expr_table->is_return_a_variable())
-            returned_table = new type::Table(LOC(if_), then_type
-                                                    , then_expr_table->get_return_variable_name());
-        else if(then_expr_table->is_return_a_dispatch())
-            returned_table = new type::Table(LOC(if_), then_type
-                                                    , then_expr_table->get_return_dispatch_method_name()
-                                                    , then_expr_table->get_return_dispatch_object_name());
-        else if(else_expr_table->is_return_a_variable())
+        if(else_expr_table->is_return_a_variable())
             returned_table = new type::Table(LOC(if_), else_type
                                                     , else_expr_table->get_return_variable_name());
         else if(else_expr_table->is_return_a_dispatch())
             returned_table = new type::Table(LOC(if_), else_type
                                                     , else_expr_table->get_return_dispatch_method_name()
                                                     , else_expr_table->get_return_dispatch_object_name());
+        else if(then_expr_table->is_return_a_variable())
+            returned_table = new type::Table(LOC(if_), then_type
+                                                    , then_expr_table->get_return_variable_name());
+        else if(then_expr_table->is_return_a_dispatch())
+            returned_table = new type::Table(LOC(if_), then_type
+                                                    , then_expr_table->get_return_dispatch_method_name()
+                                                    , then_expr_table->get_return_dispatch_object_name());
         else
             returned_table = new type::Table(LOC(if_), then_type);
     } else {
-        // TODO create common_class_type table
-        returned_table = new type::Table(LOC(if_), S_TYPE_NONE); // mocked
+        returned_table = new type::Table(LOC(if_), else_type);
     }
 
     returned_table->concatenate(cond_expr_table);
