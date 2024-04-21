@@ -71,7 +71,8 @@ void* Print_visitor::visit(Unop* unop){
                   + ")"
                   + type_to_string(unop);
 
-    must_be_object(unop->get_expr());
+    if(unop->get_op() == "isnull")
+        must_be_object(unop->get_expr());
 
     return TO_VOID(result);
 }
@@ -263,7 +264,7 @@ void Print_visitor::must_be_object(Expr *expr){
 
     type::Table *aux = table->find_expr_table(expr);
 
-    if(!Literals_visitor::is_child_of(aux->get_type(), S_TYPE_OBJECT))
+    if(!Literals_visitor::is_child_of(aux->get_type(), S_TYPE_OBJECT) && aux->get_type() != "Object")
         table->throw_error(expr, 
             "" + aux->get_type() + " is not an Object" 
         );

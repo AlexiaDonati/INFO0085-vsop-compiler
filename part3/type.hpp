@@ -93,6 +93,14 @@ namespace AST{
                         || S_TYPE_STRING == type;
                 }
 
+                bool is_variable(std::string str){
+                    if (!str.empty()) {
+                        char firstChar = str[0];
+                        return !(firstChar >= 'A' && firstChar <= 'Z');
+                    }
+                    return false;
+                }
+
                 void throw_error(Error *error) { 
                     error_list.push_back(error); 
                 }

@@ -249,18 +249,21 @@ void Check_classes::add_object_class(Program* program){
     Method *print = new Method(line, column, file_name, "print", print_formals, "Object", NULL);
     method_list->add(print);
     Literals_visitor::set_dispatch("Object", "print", "Object");
+    Literals_visitor::add_arg_to_dispatch("Object", "print", "string");
 
     List<Formal>* printBool_formals = new List<Formal>();
     printBool_formals->add(new Formal(line, column, file_name, "b", "bool"));
     Method *printBool = new Method(line, column, file_name, "printBool", printBool_formals, "Object", NULL);
     method_list->add(printBool);
     Literals_visitor::set_dispatch("Object", "printBool", "Object");
+    Literals_visitor::add_arg_to_dispatch("Object", "printBool", "bool");
     
     List<Formal>* printInt_formals = new List<Formal>();
     printInt_formals->add(new Formal(line, column, file_name, "i", "int32"));
     Method *printInt32 = new Method(line, column, file_name, "printInt32", printInt_formals, "Object", NULL);
     method_list->add(printInt32);
     Literals_visitor::set_dispatch("Object", "printInt32", "Object");
+    Literals_visitor::add_arg_to_dispatch("Object", "printInt32", "int32");
     
     Method *inputLine = new Method(line, column, file_name, "inputLine", new List<Formal>(), "string", NULL);
     method_list->add(inputLine);
