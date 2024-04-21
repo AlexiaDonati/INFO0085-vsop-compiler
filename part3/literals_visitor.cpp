@@ -125,7 +125,11 @@ size_t Literals_visitor::number_of_args(std::string object, std::string name){
 std::string Literals_visitor::get_variable_type(std::string object, std::string name){
     std::vector<std::string> parents = get_parents(object);
 
-    parents.push_back(object);
+    if(parents.size() > 0){
+        std::string aux = parents[0];
+        parents[0] = object;
+        parents.push_back(aux);
+    } else { parents.push_back(object);}
 
     for (auto parent_name : parents){
         for(auto it = v_table.begin(); it != v_table.end(); it++){
@@ -143,7 +147,11 @@ std::string Literals_visitor::get_variable_type(std::string object, std::string 
 std::string Literals_visitor::get_dispatch_type(std::string object, std::string name){
     std::vector<std::string> parents = get_parents(object);
 
-    parents.push_back(object);
+    if(parents.size() > 0){
+        std::string aux = parents[0];
+        parents[0] = object;
+        parents.push_back(aux);
+    } else { parents.push_back(object);}
 
     for (auto parent_name : parents){
         for(auto it = d_table.begin(); it != d_table.end(); it++){

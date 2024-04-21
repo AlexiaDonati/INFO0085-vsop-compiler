@@ -164,12 +164,6 @@ void* Print_visitor::visit(Class* class_){
                   + method_list_result
                   + ")";
 
-    if(name == "Parerfesent"){
-        type::Table *aux = table->find_expr_table(class_);
-
-    std::cerr << aux->to_string();
-    }
-
     return TO_VOID(result);
 }
 
@@ -229,15 +223,14 @@ void* Print_visitor::visit(Call* call){
     string method = call->get_method();
     string arg_expr_list_result = ACCEPT_LIST(call->get_arg_expr_list());
 
+    must_have_the_same_amount_of_args(call);
+
     string result = "Call(" 
                   + object_result + ", "
                   + method + ", "
                   + arg_expr_list_result
                   + ")"
                   + type_to_string(call);
-
-
-    must_have_the_same_amount_of_args(call);
 
     return TO_VOID(result);
 }
@@ -281,11 +274,14 @@ void Print_visitor::must_have_the_same_amount_of_args(Call *call){
         return;
 
     type::Table *aux = table->find_expr_table(call);
+    type::Table *object_table = table->find_expr_table(call->get_object());
 
     string object_name = aux->get_object_of_method(call->get_method());
 
-    if(object_name == "")
-        object_name = "Object";
+    if(object_name == ""){
+        object_name = object_table->get_type();
+    }
+    aux->set_type(Literals_visitor::get_dispatch_type(object_name, call->get_method()));
 
     if(Literals_visitor::number_of_args(object_name, call->get_method()) != call->get_arg_expr_list()->get_size()){
         table->throw_error(call, 
