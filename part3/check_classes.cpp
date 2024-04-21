@@ -259,17 +259,17 @@ void* Check_classes::visit(Program* program){
 
     List<Class>* class_list = program->get_class_list();
     if(!fill_class_map(class_list)){
-        return TO_VOID(false); // Error in class definition
+        return new int(0); // Error in class definition
     }
 
     if (!main_class_exists) {
         cout << program->get_file_name() << program->get_line() << program->get_column() << ": semantic error: Main class not found." << endl;
-        return TO_VOID(false); // Error in main class definition
+        return new int(0); // Error in main class definition
     }
 
     if(!check_extend()){
-        return TO_VOID(false); // Error in class inheritance
+        return new int(0); // Error in class inheritance
     }
 
-    return TO_VOID(true);
+    return new int(1);
 }

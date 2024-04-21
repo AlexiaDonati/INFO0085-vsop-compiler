@@ -121,6 +121,9 @@ void Table::set_type(std::string name, std::string type){
     remove_type(name);
 
     v_table.insert({new_variable, type});
+
+    if(return_type == S_TYPE_NONE && return_variable != NULL && return_variable->name == name)
+        return_type = type;
 }
 
 void Table::set_type(std::string method_name, std::string object_name, std::string type){
@@ -142,6 +145,9 @@ void Table::set_type(std::string method_name, std::string object_name, std::stri
 
     if(previous_type == S_TYPE_NONE && type == S_TYPE_NONE && Literals_visitor::get_dispatch_type(object_name, method_name) != S_TYPE_NONE)
         set_type(method_name, object_name, Literals_visitor::get_dispatch_type(object_name, method_name));
+    
+    if(return_type == S_TYPE_NONE && return_dispatch != NULL && return_dispatch->method_name == method_name && return_dispatch->object_name == object_name)
+        return_type = type;
 
     // set the type to all children classes
     std::vector<std::string> children = Literals_visitor::get_children(object_name);

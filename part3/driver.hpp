@@ -60,14 +60,16 @@ namespace VSOP
          * @brief Delete the AST.
          */
         void delete_ast() {
-            delete ast;
+            if(ast != NULL)
+                delete ast;
         }
 
         /**
          * @brief Delete the type_table.
          */
         void delete_type_table() {
-            delete type_table;
+            if(type_table != NULL)
+                delete type_table;
         }
         
         /**

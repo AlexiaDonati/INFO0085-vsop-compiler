@@ -1,9 +1,7 @@
-class Parent {
-    addOne(i : int32) : int32 { i + 1 }
-}
-class Child extends Parent {
+class MyClass {
 }
 class MyClass {
-    myMethod() : int32 { (new Child).addOne(41) }
 }
-class Main { main() : int32 { 0 } }
+class Main {
+    main() : int32 { 0 }
+}

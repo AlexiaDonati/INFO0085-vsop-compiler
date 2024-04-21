@@ -8,3 +8,4 @@ lexer.cpp
 *.hh
 vsopc
 vsopcompiler
+vsopcompiler.tar.xz

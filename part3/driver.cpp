@@ -139,12 +139,13 @@ int Driver::parse()
 int Driver::semantic_analysis()
 {
     AST::Check_classes check_classes;
-    bool res = ast->accept(&check_classes);
+    int *res = (int *) ast->accept(&check_classes);
+    make_type_table();
 
-    if (!res)
+    if (*res == 0)
         return 1;
 
-    make_type_table();
+    delete res;
 
     if(type_table->has_error()){
         std::cerr << "\n" << type_table->errors_to_string() << "\n";
