@@ -5,6 +5,16 @@
 using namespace AST;
 using namespace AST::type;
 
+bool Table::is_type_exist(std::string type){
+    if(is_primitive(type) 
+    || type == S_TYPE_NONE 
+    || type == S_TYPE_SELF 
+    || type == S_TYPE_OBJECT 
+    || Literals_visitor::is_child_of(type, S_TYPE_OBJECT))
+    return true;
+    return false;
+}
+
 void Table::throw_error(Expr *expr, std::string message) { 
     Error *new_error = new Error(
         expr->get_line(),
@@ -108,6 +118,11 @@ void Table::concatenate(const Table *table){
 }
 
 void Table::set_type(std::string name, std::string type){
+
+    if(!is_type_exist(type))
+        throw_error("type of variable " + name + " do not exist : " + type);
+    
+
     std::string previous_type = get_type(name);
 
     if(previous_type != S_TYPE_NONE && type == S_TYPE_NONE)
@@ -127,6 +142,9 @@ void Table::set_type(std::string name, std::string type){
 }
 
 void Table::set_type(std::string method_name, std::string object_name, std::string type){
+    if(!is_type_exist(type))
+        throw_error("type of dispatch " + object_name + "." + method_name + " do not exist : " + type);
+
     std::string previous_type = get_type(method_name, object_name);
 
     if(previous_type != S_TYPE_NONE && type == S_TYPE_NONE)
@@ -157,6 +175,9 @@ void Table::set_type(std::string method_name, std::string object_name, std::stri
 }
 
 void Table::set_type(std::string type){
+    if(!is_type_exist(type))
+        throw_error("type of return_variable do not exist : " + type);
+
     std::string previous_type = return_type;
 
     if(previous_type != S_TYPE_NONE && type == S_TYPE_NONE)

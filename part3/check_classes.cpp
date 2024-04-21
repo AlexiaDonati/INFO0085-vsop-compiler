@@ -214,7 +214,7 @@ bool Check_classes::check_extend(){
 
 bool Check_classes::is_class_defined(std::string class_name){
     for (auto it = class_map.begin(); it != class_map.end(); it++){
-        if(it->first == class_name)
+        if(it->first == class_name || class_name == "")
             return true;
     }
     return false;

@@ -58,6 +58,9 @@ namespace AST{
             public:
                 Table(size_t line, size_t column, std::string file_name, Expr *owner, std::string return_type) : 
                     line(line), column(column), file_name(file_name), return_type(return_type), owner(owner){
+                        if(!is_type_exist(return_type))
+                            throw_error("type of return_variable do not exist : " + return_type);
+
                         return_variable = NULL;
                         return_dispatch = NULL;
                     };
@@ -79,6 +82,8 @@ namespace AST{
                     if(return_dispatch != NULL)
                         delete return_dispatch;
                 };
+
+                bool is_type_exist(std::string type);
 
                 bool is_primitive(std::string type){
                     return S_TYPE_UNIT == type
