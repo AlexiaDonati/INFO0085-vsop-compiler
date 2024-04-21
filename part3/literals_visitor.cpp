@@ -284,7 +284,9 @@ void* Literals_visitor::visit(If* if_) {
 
     type::Table *returned_table;
 
-    if(S_TYPE_UNIT == then_type || S_TYPE_UNIT == else_type){
+    if(!if_->has_else_expr()){
+        returned_table = new type::Table(LOC(if_), S_TYPE_UNIT);
+    } else if(S_TYPE_UNIT == then_type || S_TYPE_UNIT == else_type){
         returned_table = new type::Table(LOC(if_), S_TYPE_UNIT);
     } else if(S_TYPE_NONE == then_type || S_TYPE_NONE == else_type || is_primitive(then_type) || is_primitive(else_type)){
         then_expr_table->set_type(else_type);

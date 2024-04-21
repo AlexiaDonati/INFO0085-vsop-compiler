@@ -1,5 +1,4 @@
-class MyClass extends UndefinedClass {
+class MyClass {
+    myField : int32 <- if true then 42;
 }
-class Main {
-    main() : int32 { 0 }
-}
+class Main { main() : int32 { 0 } }
