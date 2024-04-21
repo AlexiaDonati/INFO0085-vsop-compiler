@@ -329,6 +329,15 @@ void Table::v_table_must_be_empty(){
     throw_error("There is non initiated variable");
 }
 
+void Table::v_table_must_only_contain(std::string name){
+    for(auto it = v_table.begin(); it != v_table.end(); it++){
+        std::string name_ = it->first->name;
+
+        if(name != name_)
+            throw_error("There is non initiated variable");
+    }
+}
+
 void Table::update_children(std::string name, std::string type){
     std::string previous_type = get_type(name);
 

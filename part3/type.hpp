@@ -249,6 +249,8 @@ namespace AST{
 
                 void v_table_must_be_empty();
 
+                void v_table_must_only_contain(std::string name);
+
                 // Table tree
 
                 void add_child(Table *child){

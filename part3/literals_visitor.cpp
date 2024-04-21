@@ -90,7 +90,7 @@ bool Literals_visitor::is_same_arg_type(std::string object, std::string name, st
                 size_t i = 0;
                 for (auto arg : it->first->args_types){
                     if(i == position)
-                        return type == arg;
+                        return type == arg || is_child_of(type, arg);
                     i++;
                 }
                 return false;
@@ -254,7 +254,7 @@ void* Literals_visitor::visit(Field* field) {
     
     returned_table->concatenate(init_expr_table);
 
-    returned_table->v_table_must_be_empty();
+    returned_table->v_table_must_only_contain(name);
 
     returned_table->add_child(init_expr_table);
 

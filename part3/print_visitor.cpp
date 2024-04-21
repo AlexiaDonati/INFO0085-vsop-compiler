@@ -292,7 +292,7 @@ void Print_visitor::must_have_the_same_amount_of_args(Call *call){
         type::Table *arg_table = table->find_expr_table(Expr_list->get_element(i));
         if(!Literals_visitor::is_same_arg_type(object_name, call->get_method(), arg_table->get_type(), i))
             table->throw_error(call, 
-                arg_table->get_type() + " is not the right arg type of " + call->get_method() + " at position " + to_string(i) 
+                arg_table->get_type() + " is not the right arg type of " + call->get_method() + " at position " + to_string(i+1) 
             );
     }
 }
