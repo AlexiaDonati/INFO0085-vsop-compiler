@@ -224,25 +224,31 @@ void Check_classes::add_object_class(Program* program){
     print_formals->add(new Formal(line, column, file_name, "s", "string"));
     Method *print = new Method(line, column, file_name, "print", print_formals, "Object", NULL);
     method_list->add(print);
+    Literals_visitor::set_dispatch("Object", "print", "Object");
 
     List<Formal>* printBool_formals = new List<Formal>();
     printBool_formals->add(new Formal(line, column, file_name, "b", "bool"));
     Method *printBool = new Method(line, column, file_name, "printBool", printBool_formals, "Object", NULL);
     method_list->add(printBool);
+    Literals_visitor::set_dispatch("Object", "printBool", "Object");
     
     List<Formal>* printInt_formals = new List<Formal>();
     printInt_formals->add(new Formal(line, column, file_name, "i", "int32"));
     Method *printInt32 = new Method(line, column, file_name, "printInt32", printInt_formals, "Object", NULL);
     method_list->add(printInt32);
+    Literals_visitor::set_dispatch("Object", "printInt32", "Object");
     
     Method *inputLine = new Method(line, column, file_name, "inputLine", new List<Formal>(), "string", NULL);
     method_list->add(inputLine);
+    Literals_visitor::set_dispatch("Object", "inputLine", "string");
 
     Method *inputBool = new Method(line, column, file_name, "inputBool", new List<Formal>(), "bool", NULL);
     method_list->add(inputBool);
+    Literals_visitor::set_dispatch("Object", "inputBool", "bool");
 
     Method *inputInt = new Method(line, column, file_name, "inputInt32", new List<Formal>(), "int32", NULL);
     method_list->add(inputInt);
+    Literals_visitor::set_dispatch("Object", "inputInt32", "int32");
 
     Class* object_class = new Class(line, column, file_name, "Object", "", field_list, method_list);
     class_map["Object"] = object_class;

@@ -22,6 +22,7 @@ namespace AST{
 
             static bool is_child_of(std::string child, std::string parent);
             static std::string get_variable_type(std::string object, std::string name);
+            static std::string get_dispatch_type(std::string object, std::string name);
 
             static std::vector<std::string> get_children(std::string parent);
             static std::vector<std::string> get_parents(std::string child);

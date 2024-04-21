@@ -140,6 +140,9 @@ void Table::set_type(std::string method_name, std::string object_name, std::stri
 
     d_table.insert({new_dispatch, type});
 
+    if(previous_type == S_TYPE_NONE && type == S_TYPE_NONE && Literals_visitor::get_dispatch_type(object_name, method_name) != S_TYPE_NONE)
+        set_type(method_name, object_name, Literals_visitor::get_dispatch_type(object_name, method_name));
+
     // set the type to all children classes
     std::vector<std::string> children = Literals_visitor::get_children(object_name);
 

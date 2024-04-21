@@ -83,6 +83,24 @@ std::string Literals_visitor::get_variable_type(std::string object, std::string 
     return S_TYPE_NONE;
 }
 
+std::string Literals_visitor::get_dispatch_type(std::string object, std::string name){
+    std::vector<std::string> parents = get_parents(object);
+
+    parents.push_back(object);
+
+    for (auto parent_name : parents){
+        for(auto it = d_table.begin(); it != d_table.end(); it++){
+            std::string name_ = it->first->method_name;
+            std::string object_ = it->first->object_name;
+            std::string type = it->second;
+
+            if(name == name_ && parent_name == object_)
+                return type;
+        }
+    }
+    return S_TYPE_NONE;
+}
+
 std::vector<std::string> Literals_visitor::get_children(std::string parent){
     std::vector<std::string> children;
 
