@@ -254,6 +254,8 @@ void* Literals_visitor::visit(Field* field) {
     
     returned_table->concatenate(init_expr_table);
 
+    returned_table->v_table_must_be_empty();
+
     returned_table->add_child(init_expr_table);
 
     return returned_table;

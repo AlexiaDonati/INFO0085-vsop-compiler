@@ -1,7 +1,5 @@
-class A {
-    needsTwoArgs(i : int32, b : bool) : int32 { if b then i else 42 }
-}
 class MyClass {
-    myField : int32 <- (new A).needsTwoArgs(666, "false");
+    i : int32 <- 2;
+    theAnswer : int32 <- 40 + i;
 }
 class Main { main() : int32 { 0 } }
