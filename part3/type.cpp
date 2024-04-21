@@ -144,6 +144,8 @@ void Table::set_type(std::string name, std::string type){
 void Table::set_type(std::string method_name, std::string object_name, std::string type){
     if(!is_type_exist(type))
         throw_error("type of dispatch " + object_name + "." + method_name + " do not exist : " + type);
+    if(object_name != S_TYPE_SELF && Literals_visitor::get_dispatch_type(object_name, method_name) == S_TYPE_NONE)
+        throw_error("method of dispatch " + object_name + "." + method_name + " do not exist : " + method_name);
 
     std::string previous_type = get_type(method_name, object_name);
 
@@ -170,8 +172,11 @@ void Table::set_type(std::string method_name, std::string object_name, std::stri
     // set the type to all children classes
     std::vector<std::string> children = Literals_visitor::get_children(object_name);
 
-    for (auto children_name : children)
-        set_type(method_name, children_name, type);
+    for (auto children_name : children){
+        if(Literals_visitor::get_dispatch_type(children_name, method_name) != S_TYPE_NONE)
+            set_type(method_name, children_name, type);
+    }
+
 }
 
 void Table::set_type(std::string type){

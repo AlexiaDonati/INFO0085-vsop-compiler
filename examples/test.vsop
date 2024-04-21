@@ -1,7 +1,5 @@
-class Test {}
-
 class MyClass {
-    i : Test;
-    myField : bool <- isnull 42;
+    myField : unit <- (new Object).noSuchMethod();
+
 }
 class Main { main() : int32 { 0 } }

@@ -177,7 +177,7 @@ void* Literals_visitor::visit(Class* class_) {
     returned_table->update_children();
     returned_table->remove_class_variable(name);
     returned_table->remove_type(S_TYPE_SELF);
-    
+
     return returned_table;
 }
 
@@ -510,13 +510,14 @@ void* Literals_visitor::visit(Binop* binop) {
 
 void* Literals_visitor::visit(Call* call) {
     type::Table *object_table = T_ACCEPT(call->get_object());
-    string object = object_table->get_type();
+    string object = (object_table->get_type() != S_TYPE_OBJECT) ? object_table->get_type() : S_TYPE_SELF;
     if(object == S_TYPE_NONE)
         object = object_table->get_return_variable_name();
     string method = call->get_method();
     vector<type::Table*> arg_expr_list_tables = T_ACCEPT_LIST(call->get_arg_expr_list());
     
     type::Table *returned_table = new type::Table(LOC(call), S_TYPE_NONE, method, object);
+
     returned_table->concatenate(object_table);
     
     for(size_t i = 0; i < arg_expr_list_tables.size(); i++){
