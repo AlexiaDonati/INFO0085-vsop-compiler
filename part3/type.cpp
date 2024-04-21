@@ -127,7 +127,7 @@ void Table::set_type(std::string name, std::string type){
 
     if(previous_type != S_TYPE_NONE && type == S_TYPE_NONE)
         return;
-    if(previous_type != S_TYPE_NONE && previous_type != type)
+    if(previous_type != S_TYPE_NONE && !(previous_type == type || Literals_visitor::is_child_of(type, previous_type)))
         throw_error("variable " + name + " have different types " + previous_type + " and " + type);
 
     Variable* new_variable = new Variable(name);
@@ -264,7 +264,7 @@ void Table::update_class_variable(std::string class_name){
         if(class_variable_type != S_TYPE_NONE && type == S_TYPE_NONE){
             set_type(name, class_variable_type);
             break;
-        } else if(class_variable_type != S_TYPE_NONE && class_variable_type != type){
+        } else if(class_variable_type != S_TYPE_NONE && !(class_variable_type == type || Literals_visitor::is_child_of(type, class_variable_type))){
             throw_error("Variable " + class_name + "." + name + " must have type " + class_variable_type + " but have " + type);
         }
     }
@@ -277,7 +277,7 @@ void Table::remove_class_variable(std::string class_name){
 
         std::string class_variable_type = Literals_visitor::get_variable_type(class_name, name);
 
-        if(class_variable_type != S_TYPE_NONE && class_variable_type == type){
+        if(class_variable_type != S_TYPE_NONE && (class_variable_type == type || Literals_visitor::is_child_of(type, class_variable_type))){
             replace_object_by_name(name, (type != S_TYPE_NONE) ? type : name);
             delete it->first;
             v_table.erase(it);

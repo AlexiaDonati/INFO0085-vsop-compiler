@@ -58,6 +58,8 @@ void* Print_visitor::visit(Binop* binop){
                   + ")"
                   + type_to_string(binop);
 
+    verify_binop(binop);
+
     return TO_VOID(result);
 }
 
@@ -201,6 +203,8 @@ void* Print_visitor::visit(Method* method){
                     + body_block_result
                     + ")";
 
+    verify_method(method);
+
     return TO_VOID(result);
 }
 
@@ -319,4 +323,39 @@ void Print_visitor::verify_if(If *if_){
             "wrong types in condition"
         );
     }
+}
+
+void Print_visitor::verify_binop(Binop *binop){
+    if(!must_use_table())
+        return;
+
+    type::Table *left_expr_table = table->find_expr_table(binop->get_left_expr());
+    type::Table *right_expr_table = table->find_expr_table(binop->get_right_expr());
+
+
+    string left_type = left_expr_table->get_type();
+    string right_type = right_expr_table->get_type();
+
+    if(binop->get_op() == "="){
+        if((right_expr_table->is_primitive(left_type) || right_expr_table->is_primitive(right_type)) && left_type != right_type){
+            table->throw_error(binop, 
+                "binop = must have to same type to compare"
+            );
+        }
+    }
+}
+
+void Print_visitor::verify_method(Method *method){
+    if(!must_use_table())
+        return;
+
+    type::Table *block_table = table->find_expr_table(method->get_body_block());
+
+    string block_type = block_table->get_type();
+    string method_type = method->get_return_type();
+
+    if(!(method_type == block_type || Literals_visitor::is_child_of(block_type, method_type)))
+        table->throw_error(method, 
+            "return type are different"
+        );
 }

@@ -1,10 +1,13 @@
-class GrandParent {
-}
-class Parent extends GrandParent {
+class Parent {
+    whoAmI(): string { "I'm a Parent.\n" }
 }
 class Child extends Parent {
+    whoAmI(): string { "I'm a Child.\n" }
 }
-class MyClass {
-    myField : Parent <- if true then new Child else new Parent;
+class Main {
+    someParent(): Parent { new Child }
+    main(): int32 {
+        print(someParent().whoAmI());
+        0
+    }
 }
-class Main { main() : int32 { 0 } }

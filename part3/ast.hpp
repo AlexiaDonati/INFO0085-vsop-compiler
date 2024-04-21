@@ -86,6 +86,8 @@ namespace AST
             void must_be_object(Expr *expr);
             void must_have_the_same_amount_of_args(Call *call);
             void verify_if(If *if_);
+            void verify_binop(Binop *binop);
+            void verify_method(Method *method);
 
             bool must_use_table();
 
