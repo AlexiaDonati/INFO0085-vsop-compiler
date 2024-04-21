@@ -144,7 +144,7 @@ void Table::set_type(std::string name, std::string type){
 void Table::set_type(std::string method_name, std::string object_name, std::string type){
     if(!is_type_exist(type))
         throw_error("type of dispatch " + object_name + "." + method_name + " do not exist : " + type);
-    if(object_name != S_TYPE_SELF && !is_variable(object_name) && Literals_visitor::get_dispatch_type(object_name, method_name) == S_TYPE_NONE)
+    if(object_name != S_TYPE_SELF && !is_variable(object_name) && object_name != S_TYPE_NONE && Literals_visitor::get_dispatch_type(object_name, method_name) == S_TYPE_NONE)
         throw_error("method of dispatch " + object_name + "." + method_name + " do not exist : " + method_name);
 
     std::string previous_type = get_type(method_name, object_name);
