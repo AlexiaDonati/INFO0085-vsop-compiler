@@ -71,6 +71,8 @@ void* Print_visitor::visit(Unop* unop){
                   + ")"
                   + type_to_string(unop);
 
+    must_be_object(unop->get_expr());
+
     return TO_VOID(result);
 }
 
@@ -250,4 +252,16 @@ std::string Print_visitor::type_to_string(Expr *expr, std::string name){
     type::Table *aux = table->find_expr_table(expr);
 
     return " : " + aux->type_to_string(name);
+}
+
+void Print_visitor::must_be_object(Expr *expr){
+    if(!must_use_table())
+        return;
+
+    type::Table *aux = table->find_expr_table(expr);
+
+    if(!Literals_visitor::is_child_of(aux->get_type(), S_TYPE_OBJECT))
+        table->throw_error(expr, 
+            "" + aux->get_type() + " is not an Object" 
+        );
 }

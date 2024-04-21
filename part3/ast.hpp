@@ -83,6 +83,7 @@ namespace AST
 
             Print_visitor() { table = NULL; };
             Print_visitor(type::Table *table) : table(table) {};
+            void must_be_object(Expr *expr);
 
             bool must_use_table();
 

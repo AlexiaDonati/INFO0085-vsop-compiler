@@ -1,4 +1,7 @@
+class Test {}
+
 class MyClass {
-    myField : int32 <- if true then 42;
+    i : Test;
+    myField : bool <- isnull 42;
 }
 class Main { main() : int32 { 0 } }

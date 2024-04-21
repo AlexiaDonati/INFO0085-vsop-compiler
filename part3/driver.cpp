@@ -147,6 +147,8 @@ int Driver::semantic_analysis()
 
     delete res;
 
+    print_ast();
+
     if(type_table->has_error()){
         std::cerr << "\n" << type_table->errors_to_string() << "\n";
         return 1;
