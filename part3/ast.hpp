@@ -196,6 +196,8 @@ namespace AST
             bool check_override_field(Class* class_);
             bool check_override_method(Class* class_);
             bool check_extend();
+            bool is_class_defined(std::string class_name);
+            bool check_undefined();
     };
 
     // Data classes

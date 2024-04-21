@@ -212,6 +212,24 @@ bool Check_classes::check_extend(){
     return true;
 }
 
+bool Check_classes::is_class_defined(std::string class_name){
+    for (auto it = class_map.begin(); it != class_map.end(); it++){
+        if(it->first == class_name)
+            return true;
+    }
+    return false;
+}
+
+bool Check_classes::check_undefined(){
+    for (auto it = class_map.begin(); it != class_map.end(); it++){
+        if(!is_class_defined(it->second->get_parent())){
+            cerr << it->second->get_file_name() << ":" << it->second->get_line() << ":" << it->second->get_column() << ": semantic error: " << it->second->get_parent() << " is not defined" << endl;
+            return false;
+        }
+    }
+    return true;
+}
+
 void Check_classes::add_object_class(Program* program){
     int line = program->get_line();
     int column = program->get_column();
@@ -268,6 +286,10 @@ void* Check_classes::visit(Program* program){
     }
 
     if(!check_extend()){
+        return new int(0); // Error in class inheritance
+    }
+
+    if(!check_undefined()){
         return new int(0); // Error in class inheritance
     }
 
