@@ -18,6 +18,8 @@ namespace AST{
 
             static bool is_child_of(std::string child, std::string parent);
 
+            static std::vector<std::string> get_children(std::string parent);
+
             void* visit(Program* program);
             void* visit(Class* class_);
             void* visit(Field* field);

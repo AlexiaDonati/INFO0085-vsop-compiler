@@ -55,6 +55,20 @@ bool Literals_visitor::is_child_of(std::string child, std::string parent){
     return is_child > 0;
 }
 
+std::vector<std::string> Literals_visitor::get_children(std::string parent){
+    std::vector<std::string> children;
+
+    for(auto it = c_table.begin(); it != c_table.end(); it++){
+        std::string child_ = it->first;
+        std::string parent_ = it->second;
+
+        if(parent == parent_)
+            children.push_back(child_);
+    }
+
+    return children;
+}
+
 void* Literals_visitor::visit(Program* program) {
     vector<type::Table*> class_list_tables = T_ACCEPT_LIST(program->get_class_list());
 
