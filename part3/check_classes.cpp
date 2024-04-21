@@ -20,7 +20,7 @@ void* Check_classes::visit(Method* method){
         Formal* formal = (Formal *) formals->accept_one(this, i);
         string name = formal->get_name();
         if (formals_map.find(name) != formals_map.end()){
-            cout << formal->get_file_name() << ":" << formal->get_line() << ":" << formal->get_column() << ": semantic error: Formal with name " << name << " already exists." << endl;
+            cerr << formal->get_file_name() << ":" << formal->get_line() << ":" << formal->get_column() << ": semantic error: Formal with name " << name << " already exists." << endl;
             return nullptr;
         }
         formals_map[name] = formal;
@@ -37,7 +37,7 @@ bool Check_classes::check_class_body_redefinition(Class* class_){
 
         string name = field->get_name();
         if (class_->field_map.find(name) != class_->field_map.end()){
-            cout << field->get_file_name() << ":" << field->get_line() << ":" << field->get_column() << ": semantic error: Field with name " << name << " already exists." << endl;
+            cerr << field->get_file_name() << ":" << field->get_line() << ":" << field->get_column() << ": semantic error: Field with name " << name << " already exists." << endl;
             return false;
         }
         class_->field_map[name] = field;
@@ -55,7 +55,7 @@ bool Check_classes::check_class_body_redefinition(Class* class_){
 
         string name = method->get_name();
         if (class_->method_map.find(name) != class_->method_map.end()){
-            cout << method->get_file_name() << ":" << method->get_line() << ":" << method->get_column() << ": semantic error: Method with name " << name << " already exists." << endl;
+            cerr << method->get_file_name() << ":" << method->get_line() << ":" << method->get_column() << ": semantic error: Method with name " << name << " already exists." << endl;
             return false;
         }
         class_->method_map[name] = method;
@@ -69,7 +69,7 @@ void* Check_classes::visit(Class* class_){
     string name = class_->get_name();
 
     if (class_map.find(name) != class_map.end()) {
-        cout << class_->get_file_name() << ":" << class_->get_line() << ":" << class_->get_column() << ": semantic error: Class with name " << name << " already exists." << endl;
+        cerr << class_->get_file_name() << ":" << class_->get_line() << ":" << class_->get_column() << ": semantic error: Class with name " << name << " already exists." << endl;
         return TO_VOID(false);
     }
 
@@ -84,16 +84,16 @@ void* Check_classes::visit(Class* class_){
         main_class_exists = true;
         
         if(class_->method_map.find("main") == class_->method_map.end()){
-            cout << class_->get_file_name() << ":" << class_->get_line() << ":" << class_->get_column() << ": semantic error: main method not found in Main class." << endl;
+            cerr << class_->get_file_name() << ":" << class_->get_line() << ":" << class_->get_column() << ": semantic error: main method not found in Main class." << endl;
             return TO_VOID(false);
         } else{
             Method* method = class_->method_map["main"];
             if(method->get_return_type() != "int32"){
-                cout << method->get_file_name() << ":" << method->get_line() << ":" << method->get_column() << ": semantic error: main method should return int32." << endl;
+                cerr << method->get_file_name() << ":" << method->get_line() << ":" << method->get_column() << ": semantic error: main method should return int32." << endl;
                 return TO_VOID(false);
             }
             if(method->get_formal_list()->get_size() != 0){
-                cout << method->get_file_name() << ":" << method->get_line() << ":" << method->get_column() << ": semantic error: main method should not have any formals." << endl;
+                cerr << method->get_file_name() << ":" << method->get_line() << ":" << method->get_column() << ": semantic error: main method should not have any formals." << endl;
                 return TO_VOID(false);
             }
         }
@@ -121,7 +121,7 @@ bool Check_classes::check_override_field(Class* class_) {
         Class* parent = class_map[class_->get_parent()];
         while (parent->get_name() != "Object"){
             if (parent->field_map.find(name) != parent->field_map.end()){
-                cout << field->get_file_name() << ":" << field->get_line() << ":" << field->get_column() << ": semantic error: Field with name " << name << " already exists in parent class." << endl;
+                cerr << field->get_file_name() << ":" << field->get_line() << ":" << field->get_column() << ": semantic error: Field with name " << name << " already exists in parent class." << endl;
                 return false;
             }
 
@@ -144,7 +144,7 @@ bool Check_classes::check_override_method(Class* class_) {
                 // Check return type
                 Method* parent_method = parent->method_map[name];
                 if (method->get_return_type() != parent_method->get_return_type()){
-                    cout << method->get_file_name() << ":" << method->get_line() << ":" << method->get_column() << ": semantic error: Method with name " << name << " has different return type in parent class." << endl;
+                    cerr << method->get_file_name() << ":" << method->get_line() << ":" << method->get_column() << ": semantic error: Method with name " << name << " has different return type in parent class." << endl;
                     return false;
                 }
 
@@ -152,7 +152,7 @@ bool Check_classes::check_override_method(Class* class_) {
                 List<Formal>* formals = method->get_formal_list();
                 List<Formal>* parent_formals = parent_method->get_formal_list();
                 if (formals->get_size() != parent_formals->get_size()){
-                    cout << method->get_file_name() << ":" << method->get_line() << ":" << method->get_column() << ": semantic error: Method with name " << name << " has different number of formals in parent class." << endl;
+                    cerr << method->get_file_name() << ":" << method->get_line() << ":" << method->get_column() << ": semantic error: Method with name " << name << " has different number of formals in parent class." << endl;
                     return false;
                 }
 
@@ -161,7 +161,7 @@ bool Check_classes::check_override_method(Class* class_) {
                     Formal* formal = (Formal *) formals->accept_one(this, i);
                     Formal* parent_formal = (Formal *) parent_formals->accept_one(this, i);
                     if (formal->get_type() != parent_formal->get_type()){
-                        cout << method->get_file_name() << ":" << method->get_line() << ":" << method->get_column() << ": semantic error: Method with name " << name << " has different type of formal in parent class." << endl;
+                        cerr << method->get_file_name() << ":" << method->get_line() << ":" << method->get_column() << ": semantic error: Method with name " << name << " has different type of formal in parent class." << endl;
                         return false;
                     }
                 }
@@ -193,7 +193,7 @@ bool Check_classes::check_extend(){
             string next_parent_name = parent->get_parent();
 
             if (extend_path.find(next_parent_name) != extend_path.end()){
-                cout << it->second->get_file_name() << ":" << it->second->get_line() << ":" << it->second->get_column() << ": semantic error: Inheritance cycle detected." << endl;
+                cerr << it->second->get_file_name() << ":" << it->second->get_line() << ":" << it->second->get_column() << ": semantic error: Inheritance cycle detected." << endl;
                 return false;
             }
 
@@ -263,7 +263,7 @@ void* Check_classes::visit(Program* program){
     }
 
     if (!main_class_exists) {
-        cout << program->get_file_name() << program->get_line() << program->get_column() << ": semantic error: Main class not found." << endl;
+        cerr << program->get_file_name() << program->get_line() << program->get_column() << ": semantic error: Main class not found." << endl;
         return new int(0); // Error in main class definition
     }
 
