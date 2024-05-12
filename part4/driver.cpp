@@ -161,13 +161,15 @@ int Driver::semantic_analysis()
     return 0;
 }
 
-void Driver::generate_code(){
+string Driver::generate_code(){
     if(type_table == NULL)
         make_type_table();
         
     AST::Code_generation_visitor* code_generator = new AST::Code_generation_visitor(type_table);
 
     ast->accept(code_generator);
+
+    return "TODO";
 }
 
 void Driver::make_type_table(){

@@ -94,7 +94,7 @@ namespace VSOP
          */
         int semantic_analysis();
 
-        void generate_code();
+        std::string generate_code();
 
         void make_type_table();
 
