@@ -14,7 +14,8 @@ SRC				= main.cpp \
 				  literals_visitor.cpp \
 				  type.cpp \
 				  check_classes.cpp \
-				  post_sementic_analysis_visitor.cpp
+				  post_sementic_analysis_visitor.cpp \
+				  code_generation_visitor.cpp 
 
 
 OBJ	  			= $(SRC:.cpp=.o)
@@ -27,6 +28,8 @@ main.o: driver.hpp parser.hpp ast.hpp semantics_expressions.hpp type.hpp
 ast.o: ast.hpp
 
 semantics_expressions.o: semantics_expressions.hpp
+
+code_generation_visitor.o: code_generation_visitor.hpp
 
 type.o: type.hpp
 
