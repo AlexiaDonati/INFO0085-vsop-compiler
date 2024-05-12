@@ -5,20 +5,25 @@ using namespace llvm;
 LLVM *LLVM::instance = nullptr;
 
 LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileName){
+    if(program == nullptr){
+        errs() << "Error: Program is null\n";
+        return;
+    }
+
     context = new LLVMContext(); // Used to generate the LLVM module and the types
 
     module = new Module(fileName, *context); // Module containing the LLVM IR (compilation unit)
     builder = new IRBuilder<>(*context); // Used to generate the LLVM IR
-
+    
     AST::List<AST::Class> *classes = program->get_class_list();
     for (size_t i = 0; i < classes->get_size(); ++i){
         AST::Class *current_class = classes->get_element(i);
 
         StructType *structure_class = StructType::create(*context, current_class->get_name()); // Declare structure for class
         StructType *structure_vtable = StructType::create(*context, current_class->get_name() + "_vtable"); // Declare VTable structure for class
-
+        
         // Create the types -----------------
-
+        
         // Create the types for the fields
         std::vector<Type *> types_fields = std::vector<Type *>();
 
@@ -29,25 +34,25 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
             types_fields.push_back(get_type(field->get_type()));
         }
         StructType::create(*context, types_fields, current_class->get_name());
-
+        
         // Create the types for the methods
         AST::List<AST::Method> *method_list = current_class->get_method_list();
         for (size_t j = 0; j < method_list->get_size(); ++j){
             AST::Method *method = method_list->get_element(j);
-
-            auto types_methods = vector<Type *>();
+            
+            std::vector<Type *> types_methods = std::vector<Type *>();
             types_methods.push_back(get_type(current_class->get_name()));
-
+            
             AST::List<AST::Formal> *formal_list = method->get_formal_list();
             for (size_t k = 0; k < formal_list->get_size(); ++k){
                 AST::Formal *formal = formal_list->get_element(k);
-
                 types_methods.push_back(get_type(formal->get_type()));
             }
+            
             FunctionType *functionType = FunctionType::get(get_type(method->get_return_type()), types_methods, false);
-            Function::Create(functionType, Function::ExternalLinkage, method->get_name(), module);
+            module->getOrInsertFunction(current_class->get_name() + "__" + method->get_name(), functionType);
         }
-
+        
         // Inheritance -----------------
 
         AST::Class *parent = current_class;
@@ -64,9 +69,9 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
         std::map<std::string, int> method_indexes;
 
         int current_index = 0;
-
-        while(parent->get_name() != "Object"){
-
+        
+        while(true){
+            
             // inherited fields 
             AST::List<AST::Field> *parent_fields = parent->get_field_list();
             for(size_t y = 0; y < parent_fields->get_size(); ++y){
@@ -99,7 +104,10 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
                     parent_types_methods[index] = PointerType::get(type, 0); // update the type
                 }
             }
-
+            
+            if (parent->get_parent() == "Object"){
+                break;
+            }
             for(size_t c = 0; c < classes->get_size(); ++c){
                 if(classes->get_element(c)->get_name() == parent->get_parent()){
                     parent = classes->get_element(c);
