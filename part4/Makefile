@@ -21,7 +21,7 @@ SRC				= main.cpp \
 				  type.cpp \
 				  check_classes.cpp \
 				  post_sementic_analysis_visitor.cpp \
-				  llvm.cpp \ \
+				  llvm.cpp \
 				  code_generation_visitor.cpp 
 
 
@@ -30,7 +30,7 @@ OBJ	  			= $(SRC:.cpp=.o)
 
 all: $(EXEC)
 
-main.o: driver.hpp parser.hpp ast.hpp semantics_expressions.hpp type.hpp llvm.hpp
+main.o: driver.hpp parser.hpp ast.hpp semantics_expressions.hpp type.hpp llvm.hpp code_generation_visitor.hpp
 
 ast.o: ast.hpp
 
