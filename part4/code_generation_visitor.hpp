@@ -6,11 +6,15 @@
 #include <string>
 #include <iostream>
 #include "ast.hpp"
+#include "type.hpp"
 
 namespace AST{
 
     class Code_generation_visitor : public Visitor {
         public:
+            type::Table *table;
+
+            Code_generation_visitor(type::Table *table) : table(table) {};
             void* visit(Program* program);
             void* visit(Class* class_);
             void* visit(Field* field);
