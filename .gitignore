@@ -9,3 +9,4 @@ lexer.cpp
 vsopc
 vsopcompiler
 vsopcompiler.tar.xz
+.vscode/settings.json
