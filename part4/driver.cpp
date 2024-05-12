@@ -147,7 +147,11 @@ int Driver::semantic_analysis()
 
     delete res;
 
-    print_ast();
+    AST::Post_sementic_analysis_visitor* post_analysis = new AST::Post_sementic_analysis_visitor(type_table);
+
+    ast->accept(post_analysis);
+
+    //print_ast();
 
     if(type_table->has_error()){
         std::cerr << "\n" << type_table->errors_to_string() << "\n";

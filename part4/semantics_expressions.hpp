@@ -10,6 +10,52 @@
 
 namespace AST{
 
+    class Post_sementic_analysis_visitor : public Visitor {
+        public:
+            type::Table *table;
+
+            Post_sementic_analysis_visitor(type::Table *table) : table(table) {};
+            void must_be_object(Expr *expr);
+            void must_have_the_same_amount_of_args(Call *call);
+            void verify_if(If *if_);
+            void verify_binop(Binop *binop);
+            void verify_method(Method *method);
+
+            void* visit(Program* program);
+            void* visit(Class* class_);
+            void* visit(Field* field);
+            void* visit(Method* method);
+            void* visit(Formal* formal);
+            void* visit(Block* block);
+            void* visit(If* if_);
+            void* visit(While* while_);
+            void* visit(Let* let);
+            void* visit(Assign* assign);
+            void* visit(Self* self);
+            void* visit(Unop* unop);
+            void* visit(Binop* binop);
+            void* visit(Call* call);
+            void* visit(New* new_);
+            void* visit(String* string_);
+            void* visit(Integer* integer);
+            void* visit(Boolean* boolean);
+            void* visit(Unit* unit);
+            void* visit(Object* object);
+
+            template <typename T>
+            void accept_list(List<T>* list){
+                size_t size = list->get_size();
+                for (size_t i = 0; i < size; i++)
+                    list->accept_one(this, i);
+            } 
+
+            void get_value_from_void(void* void_value){
+                void* a = void_value;
+                void_value = a;
+                return;
+            }   
+    };
+
     class Literals_visitor : public Visitor {
         public:
             static std::map<std::string, std::string> c_table;

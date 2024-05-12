@@ -13,7 +13,8 @@ SRC				= main.cpp \
 				  print_visitor.cpp \
 				  literals_visitor.cpp \
 				  type.cpp \
-				  check_classes.cpp
+				  check_classes.cpp \
+				  post_sementic_analysis_visitor.cpp
 
 
 OBJ	  			= $(SRC:.cpp=.o)
