@@ -28,10 +28,12 @@ int main(int argc, char const *argv[])
 {
     Mode mode;
     string source_file;
+    bool must_print = false;
 
     if (argc == 2)
     {
-        mode = Mode::PARSE;
+        mode = Mode::CODE_GENERATION;
+        must_print = true;
         source_file = argv[1];
     }
     else if (argc == 3)
@@ -91,13 +93,20 @@ int main(int argc, char const *argv[])
             return res;
 
         res = driver.semantic_analysis();
-        driver.delete_type_table();
 
         if (res != 0)
             return res;
 
-        // put code generation code here
+        string code_text = driver.generate_code();
 
+        /*
+        if(must_print)
+            // print the output text
+        else
+            // make file of output text
+        */
+
+        driver.delete_type_table();
         driver.delete_ast();
 
         return res;

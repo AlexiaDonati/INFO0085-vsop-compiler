@@ -8,6 +8,7 @@
 #include "ast.hpp"
 #include "parser.hpp"
 #include "semantics_expressions.hpp"
+#include "code_generation_visitor.hpp"
 
 // Give prototype of yylex() function, then declare it.
 #define YY_DECL VSOP::Parser::symbol_type yylex()
@@ -92,6 +93,8 @@ namespace VSOP
          * @return int 0 if no semantic error.
          */
         int semantic_analysis();
+
+        std::string generate_code();
 
         void make_type_table();
 
