@@ -4,6 +4,7 @@
 
 #include "driver.hpp"
 #include "parser.hpp"
+#include "llvm.hpp"
 
 using namespace std;
 using namespace VSOP;
@@ -164,10 +165,14 @@ int Driver::semantic_analysis()
 string Driver::generate_code(){
     if(type_table == NULL)
         make_type_table();
-        
-    AST::Code_generation_visitor* code_generator = new AST::Code_generation_visitor(type_table);
+    
+    LLVM *llvm = LLVM::get_instance(ast, source_file);
 
-    ast->accept(code_generator);
+    //AST::Code_generation_visitor* code_generator = new AST::Code_generation_visitor(type_table);
+    //ast->accept(code_generator);
+
+    //llvm->optimizeCode();
+    llvm->print();
 
     return "TODO";
 }
