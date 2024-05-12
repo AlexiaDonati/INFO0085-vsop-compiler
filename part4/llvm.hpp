@@ -42,7 +42,7 @@ class LLVM {
         }
 
         Type *get_type(string type){
-            if (type == "int")
+            if (type == "int32")
                 return Type::getInt32Ty(*context);
             else if (type == "bool")
                 return Type::getInt1Ty(*context);
