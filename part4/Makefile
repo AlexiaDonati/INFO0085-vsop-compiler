@@ -1,6 +1,12 @@
+CC				= clang
+
 CXX 			= clang++
 
-CXXFLAGS 		= -Wall -Wextra -ggdb3
+LLVM_CONFIG		= llvm-config 
+
+CXXFLAGS 		= -Wall -Wextra -ggdb3 $(shell ${LLVM_CONFIG} --cxxflags)
+
+LDFLAGS			= $(shell ${LLVM_CONFIG} --ldflags --system-libs --libs all)
 
 BISONFLAGS 		= -d -Wconflicts-sr -Wcounterexamples
 
@@ -14,7 +20,8 @@ SRC				= main.cpp \
 				  literals_visitor.cpp \
 				  type.cpp \
 				  check_classes.cpp \
-				  post_sementic_analysis_visitor.cpp
+				  post_sementic_analysis_visitor.cpp \
+				  llvm.cpp \
 
 
 OBJ	  			= $(SRC:.cpp=.o)
@@ -22,7 +29,7 @@ OBJ	  			= $(SRC:.cpp=.o)
 
 all: $(EXEC)
 
-main.o: driver.hpp parser.hpp ast.hpp semantics_expressions.hpp type.hpp
+main.o: driver.hpp parser.hpp ast.hpp semantics_expressions.hpp type.hpp llvm.hpp
 
 ast.o: ast.hpp
 
@@ -35,6 +42,8 @@ driver.o: driver.hpp parser.hpp
 parser.o: driver.hpp parser.hpp
 
 lexer.o: driver.hpp parser.hpp
+
+llvm.o: llvm.hpp
 
 $(EXEC): $(OBJ)
 	$(CXX) -o $@ $(LDFLAGS) $(OBJ)
@@ -58,3 +67,4 @@ clean:
 
 install-tools:
 	sudo apt-get install flex bison
+	sudo cp -R ./runtime/ /usr/local/lib/vsop/
