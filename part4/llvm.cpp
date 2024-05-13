@@ -216,12 +216,7 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
     vector<Value *> arguments_values = get_function_args(method_function);
 
     // Load the value of head
-    Value* head_Ptr = builder->CreateGEP(
-            arguments_values[0], 
-            {ConstantInt::get(Type::getInt32Ty(*context), 0),
-                ConstantInt::get(Type::getInt32Ty(*context), 1)}, 
-            "");
-    Value* head_value = builder->CreateLoad(head_Ptr, "");
+    Value* head_value = load(arguments_values[0], 1);
 
     set_return_value(head_value);
 // ==== Inherits parents methods
