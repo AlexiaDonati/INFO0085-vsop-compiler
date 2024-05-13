@@ -62,13 +62,21 @@ class LLVM {
 
         void executable(const std::string &fileName);
 
-        void make_method(    
+        Function* make_method(    
             vector<string> args_name, 
             vector<string> args_type, 
             string return_type, 
             string class_name,
             StructType* class_type,
             string method_name);
+
+        void make_function_block(IRBuilder<>& builder, string name, Function *function);
+
+        vector<Value *> get_function_args(Function *function);
+
+        void set_return_value(IRBuilder<>& builder, bool return_value);
+
+        void set_return_value(IRBuilder<>& builder, int return_value);
 };
 
 #endif // LLVM_HH
