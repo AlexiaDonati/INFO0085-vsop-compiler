@@ -20,6 +20,7 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
 // Structure--------------------------
     string class_name = "List";
     StructType* class_type = StructType::create(*context, class_name);
+    StructType *m_table_type = create_mtable(class_name);
 
 // Fields--------------------------
 // ==== Define the list of fields
@@ -32,6 +33,8 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
     class_type->setBody(fields_types);
 
 // Methods--------------------------
+    vector<Type *> methods_types;
+    vector<Constant *> methods;
 // ==== isNil()
     vector<string> args_name;
     vector<string> args_type;
@@ -42,6 +45,10 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
         class_name, 
         class_type,
         "isNil");
+
+    // put in m_table
+    methods_types.push_back(method_function->getFunctionType()->getPointerTo());
+    methods.push_back(method_function);
 
     IRBuilder<> builder(*context);
 
@@ -60,11 +67,18 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
         class_type,
         "length");
 
+    // put in m_table
+    methods_types.push_back(method_function->getFunctionType()->getPointerTo());
+    methods.push_back(method_function);
+
     make_function_block(builder, "entry", method_function);
 
     arguments_values = get_function_args(method_function);
 
     set_return_value(builder, 0);
+
+// M table save---------------------------
+    save_m_table(m_table_type, class_name, methods_types, methods);
     
 /**************************/
 }
@@ -226,6 +240,29 @@ vector<Value *> LLVM::get_function_args(Function *function){
     for (auto &arg : function->args())
         arguments_values.push_back(&arg);
     return arguments_values;
+}
+
+StructType * LLVM::create_mtable(string class_name){
+    string mtable_name = "struct." + class_name + "_MTable";
+    return StructType::create(*context, mtable_name);
+}
+
+void LLVM::save_m_table(StructType *mtable_type, string class_name, vector<Type *> methods_types, vector<Constant *> methods){
+    mtable_type->setBody(methods_types);
+
+    // Create a constant
+    Constant *mtable_const = ConstantStruct::get(
+        mtable_type, // Type of the constant structure
+        methods);    // Values to give to the different fields
+
+    // Assign the constant to a global variable
+    GlobalVariable *vtable = new GlobalVariable(
+        *module,                      // The LLVM module
+        mtable_type,                  // The type of the constant
+        true,                        // It is constant
+        GlobalValue::InternalLinkage, // The linkage
+        mtable_const,                 // The constant value
+        class_name + "_mtable");      // The name of the variable
 }
 
 void LLVM::set_return_value(IRBuilder<>& builder, bool return_value){

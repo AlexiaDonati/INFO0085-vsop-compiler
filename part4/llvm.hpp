@@ -74,6 +74,10 @@ class LLVM {
 
         vector<Value *> get_function_args(Function *function);
 
+        StructType * create_mtable(string class_name);
+
+        void save_m_table(StructType *mtable_type, string class_name, vector<Type *> methods_types, vector<Constant *> methods);
+
         void set_return_value(IRBuilder<>& builder, bool return_value);
 
         void set_return_value(IRBuilder<>& builder, int return_value);
