@@ -10,6 +10,124 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
         return;
     }
 
+    context = new LLVMContext();
+    module = new Module(fileName, *context);
+    builder = new IRBuilder<>(*context);
+
+/******* Class List *******/
+
+// Structure--------------------------
+    string class_name = "List";
+    StructType* class_type = StructType::create(*context, class_name);
+
+// Fields--------------------------
+// ==== Define the list of fields
+    vector<Type *> fields_types;
+
+// ==== Define fields
+    // No fields
+
+// ==== Push the field in the class structure
+    class_type->setBody(fields_types);
+
+// Methods--------------------------
+// ==== Define the list of methods
+    /*vector<Type *> methods_types;
+    map<string, Function *> methods_functions;
+    map<string, FunctionType *> methods_signatures;*/
+
+// ==== isNil()
+vector<string> args_name;
+vector<string> args_type;
+make_method(    
+    args_name, 
+    args_type, 
+    "bool", 
+    "List", 
+    class_type,
+    "isNil");
+
+args_name.push_back("test");
+make_method(    
+    args_name, 
+    args_type, 
+    "bool", 
+    "List", 
+    class_type,
+    "length");
+
+/*
+// ==== ==== Define args
+    vector<Type *> method_arguments;
+
+    // First arg is always Self
+    Type *self = class_type->getPointerTo();
+    method_arguments.push_back(self);
+
+// ==== ==== Create signature
+    string method_return_type = "bool";
+    string method_name = class_name + "." + "isNil";
+
+    FunctionType *method_signature = FunctionType::get(
+        get_type(method_return_type), // Return type
+        method_arguments,             // List of arguments types
+        false);                       // No variable number of arguments
+
+    methods_types.push_back(method_signature->getPointerTo());
+    methods_signatures[method_name] = method_signature;
+
+// ==== ==== Define function
+    Function *method_function = Function::Create(
+        method_signature,                  // The signature
+        GlobalValue::ExternalLinkage,      // The linkage (not important here)
+        method_name,                       // The name
+        module);                           // The LLVM module
+
+    methods_functions[method_name] = method_function;
+
+// ==== ==== Name args
+    int i = 0;
+    for (auto &arg : method_function->args()){
+        switch(i){
+            case 0:
+                arg.setName("self");
+                break;
+            default:
+                break;
+        }
+        i++;
+    }
+
+// ==== ==== Implementation (block creation)
+// ==== ==== ==== Define block
+    string block_name = method_name + ".block";
+    BasicBlock *function_block = BasicBlock::Create(
+        *context,         // The LLVM context
+        block_name,       // The label of the block
+        method_function); // The function in which should be inserted the block
+
+// ==== ==== ==== Define Builder
+    IRBuilder<> builder(*context);
+    builder.SetInsertPoint(function_block);
+
+// ==== ==== ==== Get args
+    vector<Value *> arguments_values;
+    for (auto &arg : method_function->args())
+        arguments_values.push_back(&arg);
+
+// ==== ==== ==== Set return value
+    bool return_value = true;
+    builder.CreateRet(
+        ConstantInt::get(
+            Type::getInt1Ty(*context), 
+            (return_value) ? 1 : 0
+        )
+    );*/
+    
+/**************************/
+
+    /*
+
     context = new LLVMContext(); // Used to generate the LLVM module and the types
 
     module = new Module(fileName, *context); // Module containing the LLVM IR (compilation unit)
@@ -117,7 +235,7 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
         }
         structure_vtable->setBody(parent_types_methods);
         structure_class->setBody(parent_types_fields);
-    }
+    }*/
     
 }
 
@@ -136,4 +254,83 @@ void LLVM::print(){
 
 void LLVM::executable(const string &fileName){
 
+}
+
+void LLVM::make_method(    
+    vector<string> args_name, 
+    vector<string> args_type, 
+    string return_type, 
+    string class_name,
+    StructType* class_type,
+    string method_name){
+
+    if(args_name.size() != args_type.size()){
+        fprintf(stderr, "Error: make_method -> args_name and args_type must be the same size");
+        return;
+    }
+
+// ==== ==== Define args
+    vector<Type *> method_arguments;
+
+    // First arg is always Self
+    Type *self = class_type->getPointerTo();
+    method_arguments.push_back(self);
+
+    for (auto type : args_type)
+        method_arguments.push_back(get_type(type));
+
+// ==== ==== Create signature
+    string true_method_name = class_name + "." + method_name;
+
+    FunctionType *method_signature = FunctionType::get(
+        get_type(return_type),        // Return type
+        method_arguments,             // List of arguments types
+        false);                       // No variable number of arguments
+
+// ==== ==== Define function
+    Function *method_function = Function::Create(
+        method_signature,                  // The signature
+        GlobalValue::ExternalLinkage,      // The linkage (not important here)
+        true_method_name,                       // The name
+        module);                           // The LLVM module
+
+// ==== ==== Name args
+    int i = 0;
+    for (auto &arg : method_function->args()){
+        switch(i){
+            case 0:
+                arg.setName("self");
+                break;
+            default:
+                arg.setName(args_name[i-1]);
+                break;
+        }
+        i++;
+    }
+
+// ==== ==== Implementation (block creation)
+// ==== ==== ==== Define block
+    string block_name = true_method_name + ".block";
+    BasicBlock *function_block = BasicBlock::Create(
+        *context,         // The LLVM context
+        block_name,       // The label of the block
+        method_function); // The function in which should be inserted the block
+
+// ==== ==== ==== Define Builder
+    IRBuilder<> builder(*context);
+    builder.SetInsertPoint(function_block);
+
+// ==== ==== ==== Get args
+    vector<Value *> arguments_values;
+    for (auto &arg : method_function->args())
+        arguments_values.push_back(&arg);
+
+// ==== ==== ==== Set return value
+    bool return_value = true;
+    builder.CreateRet(
+        ConstantInt::get(
+            Type::getInt1Ty(*context), 
+            (return_value) ? 1 : 0
+        )
+    );
 }

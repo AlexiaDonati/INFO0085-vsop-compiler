@@ -1,0 +1,303 @@
+#include "ast.hpp"
+#include "code_generation_visitor.hpp"
+#include <iostream>
+
+using namespace AST;
+using namespace std;
+
+const map<string, BINOP> binop_to_enum = {
+    {"=", EQ},
+    {"<", LT},
+    {"<=", LEQ},
+    {"+", ADD},
+    {"-", SUB},
+    {"*", MUL},
+    {"/", DIV},
+    {"^", POW},
+    {"and", AND},
+};
+
+void* Code_generation_visitor::visit(Program* program){
+    program->get_column();
+    return NULL;
+}
+
+void* Code_generation_visitor::visit(Class* class_){
+    class_->get_column();
+    return NULL;
+}
+
+void* Code_generation_visitor::visit(Field* field){
+    field->get_column();
+    return NULL;
+}
+
+void* Code_generation_visitor::visit(Method* method){
+    method->get_column();
+    return NULL;
+}
+
+void* Code_generation_visitor::visit(Formal* formal){
+    formal->get_column();
+    return NULL;
+}
+
+void* Code_generation_visitor::visit(Block* block){
+    /*********** Creation of the block ***********/
+    /* --- TODO --- 
+    
+        get LLVM context
+        get/create label
+        get function if need. if not, give NULL
+
+        static BasicBlock *Create(LLVMContext &Context, const Twine &Name = "",
+                            Function *Parent = nullptr,
+                            BasicBlock *InsertBefore = nullptr)
+    
+       ------------ */
+    BasicBlock *block = BasicBlock::Create(
+        *context,      // The LLVM context
+        label,         // The label of the block
+        function);     // The function in which should be inserted the block
+
+    /*****************************************/
+
+    // ....
+
+    /*********** Return the value ***********/
+    /* --- TODO --- 
+
+        get the context
+        get the return value
+    
+        static ReturnInst* Create(LLVMContext &C, Value *retVal,
+                                  BasicBlock *InsertAtEnd) {
+          return new(!!retVal) ReturnInst(C, retVal, InsertAtEnd);
+        }
+
+        static ReturnInst* Create(LLVMContext &C, BasicBlock *InsertAtEnd) {
+          return new(0) ReturnInst(C, InsertAtEnd);
+        }
+    
+       ------------ */
+    ReturnInst::Create(
+        *context,   // The LLVM context
+        return_value,
+        block);     // The block in which the instruction will be inserted
+    /*****************************************/
+}
+
+void* Code_generation_visitor::visit(If* if_){
+    /* --- TODO --- 
+
+        use builder to make branches and put block made by accepting all linked blockes to these branches
+    
+       ------------ */
+}
+
+void* Code_generation_visitor::visit(While* while_){
+    while_->get_column();
+    return NULL;
+}
+
+void* Code_generation_visitor::visit(Let* let){
+    let->get_column();
+    return NULL;
+}
+
+void* Code_generation_visitor::visit(Assign* assign){
+    assign->get_column();
+    return NULL;
+}
+
+void* Code_generation_visitor::visit(Self* self){
+    self->get_column();
+    return NULL;
+}
+
+void* Code_generation_visitor::visit(Unop* unop){
+    unop->get_column();
+    return NULL;
+}
+
+void* Code_generation_visitor::visit(Binop* binop){
+    string op = binop->get_op();
+
+    BasicBlock *block = // TODO : get current block
+    Value *left = // TODO : get the left operand
+    Value *right = // TODO : get the right operand
+    bool use_binop = false;
+
+    Instruction instruction;
+    switch (binop_to_enum.at(op)){
+    case EQ:   
+        /* --- TODO --- 
+    
+        get right_operand_value
+        get left_operand_ptr
+    
+        StoreInst(Value *Val, Value *Ptr, BasicBlock *InsertAtEnd);
+
+           ------------ */
+        new StoreInst(
+            right_operand_value,         // The value to store
+            left_operand_ptr,            // The address where the value has to be stored
+            block);                      // The block in which the instruction will be inserted
+
+        break;
+    case LT:
+        /* --- TODO --- 
+
+        Get/create name
+
+        ICmpInst(
+          BasicBlock &InsertAtEnd, ///< Block to insert into.
+          Predicate pred,  ///< The predicate to use for the comparison
+          Value *LHS,      ///< The left-hand-side of the expression
+          Value *RHS,      ///< The right-hand-side of the expression
+          const Twine &NameStr = ""  ///< Name of the instruction
+        )
+
+        https://releases.llvm.org/11.0.0/docs/LangRef.html#icmp-instruction
+
+           ------------ */
+
+        ICmpInst* cmpInst = new ICmpInst(*block, ICmpInst::ICMP_SLT, left, right, name);
+        break;
+    case LEQ:
+        /* --- TODO --- 
+
+        Get/create name
+
+        ICmpInst(
+          BasicBlock &InsertAtEnd, ///< Block to insert into.
+          Predicate pred,  ///< The predicate to use for the comparison
+          Value *LHS,      ///< The left-hand-side of the expression
+          Value *RHS,      ///< The right-hand-side of the expression
+          const Twine &NameStr = ""  ///< Name of the instruction
+        )
+
+        https://releases.llvm.org/11.0.0/docs/LangRef.html#icmp-instruction
+
+           ------------ */
+
+        ICmpInst* cmpInst = new ICmpInst(*block, ICmpInst::ICMP_SLE, left, right, name);
+        break;
+    case ADD:
+        instruction = Instruction::Add;
+        use_binop = true;
+        break;
+    case SUB:
+        instruction = Instruction::Sub;
+        use_binop = true;
+        break;
+    case MUL:
+        instruction = Instruction::Mul;
+        use_binop = true;
+        break;
+    case DIV:
+        instruction = Instruction::Udiv;
+        use_binop = true;
+        break;
+    case POW:
+        /* --- TODO --- 
+    
+        make the pow using https://releases.llvm.org/11.0.0/docs/LangRef.html#llvm-pow-intrinsic
+
+        But need to know what to call in API
+
+           ------------ */
+        break;
+    case AND:
+        instruction = Instruction::And
+        use_binop = true;
+        break;
+    default:
+        return;
+    }
+
+    /*
+    
+    static BinaryOperator *Create(BinaryOps Op, Value *S1, Value *S2,
+                                const Twine &Name, BasicBlock *InsertAtEnd);
+
+    */
+
+    if(use_binop)
+        Value *sum = BinaryOperator::Create(
+                instruction, // The binary operator
+                left,      // The left operand
+                right,            // The right operand
+                "",               // Name of the LLVM variable (not fixed here)
+                block);       // The block in which the instruction will be inserted
+
+        break;
+}
+
+void* Code_generation_visitor::visit(Call* call){
+    // --- TODO ---
+
+    methods_signatures = // get the methods signature
+    method = // get the method pointer
+    true_args = {object, args} // TODO
+    block =  // get block where it is called
+
+    // ------------
+
+    // call the method
+    CallInst::Create(
+        methods_signatures, // The signature
+        method,             // The method (function)
+        true_args,          // The arguments
+        "",                 // Name of the LLVM variable (not fixed here)
+        block          // The block in which the instruction will be inserted
+    );
+}
+
+void* Code_generation_visitor::visit(New* new_){
+    // --- TODO ---
+
+    new_method = // get the new method pointer
+    block =  // get block where it is called
+
+    // ------------
+
+    // call the method
+    Value *object = CallInst::Create(
+        new_method,  // The method (function)
+        {},          // The arguments
+        "",          // Name of the LLVM variable (not fixed here)
+        block        // The block in which the instruction will be inserted
+    );
+
+    // --- TODO ---
+
+    // save the object
+
+    // ------------
+}
+
+void* Code_generation_visitor::visit(String* string_){
+    string_->get_column();
+    return NULL;
+}
+
+void* Code_generation_visitor::visit(Integer* integer){
+    integer->get_column();
+    return NULL;
+}
+
+void* Code_generation_visitor::visit(Boolean* boolean){
+    boolean->get_column();
+    return NULL;
+}
+
+void* Code_generation_visitor::visit(Unit* unit){
+    unit->get_column();
+    return NULL;
+}
+
+void* Code_generation_visitor::visit(Object* object){
+    object->get_column();
+    return NULL;
+}

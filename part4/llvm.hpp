@@ -61,6 +61,14 @@ class LLVM {
         void print();
 
         void executable(const std::string &fileName);
+
+        void make_method(    
+            vector<string> args_name, 
+            vector<string> args_type, 
+            string return_type, 
+            string class_name,
+            StructType* class_type,
+            string method_name);
 };
 
 #endif // LLVM_HH
