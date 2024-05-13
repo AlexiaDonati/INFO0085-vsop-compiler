@@ -50,13 +50,11 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
     methods_types.push_back(method_function->getFunctionType()->getPointerTo());
     methods.push_back(method_function);
 
-    IRBuilder<> builder(*context);
-
-    make_function_block(builder, "entry", method_function);
+    make_function_block("entry", method_function);
 
     vector<Value *> arguments_values = get_function_args(method_function);
 
-    set_return_value(builder, true);
+    set_return_value(true);
 
 // ==== length()
     method_function = make_method(    
@@ -71,11 +69,11 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
     methods_types.push_back(method_function->getFunctionType()->getPointerTo());
     methods.push_back(method_function);
 
-    make_function_block(builder, "entry", method_function);
+    make_function_block("entry", method_function);
 
     arguments_values = get_function_args(method_function);
 
-    set_return_value(builder, 0);
+    set_return_value(0);
 
 // M table save---------------------------
     save_m_table(m_table_type, class_name, methods_types, methods);
@@ -117,15 +115,13 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
         class_type,
         method_name);
 
-    IRBuilder<> builder(*context);
-
-    make_function_block(builder, "entry", method_function);
+    make_function_block("entry", method_function);
 
     vector<Value *> arguments_values = get_function_args(method_function);
 
-    Value *result = builder.CreateCall(parent_function);
+    Value *result = builder->CreateCall(parent_function);
 
-    set_return_value(builder, result);
+    set_return_value(result);
 
 // ==== ==== length()
     method_name = "length";
@@ -140,13 +136,13 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
         class_type,
         method_name);
 
-    make_function_block(builder, "entry", method_function);
+    make_function_block("entry", method_function);
 
     arguments_values = get_function_args(method_function);
 
-    result = builder.CreateCall(parent_function);
+    result = builder->CreateCall(parent_function);
 
-    set_return_value(builder, result);
+    set_return_value(result);
     
 /**************************/
 }
@@ -224,7 +220,7 @@ Function* LLVM::make_method(
     return method_function;
 }
 
-void LLVM::make_function_block(IRBuilder<>& builder, string name, Function *function){
+void LLVM::make_function_block(string name, Function *function){
     // ==== ==== ==== Define block
     BasicBlock *function_block = BasicBlock::Create(
         *context,         // The LLVM context
@@ -232,7 +228,7 @@ void LLVM::make_function_block(IRBuilder<>& builder, string name, Function *func
         function);        // The function in which should be inserted the block
     
     // ==== ==== ==== Define Builder
-    builder.SetInsertPoint(function_block);
+    builder->SetInsertPoint(function_block);
 }
 
 vector<Value *> LLVM::get_function_args(Function *function){
@@ -265,8 +261,8 @@ void LLVM::save_m_table(StructType *mtable_type, string class_name, vector<Type 
         class_name + "_mtable");      // The name of the variable
 }
 
-void LLVM::set_return_value(IRBuilder<>& builder, bool return_value){
-    builder.CreateRet(
+void LLVM::set_return_value(bool return_value){
+    builder->CreateRet(
         ConstantInt::get(
             Type::getInt1Ty(*context), 
             (return_value) ? 1 : 0
@@ -274,8 +270,8 @@ void LLVM::set_return_value(IRBuilder<>& builder, bool return_value){
     );
 }
 
-void LLVM::set_return_value(IRBuilder<>& builder, int return_value){
-    builder.CreateRet(
+void LLVM::set_return_value(int return_value){
+    builder->CreateRet(
         ConstantInt::get(
             Type::getInt32Ty(*context), 
             return_value
@@ -283,8 +279,8 @@ void LLVM::set_return_value(IRBuilder<>& builder, int return_value){
     );
 }
 
-void LLVM::set_return_value(IRBuilder<>& builder, Value *return_value){
-    builder.CreateRet(
+void LLVM::set_return_value(Value *return_value){
+    builder->CreateRet(
         return_value
     );
 }

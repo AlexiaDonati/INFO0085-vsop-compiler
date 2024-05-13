@@ -70,7 +70,7 @@ class LLVM {
             StructType* class_type,
             string method_name);
 
-        void make_function_block(IRBuilder<>& builder, string name, Function *function);
+        void make_function_block(string name, Function *function);
 
         vector<Value *> get_function_args(Function *function);
 
@@ -78,11 +78,11 @@ class LLVM {
 
         void save_m_table(StructType *mtable_type, string class_name, vector<Type *> methods_types, vector<Constant *> methods);
 
-        void set_return_value(IRBuilder<>& builder, bool return_value);
+        void set_return_value(bool return_value);
 
-        void set_return_value(IRBuilder<>& builder, int return_value);
+        void set_return_value(int return_value);
 
-        void set_return_value(IRBuilder<>& builder, Value *return_value);
+        void set_return_value(Value *return_value);
 };
 
 #endif // LLVM_HH
