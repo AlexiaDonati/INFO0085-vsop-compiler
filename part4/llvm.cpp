@@ -27,7 +27,8 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
     vector<Type *> fields_types;
 
 // ==== Define fields
-    // No fields
+    // First field is the pointer towards the mtable
+    fields_types.push_back(m_table_type->getPointerTo());
 
 // ==== Push the field in the class structure
     class_type->setBody(fields_types);
@@ -87,19 +88,27 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
     string class_name = "Nil";
     string parent_class_name = "List";
     StructType* class_type = StructType::create(*context, class_name);
+    StructType *m_table_type = create_mtable(class_name);
 
 // Fields--------------------------
 // ==== Define the list of fields
     vector<Type *> fields_types;
 
 // ==== Define fields
-    // No fields
+    // First field is the pointer towards the mtable
+    fields_types.push_back(m_table_type->getPointerTo());
 
 // ==== Push the field in the class structure
     class_type->setBody(fields_types);
 
 // Methods--------------------------
+    vector<Type *> methods_types;
+    vector<Constant *> methods;
 // ==== Inherits parents methods
+/* Try to get the m table of the parrent, but seg fault
+    GlobalVariable* parent_m_table = module->getNamedGlobal(parent_class_name + "_Mtable");
+    Constant* value = parent_m_table->getInitializer();
+*/
 // ==== ==== isNil()
     string method_name = "isNil";
     string true_method_name = parent_class_name + "." + method_name;
@@ -114,6 +123,10 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
         class_name, 
         class_type,
         method_name);
+
+    // put in m_table
+    methods_types.push_back(method_function->getFunctionType()->getPointerTo());
+    methods.push_back(method_function);
 
     make_function_block("entry", method_function);
 
@@ -135,6 +148,10 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
         class_name, 
         class_type,
         method_name);
+    
+    // put in m_table
+    methods_types.push_back(method_function->getFunctionType()->getPointerTo());
+    methods.push_back(method_function);
 
     make_function_block("entry", method_function);
 
@@ -143,6 +160,159 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
     result = builder->CreateCall(parent_function);
 
     set_return_value(result);
+
+// M table save---------------------------
+    save_m_table(m_table_type, class_name, methods_types, methods);
+    
+/**************************/
+}
+
+{
+/******* Class Cons extends List *******/
+
+// Structure--------------------------
+    string class_name = "Cons";
+    string parent_class_name = "List";
+    StructType* class_type = StructType::create(*context, class_name);
+    StructType *m_table_type = create_mtable(class_name);
+
+// Fields--------------------------
+// ==== Define the list of fields
+    vector<Type *> fields_types;
+
+// ==== Define fields
+    // First field is the pointer towards the mtable
+    fields_types.push_back(m_table_type->getPointerTo());
+    fields_types.push_back(get_type("int32")); // head
+    fields_types.push_back(get_type("List")); // tail
+
+// ==== Push the field in the class structure
+    class_type->setBody(fields_types);
+
+// Methods--------------------------
+    vector<Type *> methods_types;
+    vector<Constant *> methods;
+// ==== head()
+    string method_name = "head";
+    string true_method_name = parent_class_name + "." + method_name;
+    Function* parent_function = module->getFunction(true_method_name);
+
+    vector<string> args_name;
+    vector<string> args_type;
+    Function* method_function = make_method(    
+        args_name, 
+        args_type, 
+        "int32", 
+        class_name, 
+        class_type,
+        method_name);
+
+    // put in m_table
+    methods_types.push_back(method_function->getFunctionType()->getPointerTo());
+    methods.push_back(method_function);
+
+    make_function_block("entry", method_function);
+
+    vector<Value *> arguments_values = get_function_args(method_function);
+
+    // Load the value of head
+    Value* head_Ptr = builder->CreateGEP(
+            arguments_values[0], 
+            {ConstantInt::get(Type::getInt32Ty(*context), 0),
+                ConstantInt::get(Type::getInt32Ty(*context), 1)}, 
+            "");
+    Value* head_value = builder->CreateLoad(head_Ptr, "");
+
+    set_return_value(head_value);
+// ==== Inherits parents methods
+/* Try to get the m table of the parrent, but seg fault
+    GlobalVariable* parent_m_table = module->getNamedGlobal(parent_class_name + "_Mtable");
+    Constant* value = parent_m_table->getInitializer();
+*/
+// ==== ==== isNil()
+    method_name = "isNil";
+    true_method_name = parent_class_name + "." + method_name;
+    parent_function = module->getFunction(true_method_name);
+
+    method_function = make_method(    
+        args_name, 
+        args_type, 
+        "bool", 
+        class_name, 
+        class_type,
+        method_name);
+
+    // put in m_table
+    methods_types.push_back(method_function->getFunctionType()->getPointerTo());
+    methods.push_back(method_function);
+
+    make_function_block("entry", method_function);
+
+    arguments_values = get_function_args(method_function);
+
+    // We don"t call the parent method because this is an override
+    Value *result; //= builder->CreateCall(parent_function);
+
+    set_return_value(false);
+
+// ==== ==== length()
+    method_name = "length";
+    true_method_name = parent_class_name + "." + method_name;
+    parent_function = module->getFunction(true_method_name);
+
+    method_function = make_method(    
+        args_name, 
+        args_type, 
+        "int32", 
+        class_name, 
+        class_type,
+        method_name);
+    
+    // put in m_table
+    methods_types.push_back(method_function->getFunctionType()->getPointerTo());
+    methods.push_back(method_function);
+
+    make_function_block("entry", method_function);
+
+    arguments_values = get_function_args(method_function);
+
+    // We don"t call the parent method because this is an override
+    // result = builder->CreateCall(parent_function);
+
+    // Load the value of tail
+    Value* tail_Ptr = builder->CreateGEP(
+            arguments_values[0], 
+            {ConstantInt::get(Type::getInt32Ty(*context), 0),
+                ConstantInt::get(Type::getInt32Ty(*context), 2)}, // tail position is 2
+            "");
+    Value* tail_value = builder->CreateLoad(tail_Ptr, "");
+
+    // Load the value of mtable of tail
+    Value* mtable_Ptr = builder->CreateGEP(
+            tail_value, 
+            {ConstantInt::get(Type::getInt32Ty(*context), 0),
+                ConstantInt::get(Type::getInt32Ty(*context), 0)}, // v_table always 0
+            "");
+    Value* m_table_value = builder->CreateLoad(mtable_Ptr, "");
+
+    // Load tail.length() in tail m_tables
+    Value* length_method_Ptr = builder->CreateGEP(
+            m_table_value, 
+            {ConstantInt::get(Type::getInt32Ty(*context), 0),
+                ConstantInt::get(Type::getInt32Ty(*context), 1)}, // length() in second position
+            "");
+    Value* length_method_value = builder->CreateLoad(length_method_Ptr, "");
+
+    // call tail.length()
+    result = builder->CreateCall(parent_function);
+
+    // 1 + tail.length()
+    result = builder->CreateAdd(builder->getInt32(1), result, "");
+
+    set_return_value(result);
+
+// M table save---------------------------
+    save_m_table(m_table_type, class_name, methods_types, methods);
     
 /**************************/
 }
