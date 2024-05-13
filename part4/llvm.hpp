@@ -72,6 +72,8 @@ class LLVM {
 
         void make_function_block(string name, Function *function);
 
+        Value* load(Value* object, uint position);
+
         vector<Value *> get_function_args(Function *function);
 
         StructType * create_mtable(string class_name);

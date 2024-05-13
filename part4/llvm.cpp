@@ -280,28 +280,13 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
     // result = builder->CreateCall(parent_function);
 
     // Load the value of tail
-    Value* tail_Ptr = builder->CreateGEP(
-            arguments_values[0], 
-            {ConstantInt::get(Type::getInt32Ty(*context), 0),
-                ConstantInt::get(Type::getInt32Ty(*context), 2)}, // tail position is 2
-            "");
-    Value* tail_value = builder->CreateLoad(tail_Ptr, "");
+    Value* tail_value = load(arguments_values[0], 2);
 
     // Load the value of mtable of tail
-    Value* mtable_Ptr = builder->CreateGEP(
-            tail_value, 
-            {ConstantInt::get(Type::getInt32Ty(*context), 0),
-                ConstantInt::get(Type::getInt32Ty(*context), 0)}, // v_table always 0
-            "");
-    Value* m_table_value = builder->CreateLoad(mtable_Ptr, "");
+    Value* m_table_value = load(tail_value, 0);
 
     // Load tail.length() in tail m_tables
-    Value* length_method_Ptr = builder->CreateGEP(
-            m_table_value, 
-            {ConstantInt::get(Type::getInt32Ty(*context), 0),
-                ConstantInt::get(Type::getInt32Ty(*context), 1)}, // length() in second position
-            "");
-    Value* length_method_value = builder->CreateLoad(length_method_Ptr, "");
+    Value* length_method_value = load(m_table_value, 1);
 
     // call tail.length()
     result = builder->CreateCall(parent_function);
@@ -399,6 +384,15 @@ void LLVM::make_function_block(string name, Function *function){
     
     // ==== ==== ==== Define Builder
     builder->SetInsertPoint(function_block);
+}
+
+Value* LLVM::load(Value* object, uint position){
+    Value* ptr = builder->CreateGEP(
+            object, 
+            {ConstantInt::get(Type::getInt32Ty(*context), 0),
+                ConstantInt::get(Type::getInt32Ty(*context), position)},
+            "");
+    return builder->CreateLoad(ptr, "");
 }
 
 vector<Value *> LLVM::get_function_args(Function *function){
