@@ -77,6 +77,8 @@ class LLVM {
         void set_return_value(IRBuilder<>& builder, bool return_value);
 
         void set_return_value(IRBuilder<>& builder, int return_value);
+
+        void set_return_value(IRBuilder<>& builder, Value *return_value);
 };
 
 #endif // LLVM_HH

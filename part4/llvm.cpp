@@ -14,6 +14,7 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
     module = new Module(fileName, *context);
     builder = new IRBuilder<>(*context);
 
+{
 /******* Class List *******/
 
 // Structure--------------------------
@@ -38,7 +39,7 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
         args_name, 
         args_type, 
         "bool", 
-        "List", 
+        class_name, 
         class_type,
         "isNil");
 
@@ -55,7 +56,7 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
         args_name, 
         args_type, 
         "int32", 
-        "List", 
+        class_name, 
         class_type,
         "length");
 
@@ -66,7 +67,75 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
     set_return_value(builder, 0);
     
 /**************************/
+}
+{
+/******* Class Nil extends List *******/
+
+// Structure--------------------------
+    string class_name = "Nil";
+    string parent_class_name = "List";
+    StructType* class_type = StructType::create(*context, class_name);
+
+// Fields--------------------------
+// ==== Define the list of fields
+    vector<Type *> fields_types;
+
+// ==== Define fields
+    // No fields
+
+// ==== Push the field in the class structure
+    class_type->setBody(fields_types);
+
+// Methods--------------------------
+// ==== Inherits parents methods
+// ==== ==== isNil()
+    string method_name = "isNil";
+    string true_method_name = parent_class_name + "." + method_name;
+    Function* parent_function = module->getFunction(true_method_name);
+
+    vector<string> args_name;
+    vector<string> args_type;
+    Function* method_function = make_method(    
+        args_name, 
+        args_type, 
+        "bool", 
+        class_name, 
+        class_type,
+        method_name);
+
+    IRBuilder<> builder(*context);
+
+    make_function_block(builder, "entry", method_function);
+
+    vector<Value *> arguments_values = get_function_args(method_function);
+
+    Value *result = builder.CreateCall(parent_function);
+
+    set_return_value(builder, result);
+
+// ==== ==== length()
+    method_name = "length";
+    true_method_name = parent_class_name + "." + method_name;
+    parent_function = module->getFunction(true_method_name);
+
+    method_function = make_method(    
+        args_name, 
+        args_type, 
+        "int32", 
+        class_name, 
+        class_type,
+        method_name);
+
+    make_function_block(builder, "entry", method_function);
+
+    arguments_values = get_function_args(method_function);
+
+    result = builder.CreateCall(parent_function);
+
+    set_return_value(builder, result);
     
+/**************************/
+}
 }
 
 void LLVM::optimize(){
@@ -174,5 +243,11 @@ void LLVM::set_return_value(IRBuilder<>& builder, int return_value){
             Type::getInt32Ty(*context), 
             return_value
         )
+    );
+}
+
+void LLVM::set_return_value(IRBuilder<>& builder, Value *return_value){
+    builder.CreateRet(
+        return_value
     );
 }
