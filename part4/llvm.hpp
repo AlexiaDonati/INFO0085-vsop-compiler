@@ -70,6 +70,18 @@ class LLVM {
             StructType* class_type,
             string method_name);
 
+        Function* make_method(    
+            vector<string> args_name, 
+            vector<string> args_type, 
+            Type * return_type, 
+            string class_name,
+            StructType* class_type,
+            string method_name);
+
+        Function* make_new(string class_name, StructType* class_type);
+
+        Value* implement_new(Function* method_function, StructType* class_type);
+
         void make_function_block(string name, Function *function);
 
         Value* load(Value* object, uint position);

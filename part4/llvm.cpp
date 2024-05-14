@@ -15,6 +15,23 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
     builder = new IRBuilder<>(*context);
 
 {
+
+/******* Malloc Function *******/
+    // Signature
+    FunctionType *malloc_sign = FunctionType::get(
+        Type::getInt8Ty(*context)->getPointerTo(), // The return type
+        {Type::getInt64Ty(*context)},              // The arguments
+        false);                                    // No variable number of arguments
+
+    // Declare the function
+    Function *malloc_function = Function::Create(
+        malloc_sign,                  // The signature
+        GlobalValue::ExternalLinkage, // The linkage: external, malloc is implemented elsewhere
+        "malloc",                     // The name
+        module);                      // The LLVM module
+
+/**************************/
+
 /******* Class List *******/
 
 // Structure--------------------------
@@ -75,6 +92,17 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
     arguments_values = get_function_args(method_function);
 
     set_return_value(0);
+
+// ==== new()
+    method_function = make_new(class_name, class_type);
+
+    // put in m_table
+    methods_types.push_back(method_function->getFunctionType()->getPointerTo());
+    methods.push_back(method_function);
+
+    Value* new_object = implement_new(method_function, class_type);
+
+    set_return_value(new_object);
 
 // M table save---------------------------
     save_m_table(m_table_type, class_name, methods_types, methods);
@@ -160,6 +188,17 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
     result = builder->CreateCall(parent_function);
 
     set_return_value(result);
+
+// ==== new()
+    method_function = make_new(class_name, class_type);
+
+    // put in m_table
+    methods_types.push_back(method_function->getFunctionType()->getPointerTo());
+    methods.push_back(method_function);
+
+    Value* new_object = implement_new(method_function, class_type);
+
+    set_return_value(new_object);
 
 // M table save---------------------------
     save_m_table(m_table_type, class_name, methods_types, methods);
@@ -291,6 +330,17 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
 
     set_return_value(result);
 
+// ==== new()
+    method_function = make_new(class_name, class_type);
+
+    // put in m_table
+    methods_types.push_back(method_function->getFunctionType()->getPointerTo());
+    methods.push_back(method_function);
+
+    Value* new_object = implement_new(method_function, class_type);
+
+    set_return_value(new_object);
+
 // M table save---------------------------
     save_m_table(m_table_type, class_name, methods_types, methods);
     
@@ -322,6 +372,22 @@ Function* LLVM::make_method(
     string class_name,
     StructType* class_type,
     string method_name){
+        return make_method(    
+            args_name, 
+            args_type, 
+            get_type(return_type), 
+            class_name, 
+            class_type,
+            method_name);
+    }
+
+Function* LLVM::make_method(    
+    vector<string> args_name, 
+    vector<string> args_type, 
+    Type * return_type, 
+    string class_name,
+    StructType* class_type,
+    string method_name){
 
     if(args_name.size() != args_type.size()){
         fprintf(stderr, "Error: make_method -> args_name and args_type must be the same size\n");
@@ -342,7 +408,7 @@ Function* LLVM::make_method(
     string true_method_name = class_name + "." + method_name;
 
     FunctionType *method_signature = FunctionType::get(
-        get_type(return_type),        // Return type
+        return_type,        // Return type
         method_arguments,             // List of arguments types
         false);                       // No variable number of arguments
 
@@ -368,6 +434,44 @@ Function* LLVM::make_method(
     }
 
     return method_function;
+}
+
+Function* LLVM::make_new(string class_name, StructType* class_type){
+    return make_method(    
+        {}, 
+        {}, 
+        class_name, 
+        class_name, 
+        class_type,
+        "new");
+}
+
+// Return the new object value
+Value* LLVM::implement_new(Function* method_function, StructType* class_type){
+    make_function_block("entry", method_function);
+
+    // Get the size of the object
+    Value* ptr_size = builder->CreateGEP(
+        class_type, 
+        ConstantPointerNull::get(class_type->getPointerTo()), 
+        {builder->getInt32(1)}, 
+        "");
+
+    Value* bytes_size = builder->CreatePointerCast(
+        ptr_size, 
+        Type::getInt64Ty(*context), 
+        "");
+
+    // Now that we have the size, we can call malloc:
+    Value *struct_ptr = builder->CreateCall(
+        module->getFunction("malloc"), 
+        {bytes_size});
+
+    // Malloc returns a i8 pointer, we have to cast it as a pointer towards our structure
+    return builder->CreatePointerCast(
+        struct_ptr, 
+        class_type->getPointerTo(), 
+        "");
 }
 
 void LLVM::make_function_block(string name, Function *function){
