@@ -443,7 +443,7 @@ Function* LLVM::make_new(string class_name, StructType* class_type){
         class_name, 
         class_name, 
         class_type,
-        "new");
+        ".new"); // there is a point to avoid collision with user methods
 }
 
 // Return the new object value
