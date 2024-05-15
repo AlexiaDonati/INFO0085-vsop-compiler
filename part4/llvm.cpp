@@ -157,7 +157,7 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
 
     vector<Value *> arguments_values = get_function_args(method_function);
 
-    Value *result = builder->CreateCall(parent_function);
+    Value *result = builder->CreateCall(parent_function, {arguments_values[0]});
 
     set_return_value(result);
 
@@ -182,7 +182,7 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
 
     arguments_values = get_function_args(method_function);
 
-    result = builder->CreateCall(parent_function);
+    result = builder->CreateCall(parent_function, {arguments_values[0]});
 
     set_return_value(result);
 
@@ -335,14 +335,7 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
     // Load the value of tail
     Value* tail_value = load(arguments_values[0], 2);
 
-    // Load the value of mtable of tail
-    Value* m_table_value = load(tail_value, 0);
-
-    // Load tail.length() in tail m_tables
-    Value* length_method_value = load(m_table_value, 1);
-
-    // call tail.length()
-    result = builder->CreateCall(parent_function);
+    result = call_method(tail_value, 1, "int32", {});
 
     // 1 + tail.length()
     result = builder->CreateAdd(builder->getInt32(1), result, "");
@@ -359,6 +352,70 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
 
 // ==== .new()
     method_function = make_new(class_name, class_type);
+    
+/**************************/
+}
+{
+/******* Class main *******/
+
+// Structure--------------------------
+    string class_name = "main";
+    StructType* class_type = StructType::create(*context, class_name);
+    StructType *m_table_type = create_mtable(class_name);
+
+// Fields--------------------------
+// ==== Define the list of fields
+    vector<Type *> fields_types;
+
+// ==== Define fields
+    // First field is the pointer towards the mtable
+    fields_types.push_back(m_table_type->getPointerTo());
+
+// ==== Push the field in the class structure
+    class_type->setBody(fields_types);
+
+// Methods--------------------------
+    vector<Type *> methods_types;
+    vector<Constant *> methods;
+
+// ==== main()
+
+    string method_name = "main";
+
+    vector<string> args_name;
+    vector<string> args_type;
+    Function* method_function = make_method(    
+        args_name, 
+        args_type, 
+        "int32", 
+        class_name, 
+        class_type,
+        method_name);
+
+    // put in m_table
+    methods_types.push_back(method_function->getFunctionType()->getPointerTo());
+    methods.push_back(method_function);
+
+    make_function_block("entry", method_function);
+
+    // (new Cons).init(0, (new Cons).init(1, (new Cons).init(2, new Nil)))
+    // ==== (new Cons)
+
+
+    vector<Value *> arguments_values = get_function_args(method_function);
+    
+    set_return_value(0);
+
+// M table save---------------------------
+    save_m_table(m_table_type, class_name, methods_types, methods);
+
+// Mandatory "method"
+
+// ==== .init()
+    make_init(class_name, class_type);
+
+// ==== .new()
+    make_new(class_name, class_type);
     
 /**************************/
 }
@@ -548,6 +605,28 @@ Value* LLVM::get_pointer(Value* object, uint position){
             {ConstantInt::get(Type::getInt32Ty(*context), 0),
                 ConstantInt::get(Type::getInt32Ty(*context), position)},
             "");
+}
+
+Value* LLVM::call_method(
+    Value* object, 
+    uint position, 
+    string return_type, 
+    vector<Value *> args){
+    // Load the value of mtable of object
+    Value* m_table_value = load(object, 0);
+
+    // Load object.method() in object m_tables
+    Value* length_method_value = load(m_table_value, position);
+
+    FunctionType *false_signature = FunctionType::get(
+        get_type(return_type), // Return type
+        {}, // do not need to specify because will be con$mpleted automaticaly by call (to be verified)
+        false);           // No variable number of arguments
+
+    args.insert(args.begin(), object);
+
+    // call 
+    return builder->CreateCall(false_signature, length_method_value, args, "");
 }
 
 void LLVM::set_value(Value* object, Value* value){

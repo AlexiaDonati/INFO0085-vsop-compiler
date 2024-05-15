@@ -90,6 +90,12 @@ class LLVM {
 
         Value* get_pointer(Value* object, uint position);
 
+        Value* call_method(
+            Value* object, 
+            uint position, 
+            string return_type, 
+            vector<Value *> args);
+
         void set_value(Value* object, Value* value);
 
         vector<Value *> get_function_args(Function *function);
