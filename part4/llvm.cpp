@@ -398,11 +398,53 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
 
     make_function_block("entry", method_function);
 
+    vector<Value *> arguments_values = get_function_args(method_function);
+
     // (new Cons).init(0, (new Cons).init(1, (new Cons).init(2, new Nil)))
     // ==== (new Cons)
+    Value *first_new_object = call_new_then_init("Cons");
 
+    // ==== .init(0, (new Cons).init(1, (new Cons).init(2, new Nil)))
+    // ==== ==== (new Cons).init(1, (new Cons).init(2, new Nil))
+    // ==== ==== ==== (new Cons)
+    Value *second_new_object = call_new_then_init("Cons");
 
-    vector<Value *> arguments_values = get_function_args(method_function);
+    // ==== ==== ==== .init(1, (new Cons).init(2, new Nil))
+    // ==== ==== ==== ==== (new Cons).init(2, new Nil)
+    // ==== ==== ==== ==== ==== (new Cons)
+    Value *third_new_object = call_new_then_init("Cons");
+    // ==== ==== ==== ==== ==== .init(2, new Nil)
+    // ==== ==== ==== ==== ==== ==== new Nil
+    Value *fourth_new_object = call_new_then_init("Nil");
+    // ==== ==== ==== ==== ==== init()
+    Value* result = call_method(
+        third_new_object, 
+        2, 
+        "Cons", 
+        {builder->getInt32(2), fourth_new_object});
+    // ==== ==== ==== init()
+    result = call_method(
+        second_new_object, 
+        1, 
+        "Cons", 
+        {builder->getInt32(2), result});
+    // ==== init()
+    result = call_method(
+        first_new_object, 
+        0, 
+        "Cons", 
+        {builder->getInt32(2), result});
+    
+    Value* xs = result;
+    /*
+        to to this -> must link object
+        {
+            print("List has length ");
+            printInt32(xs.length());
+            print("\n");
+            0
+        }
+    */
     
     set_return_value(0);
 
@@ -444,14 +486,16 @@ Function* LLVM::make_method(
     string return_type, 
     string class_name,
     StructType* class_type,
-    string method_name){
+    string method_name,
+    bool put_self){
         return make_method(    
             args_name, 
             args_type, 
             get_type(return_type), 
             class_name, 
             class_type,
-            method_name);
+            method_name,
+            put_self);
     }
 
 Function* LLVM::make_method(    
@@ -460,7 +504,8 @@ Function* LLVM::make_method(
     Type * return_type, 
     string class_name,
     StructType* class_type,
-    string method_name){
+    string method_name,
+    bool put_self){
 
     if(args_name.size() != args_type.size()){
         fprintf(stderr, "Error: make_method -> args_name and args_type must be the same size\n");
@@ -471,8 +516,10 @@ Function* LLVM::make_method(
     vector<Type *> method_arguments;
 
     // First arg is always Self
-    Type *self = class_type->getPointerTo();
-    method_arguments.push_back(self);
+    if(put_self){
+        Type *self = class_type->getPointerTo();
+        method_arguments.push_back(self);
+    }
 
     for (auto type : args_type)
         method_arguments.push_back(get_type(type));
@@ -516,7 +563,8 @@ Function* LLVM::make_new(string class_name, StructType* class_type){
         class_name, 
         class_name, 
         class_type,
-        ".new"); // there is a point to avoid collision with user methods
+        ".new", // there is a point to avoid collision with user methods
+        false); 
 
     Value* new_object = implement_new(new_function, class_type);
 
@@ -627,6 +675,16 @@ Value* LLVM::call_method(
 
     // call 
     return builder->CreateCall(false_signature, length_method_value, args, "");
+}
+
+Value* LLVM::call_new_then_init(string type){
+    Function *new_function = module->getFunction(type + "..new");
+
+    Value *new_object = builder->CreateCall(new_function);
+
+    Function *init_function = module->getFunction(type + "..init");
+
+    return builder->CreateCall(init_function, {new_object});
 }
 
 void LLVM::set_value(Value* object, Value* value){

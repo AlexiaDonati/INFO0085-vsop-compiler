@@ -68,7 +68,8 @@ class LLVM {
             string return_type, 
             string class_name,
             StructType* class_type,
-            string method_name);
+            string method_name,
+            bool put_self = true);
 
         Function* make_method(    
             vector<string> args_name, 
@@ -76,7 +77,8 @@ class LLVM {
             Type * return_type, 
             string class_name,
             StructType* class_type,
-            string method_name);
+            string method_name,
+            bool put_self = true);
 
         Function* make_new(string class_name, StructType* class_type);
 
@@ -95,6 +97,8 @@ class LLVM {
             uint position, 
             string return_type, 
             vector<Value *> args);
+
+        Value* call_new_then_init(string type);
 
         void set_value(Value* object, Value* value);
 
