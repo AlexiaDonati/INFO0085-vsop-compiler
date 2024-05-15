@@ -82,13 +82,15 @@ class LLVM {
 
         Value* implement_new(Function* method_function, StructType* class_type);
 
-        Function* begin_init(string class_name, StructType* class_type);
-
-        void end_init();
+        Function* make_init(string class_name, StructType* class_type);
 
         void make_function_block(string name, Function *function);
 
         Value* load(Value* object, uint position);
+
+        Value* get_pointer(Value* object, uint position);
+
+        void set_value(Value* object, Value* value);
 
         vector<Value *> get_function_args(Function *function);
 

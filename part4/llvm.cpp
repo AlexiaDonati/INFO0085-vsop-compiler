@@ -99,9 +99,7 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
 // Mandatory "method"
 
 // ==== .init()
-    begin_init(class_name, class_type);
-
-    end_init();
+    make_init(class_name, class_type);
 
 // ==== .new()
     method_function = make_new(class_name, class_type);
@@ -194,10 +192,7 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
 // Mandatory "method"
 
 // ==== .init()
-    begin_init(class_name, class_type);
-
-    end_init();
-
+    make_init(class_name, class_type);
 // ==== .new()
     method_function = make_new(class_name, class_type);
     
@@ -231,8 +226,6 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
     vector<Constant *> methods;
 // ==== head()
     string method_name = "head";
-    string true_method_name = parent_class_name + "." + method_name;
-    Function* parent_function = module->getFunction(true_method_name);
 
     vector<string> args_name;
     vector<string> args_type;
@@ -256,6 +249,34 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
     Value* head_value = load(arguments_values[0], 1);
 
     set_return_value(head_value);
+
+// ==== init()
+    method_name = "init";
+    
+    method_function = make_method(    
+        {"hd", "tl"}, 
+        {"int32", "List"}, 
+        class_name, 
+        class_name, 
+        class_type,
+        method_name);
+
+    // put in m_table
+    methods_types.push_back(method_function->getFunctionType()->getPointerTo());
+    methods.push_back(method_function);
+
+    make_function_block("entry", method_function);
+
+    arguments_values = get_function_args(method_function);
+
+    //head <- hd;
+    set_value(get_pointer(arguments_values[0], 1), arguments_values[1]);
+
+    //tail <- tl;
+    set_value(get_pointer(arguments_values[0], 2), arguments_values[2]);
+
+    set_return_value(arguments_values[0]);
+
 // ==== Inherits parents methods
 /* Try to get the m table of the parrent, but seg fault
     GlobalVariable* parent_m_table = module->getNamedGlobal(parent_class_name + "_Mtable");
@@ -263,8 +284,8 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
 */
 // ==== ==== isNil()
     method_name = "isNil";
-    true_method_name = parent_class_name + "." + method_name;
-    parent_function = module->getFunction(true_method_name);
+    string true_method_name = parent_class_name + "." + method_name;
+    Function* parent_function = module->getFunction(true_method_name);
 
     method_function = make_method(    
         args_name, 
@@ -334,9 +355,7 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
 // Mandatory "method"
 
 // ==== .init()
-    begin_init(class_name, class_type);
-
-    end_init();
+    make_init(class_name, class_type);
 
 // ==== .new()
     method_function = make_new(class_name, class_type);
@@ -477,7 +496,7 @@ Value* LLVM::implement_new(Function* method_function, StructType* class_type){
         "");
 }
 
-Function* LLVM::begin_init(string class_name, StructType* class_type){
+Function* LLVM::make_init(string class_name, StructType* class_type){
     Function* init_function = make_method(    
         {}, 
         {}, 
@@ -502,11 +521,9 @@ Function* LLVM::begin_init(string class_name, StructType* class_type){
 
     builder->CreateStore(m_table, m_table_ptr);
 
-    return init_function;
-}
-
-void LLVM::end_init(){
     set_return_value(0);
+
+    return init_function;
 }
 
 void LLVM::make_function_block(string name, Function *function){
@@ -521,12 +538,20 @@ void LLVM::make_function_block(string name, Function *function){
 }
 
 Value* LLVM::load(Value* object, uint position){
-    Value* ptr = builder->CreateGEP(
+    Value* ptr = get_pointer(object, position);
+    return builder->CreateLoad(ptr, "");
+}
+
+Value* LLVM::get_pointer(Value* object, uint position){
+    return builder->CreateGEP(
             object, 
             {ConstantInt::get(Type::getInt32Ty(*context), 0),
                 ConstantInt::get(Type::getInt32Ty(*context), position)},
             "");
-    return builder->CreateLoad(ptr, "");
+}
+
+void LLVM::set_value(Value* object, Value* value){
+    builder->CreateStore(value, object);
 }
 
 vector<Value *> LLVM::get_function_args(Function *function){
