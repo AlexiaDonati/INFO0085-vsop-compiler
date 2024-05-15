@@ -5,13 +5,42 @@
 using namespace AST;
 using namespace std;
 
+void* Code_generation_visitor::print(){
+    if(llvm_instance != NULL){
+        llvm_instance->print();
+    }
+    return NULL;
+}
+
 void* Code_generation_visitor::visit(Program* program){
-    program->get_column();
+    llvm_instance = LLVM::get_instance(program, file_name);
+    ACCEPT_LIST(program->get_class_list());
     return NULL;
 }
 
 void* Code_generation_visitor::visit(Class* class_){
-    class_->get_column();
+    /******** Implement the 'new' function ********/
+    Function *new_function = llvm_instance->module->getFunction("new_" + class_->get_name());
+
+    // First create an entry point.
+    BasicBlock *new_entry = BasicBlock::Create(
+        *(llvm_instance->context),      // The LLVM context
+        "entry",                        // The label of the block
+        new_function);                  // The function in which should be inserted the block
+
+    llvm_instance->builder->SetInsertPoint(new_entry);
+
+    /******** Implement the 'init' function ********/
+    Function *init_function = llvm_instance->module->getFunction("init_" + class_->get_name());
+
+    // First create an entry point.
+    BasicBlock *init_entry = BasicBlock::Create(
+        *(llvm_instance->context),      // The LLVM context
+        "entry",                        // The label of the block
+        init_function);                 // The function in which should be inserted the block
+
+    llvm_instance->builder->SetInsertPoint(init_entry);
+
     return NULL;
 }
 

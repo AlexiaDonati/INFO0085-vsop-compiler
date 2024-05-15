@@ -7,14 +7,20 @@
 #include <iostream>
 #include "ast.hpp"
 #include "type.hpp"
+#include "llvm.hpp"
 
 namespace AST{
 
     class Code_generation_visitor : public Visitor {
+        private:
+            LLVM *llvm_instance = nullptr;
+
         public:
             type::Table *table;
+            std::string file_name;
 
-            Code_generation_visitor(type::Table *table) : table(table) {};
+            Code_generation_visitor(type::Table *table, std::string file_name): table(table), file_name(file_name){}
+
             void* visit(Program* program);
             void* visit(Class* class_);
             void* visit(Field* field);
@@ -38,9 +44,10 @@ namespace AST{
 
             template <typename T>
             void accept_list(List<T>* list){
-                // TODO
-                // to stop warnings
-                list->get_size();
+                size_t size = list->get_size();
+                for (size_t i = 0; i < size; i++){
+                    list->accept_one(this, i);
+                }  
             } 
 
             void get_value_from_void(void* void_value){
@@ -56,6 +63,8 @@ namespace AST{
                 value = "";
                 return NULL;
             }
+
+            void* print();
     };
 
 }
