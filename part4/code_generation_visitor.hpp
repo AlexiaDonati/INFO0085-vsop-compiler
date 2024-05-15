@@ -14,12 +14,13 @@ namespace AST{
     class Code_generation_visitor : public Visitor {
         private:
             LLVM *llvm_instance = nullptr;
+            Class *current_class = nullptr;
 
         public:
             type::Table *table;
-            std::string file_name;
+            
 
-            Code_generation_visitor(type::Table *table, std::string file_name): table(table), file_name(file_name){}
+            Code_generation_visitor(type::Table *table): table(table){}
 
             void* visit(Program* program);
             void* visit(Class* class_);
@@ -50,21 +51,19 @@ namespace AST{
                 }  
             } 
 
-            void get_value_from_void(void* void_value){
-                // TODO
-                // to stop warnings
-                void* a = void_value;
-                void_value = a;
+            Value *get_value_from_void(void* void_value){
+                return (Value *) void_value;
             }   
 
-            void* get_void_from_value(std::string value){
-                // TODO
-                // to stop warnings
-                value = "";
-                return NULL;
+            void *get_void_from_value(Value *value){
+                return (void *) value;
             }
 
-            void* print();
+            void print(){
+                if(llvm_instance != NULL){
+                    llvm_instance->print();
+                }
+            }
     };
 
 }

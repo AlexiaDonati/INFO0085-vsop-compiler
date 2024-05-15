@@ -168,7 +168,7 @@ string Driver::generate_code(){
     
     //LLVM *llvm = LLVM::get_instance(ast, source_file);
 
-    AST::Code_generation_visitor* code_generator = new AST::Code_generation_visitor(type_table, source_file);
+    AST::Code_generation_visitor* code_generator = new AST::Code_generation_visitor(type_table);
     ast->accept(code_generator);
 
     //llvm->optimizeCode();
