@@ -82,6 +82,10 @@ class LLVM {
 
         Value* implement_new(Function* method_function, StructType* class_type);
 
+        Function* begin_init(string class_name, StructType* class_type);
+
+        void end_init();
+
         void make_function_block(string name, Function *function);
 
         Value* load(Value* object, uint position);
@@ -90,7 +94,7 @@ class LLVM {
 
         StructType * create_mtable(string class_name);
 
-        void save_m_table(StructType *mtable_type, string class_name, vector<Type *> methods_types, vector<Constant *> methods);
+        GlobalVariable* save_m_table(StructType *mtable_type, string class_name, vector<Type *> methods_types, vector<Constant *> methods);
 
         void set_return_value(bool return_value);
 

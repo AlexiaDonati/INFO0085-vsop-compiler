@@ -93,19 +93,18 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
 
     set_return_value(0);
 
-// ==== new()
-    method_function = make_new(class_name, class_type);
-
-    // put in m_table
-    methods_types.push_back(method_function->getFunctionType()->getPointerTo());
-    methods.push_back(method_function);
-
-    Value* new_object = implement_new(method_function, class_type);
-
-    set_return_value(new_object);
-
 // M table save---------------------------
     save_m_table(m_table_type, class_name, methods_types, methods);
+
+// Mandatory "method"
+
+// ==== .init()
+    begin_init(class_name, class_type);
+
+    end_init();
+
+// ==== .new()
+    method_function = make_new(class_name, class_type);
     
 /**************************/
 }
@@ -189,19 +188,18 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
 
     set_return_value(result);
 
-// ==== new()
-    method_function = make_new(class_name, class_type);
-
-    // put in m_table
-    methods_types.push_back(method_function->getFunctionType()->getPointerTo());
-    methods.push_back(method_function);
-
-    Value* new_object = implement_new(method_function, class_type);
-
-    set_return_value(new_object);
-
 // M table save---------------------------
     save_m_table(m_table_type, class_name, methods_types, methods);
+
+// Mandatory "method"
+
+// ==== .init()
+    begin_init(class_name, class_type);
+
+    end_init();
+
+// ==== .new()
+    method_function = make_new(class_name, class_type);
     
 /**************************/
 }
@@ -330,19 +328,18 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
 
     set_return_value(result);
 
-// ==== new()
-    method_function = make_new(class_name, class_type);
-
-    // put in m_table
-    methods_types.push_back(method_function->getFunctionType()->getPointerTo());
-    methods.push_back(method_function);
-
-    Value* new_object = implement_new(method_function, class_type);
-
-    set_return_value(new_object);
-
 // M table save---------------------------
     save_m_table(m_table_type, class_name, methods_types, methods);
+
+// Mandatory "method"
+
+// ==== .init()
+    begin_init(class_name, class_type);
+
+    end_init();
+
+// ==== .new()
+    method_function = make_new(class_name, class_type);
     
 /**************************/
 }
@@ -437,13 +434,19 @@ Function* LLVM::make_method(
 }
 
 Function* LLVM::make_new(string class_name, StructType* class_type){
-    return make_method(    
+    Function* new_function = make_method(    
         {}, 
         {}, 
         class_name, 
         class_name, 
         class_type,
         ".new"); // there is a point to avoid collision with user methods
+
+    Value* new_object = implement_new(new_function, class_type);
+
+    set_return_value(new_object);
+
+    return new_function;
 }
 
 // Return the new object value
@@ -472,6 +475,38 @@ Value* LLVM::implement_new(Function* method_function, StructType* class_type){
         struct_ptr, 
         class_type->getPointerTo(), 
         "");
+}
+
+Function* LLVM::begin_init(string class_name, StructType* class_type){
+    Function* init_function = make_method(    
+        {}, 
+        {}, 
+        class_name, 
+        class_name, 
+        class_type,
+        ".init"); // there is a point to avoid collision with user methods
+
+    make_function_block("entry", init_function);
+
+    vector<Value *> arguments_values = get_function_args(init_function);
+
+    // init m table
+    Value* m_table_ptr = builder->CreateGEP(
+        class_type, 
+        arguments_values[0],  // self
+        {builder->getInt32(0),
+        builder->getInt32(0)}, // m table is at position 0
+        "");
+
+    GlobalVariable* m_table = module->getNamedGlobal(class_name + "_mtable");
+
+    builder->CreateStore(m_table, m_table_ptr);
+
+    return init_function;
+}
+
+void LLVM::end_init(){
+    set_return_value(0);
 }
 
 void LLVM::make_function_block(string name, Function *function){
@@ -506,7 +541,7 @@ StructType * LLVM::create_mtable(string class_name){
     return StructType::create(*context, mtable_name);
 }
 
-void LLVM::save_m_table(StructType *mtable_type, string class_name, vector<Type *> methods_types, vector<Constant *> methods){
+GlobalVariable* LLVM::save_m_table(StructType *mtable_type, string class_name, vector<Type *> methods_types, vector<Constant *> methods){
     mtable_type->setBody(methods_types);
 
     // Create a constant
@@ -515,13 +550,15 @@ void LLVM::save_m_table(StructType *mtable_type, string class_name, vector<Type 
         methods);    // Values to give to the different fields
 
     // Assign the constant to a global variable
-    GlobalVariable *vtable = new GlobalVariable(
+    GlobalVariable *mtable = new GlobalVariable(
         *module,                      // The LLVM module
         mtable_type,                  // The type of the constant
         true,                        // It is constant
         GlobalValue::InternalLinkage, // The linkage
         mtable_const,                 // The constant value
         class_name + "_mtable");      // The name of the variable
+
+    return mtable;
 }
 
 void LLVM::set_return_value(bool return_value){
