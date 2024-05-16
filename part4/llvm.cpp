@@ -32,6 +32,10 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
         module);                      // The LLVM module
     
     AST::List<AST::Class> *classes = program->get_class_list();
+
+    StructType *vtable_type = nullptr; // Declare VTable structure for class
+
+    /****************** Define the Classes ******************/
     for (size_t i = 0; i < classes->get_size(); ++i){
         AST::Class *current_class = classes->get_element(i);
 
@@ -40,7 +44,7 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
         StructType *class_type = StructType::create(*context, current_class->get_name()); // Declare structure for class
         
         // Declare vtable
-        StructType *vtable_type = StructType::create(*context, "struct." + current_class->get_name() + "Vtable"); // Declare VTable structure for class
+        vtable_type = StructType::create(*context, "struct." + current_class->get_name() + "Vtable"); // Declare VTable structure for class
 
         /************** Fields **************/
         std::vector<Type *> class_fields = std::vector<Type *>();
@@ -48,21 +52,36 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
         // First field is the pointer towards the vtable
         class_fields.push_back(vtable_type->getPointerTo());
 
-        AST::List<AST::Field> *field_list = current_class->get_field_list();
-        for (size_t j = 0; j < field_list->get_size(); ++j){
-            AST::Field *field = field_list->get_element(j);
+        current_class->field_indexes["self"] = (uint32_t) 0;
+        uint32_t field_index = 1;
 
-            // Insert the other fields
-            class_fields.push_back(get_type(field->get_type()));
+        AST::Class *parent = current_class;
+        while (true){ // Iterate over the class and its parents
+
+            AST::List<AST::Field> *field_list = parent->get_field_list();
+            for (size_t j = 0; j < field_list->get_size(); ++j){ // Iterate over the fields of the class
+                AST::Field *field = field_list->get_element(j);
+
+                // Insert the fields
+                class_fields.push_back(get_type(field->get_type()));
+                current_class->field_indexes[field->get_name()] = field_index;
+                field_index++;
+            }
+
+            if (parent->get_parent() == "Object"){
+                break;
+            }
+            for(size_t c = 0; c < classes->get_size(); ++c){
+                if(classes->get_element(c)->get_name() == parent->get_parent()){
+                    parent = classes->get_element(c);
+                    break;
+                }
+            }
         }
+    
         class_type->setBody(class_fields);
-
-        /************** Methods **************/
-        std::vector<Type *> methods_types;
-        std::vector<Constant *> methods;
-        std::map<string, FunctionType *> methods_signatures;
-        std::map<string, Function *> methods_functions;
-
+        
+        /************** Create the Methods **************/
         AST::List<AST::Method> *method_list = current_class->get_method_list();
         for (size_t j = 0; j < method_list->get_size(); ++j){
             AST::Method *method = method_list->get_element(j);
@@ -86,15 +105,12 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
                 method_arguments,           // List of arguments types
                 false);                     // No variable number of arguments
 
-            methods_types.push_back(method_type->getPointerTo());
-            methods_signatures[method->get_name()] = method_type;
-
             // Create the actual function that will implement the method
             Function *method_function = Function::Create(
-                method_type,                  // The signature
-                GlobalValue::ExternalLinkage, // The linkage (not important here)
-                method->get_name(),           // The name
-                module);                      // The LLVM module
+                method_type,                                            // The signature
+                GlobalValue::ExternalLinkage,                           // The linkage (not important here)
+                method->get_name() + "_" + current_class->get_name(),   // The name
+                module);                                                // The LLVM module
             
             // Setting the name of the arguments
             auto arg_it = method_function->arg_begin();
@@ -104,10 +120,75 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
                 arg_it->setName(formal_list->get_element(k)->get_name());
                 ++arg_it;
             }
-
-            methods_functions[method->get_name()] = method_function;
-            methods.push_back(method_function);
         }
+
+        /************** New and Init functions **************/
+        // Declare function 'new': allocate memory for a new object and return it.
+        FunctionType *method_type = FunctionType::get(
+            class_type->getPointerTo(), // The return type
+            {},                         // The arguments
+            false);                     // No variable number of arguments
+
+        Function *new_function = Function::Create(
+            method_type,                            // The signature
+            GlobalValue::ExternalLinkage,           // The linkage
+            "new_" + current_class->get_name(),     // The name
+            module);                                // The LLVM module
+
+        // Declare function 'init': initialize an object.
+        method_type = FunctionType::get(
+            class_type->getPointerTo(),   // The return type
+            {class_type->getPointerTo()}, // The arguments
+            false);                       // No variable number of arguments
+
+        Function *init_function = Function::Create(
+            method_type,                            // The signature
+            GlobalValue::ExternalLinkage,           // The linkage
+            "init_" + current_class->get_name(),    // The name
+            module);                                // The LLVM module
+
+        init_function->arg_begin()->setName("self");
+    }
+
+    /************** Declare the methods as part of the class **************/
+    for (size_t i = 0; i < classes->get_size(); ++i){
+        AST::Class *current_class = classes->get_element(i);
+
+        std::vector<Type *> methods_types;
+        vector<Constant *> methods;
+        uint32_t method_index = 0;
+
+        AST::Class *parent = current_class;
+        while(true){ // Iterate over the class and its parents starting from the current class to the root class 'Object'
+
+            AST::List<AST::Method> *parent_methods = parent->get_method_list();
+            for(size_t y = 0; y < parent_methods->get_size(); ++y){
+                AST::Method *method = parent_methods->get_element(y); 
+
+                bool got_overriden = current_class->method_signatures.find(method->get_name()) != current_class->method_signatures.end();
+                if(!got_overriden){
+                    Function *function = module->getFunction(method->get_name() + "_" + parent->get_name());
+                    methods.push_back(function);
+
+                    FunctionType *type = function->getFunctionType();
+                    methods_types.push_back(type->getPointerTo());
+
+                    current_class->method_signatures[method->get_name()] = type;
+                    current_class->method_indexes[method->get_name()] = method_index;
+                    method_index++;
+                }
+            }
+
+            if (parent->get_parent() == "Object"){
+                break;
+            }
+            for(size_t c = 0; c < classes->get_size(); ++c){
+                if(classes->get_element(c)->get_name() == parent->get_parent()){
+                    parent = classes->get_element(c);
+                    break;
+                }
+            }
+        } 
         vtable_type->setBody(methods_types);
 
         /************** Defining the vtable **************/
@@ -125,83 +206,6 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
             vtable_const,                 // The constant value
             current_class->get_name() + "_vtable");      // The name of the variable
             
-        /************** New and Init functions **************/
-        // Declare function 'new': allocate memory for a new object and return it.
-        FunctionType *method_type = FunctionType::get(
-            class_type->getPointerTo(), // The return type
-            {},                         // The arguments
-            false);                     // No variable number of arguments
-
-        Function *new_function = Function::Create(
-            method_type,                  // The signature
-            GlobalValue::ExternalLinkage, // The linkage
-            "new_" + current_class->get_name(),          // The name
-            module);                      // The LLVM module
-
-        // Declare function 'init': initialize an object.
-        method_type = FunctionType::get(
-            class_type->getPointerTo(),   // The return type
-            {class_type->getPointerTo()}, // The arguments
-            false);                       // No variable number of arguments
-
-        Function *init_function = Function::Create(
-            method_type,                  // The signature
-            GlobalValue::ExternalLinkage, // The linkage
-            "init_" + current_class->get_name(),         // The name
-            module);                      // The LLVM module
-
-        init_function->arg_begin()->setName("self");
-        
-        /* Inheritance -----------------
-
-        AST::Class *parent = current_class;
-
-        // inherited methods
-        std::map<std::string, bool> defined;
-        std::map<std::string, int> method_indexes;
-
-        int current_index = 0;
-        
-        do{
-            if (parent->get_parent() == "Object"){
-                break;
-            }
-            for(size_t c = 0; c < classes->get_size(); ++c){
-                if(classes->get_element(c)->get_name() == parent->get_parent()){
-                    parent = classes->get_element(c);
-                    break;
-                }
-            }
-
-            // inherited fields 
-            AST::List<AST::Field> *parent_fields = parent->get_field_list();
-            for(size_t y = 0; y < parent_fields->get_size(); ++y){
-                AST::Field *field = parent_fields->get_element(y);
-                
-                class_fields.push_back(get_type(field->get_type()));
-            }
-
-            // inherited methods
-            AST::List<AST::Method> *parent_methods = parent->get_method_list();
-            for(size_t y = 0; y < parent_methods->get_size(); ++y){
-
-                AST::Method *method = parent_methods->get_element(y); 
-
-                if(methods_signatures.find(method->get_name()) == methods_signatures.end()){ // if it is not overriding
-                    methods.push_back(module->getFunction(parent->get_name() + "__" + method->get_name()));
-
-                    auto type = ((Function*) methods[i])->getFunctionType();
-                    methods_types.push_back(PointerType::get(type, 0)); // add the type
-                }
-                else{ // if it is overriding
-                    int index = method_indexes[method->get_name()]; // get the index
-                    methods[index] = module->getFunction(parent->get_name() + "__" + method->get_name()); // update the method
-
-                    auto type = ((Function*) methods[index])->getFunctionType(); 
-                    methods_types[index] = PointerType::get(type, 0); // update the type
-                }
-            }
-        } while(true);*/
     }
 }
 
