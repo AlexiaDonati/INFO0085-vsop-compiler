@@ -33,6 +33,7 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
     
     AST::List<AST::Class> *classes = program->get_class_list();
 
+    StructType *class_type = nullptr; // Declare structure for class
     StructType *vtable_type = nullptr; // Declare VTable structure for class
 
     /****************** Define the Classes ******************/
@@ -40,10 +41,10 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
         AST::Class *current_class = classes->get_element(i);
 
         /****************** Define the Class structure ******************/
-        // Declare structure
-        StructType *class_type = StructType::create(*context, current_class->get_name()); // Declare structure for class
+        // Initialize the class structure
+        class_type = StructType::create(*context, current_class->get_name()); // Declare structure for class
         
-        // Declare vtable
+        // Initialize the VTable structure
         vtable_type = StructType::create(*context, "struct." + current_class->get_name() + "Vtable"); // Declare VTable structure for class
 
         /************** Fields **************/
@@ -121,33 +122,6 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
                 ++arg_it;
             }
         }
-
-        /************** New and Init functions **************/
-        // Declare function 'new': allocate memory for a new object and return it.
-        FunctionType *method_type = FunctionType::get(
-            class_type->getPointerTo(), // The return type
-            {},                         // The arguments
-            false);                     // No variable number of arguments
-
-        Function *new_function = Function::Create(
-            method_type,                            // The signature
-            GlobalValue::ExternalLinkage,           // The linkage
-            "new_" + current_class->get_name(),     // The name
-            module);                                // The LLVM module
-
-        // Declare function 'init': initialize an object.
-        method_type = FunctionType::get(
-            class_type->getPointerTo(),   // The return type
-            {class_type->getPointerTo()}, // The arguments
-            false);                       // No variable number of arguments
-
-        Function *init_function = Function::Create(
-            method_type,                            // The signature
-            GlobalValue::ExternalLinkage,           // The linkage
-            "init_" + current_class->get_name(),    // The name
-            module);                                // The LLVM module
-
-        init_function->arg_begin()->setName("self");
     }
 
     /************** Declare the methods as part of the class **************/
@@ -191,6 +165,77 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
         } 
         vtable_type->setBody(methods_types);
 
+        /************** New and Init functions **************/
+        // Declare function 'new': allocate memory for a new object and return it.
+        FunctionType *method_type = FunctionType::get(
+            class_type->getPointerTo(), // The return type
+            {},                         // The arguments
+            false);                     // No variable number of arguments
+
+        Function *new_function = Function::Create(
+            method_type,                            // The signature
+            GlobalValue::ExternalLinkage,           // The linkage
+            "new_" + current_class->get_name(),     // The name
+            module);                                // The LLVM module
+
+        // Declare function 'init': initialize an object.
+        method_type = FunctionType::get(
+            class_type->getPointerTo(),   // The return type
+            {class_type->getPointerTo()}, // The arguments
+            false);                       // No variable number of arguments
+
+        Function *init_function = Function::Create(
+            method_type,                            // The signature
+            GlobalValue::ExternalLinkage,           // The linkage
+            "init_" + current_class->get_name(),    // The name
+            module);                                // The LLVM module
+
+        init_function->arg_begin()->setName("self");
+
+        /******** Implement the 'new' function ********/
+        // First create an entry point.
+        BasicBlock *new_entry = BasicBlock::Create(
+            *context,      // The LLVM context
+            "entry",       // The label of the block
+            new_function); // The function in which should be inserted the block
+        
+        builder->SetInsertPoint(new_entry);
+
+        // Get the size of the object
+        Value* ptr_size = builder->CreateGEP(
+            class_type,                                             // The pointed type
+            ConstantPointerNull::get(class_type->getPointerTo()),   // The address
+            {builder->getInt32(1)},                                 // The index of the element we want
+            "");                                                    // Name of the LLVM variable (not fixed here)
+
+        Value* bytes_size = builder->CreatePointerCast(
+            ptr_size,                       // The value to cast
+            Type::getInt64Ty(*context),     // The casting type
+            "");                            // Name of the LLVM variable (not fixed here)
+
+        // Now that we have the size, we can call malloc:
+        Value *struct_ptr = builder->CreateCall(
+            module->getFunction("malloc"),  // Function to call
+            {bytes_size});                  // Arguments
+
+        // Malloc returns a i8 pointer, we have to cast it as a pointer towards our structure
+        Value *cast_struct_ptr = builder->CreatePointerCast(
+            struct_ptr,                     // The value to cast
+            class_type->getPointerTo(),     // The casting type
+            "");                            // Name of the LLVM variable (not fixed here)
+
+        // The last thing to do is to return the initialized object
+        builder->CreateRet(cast_struct_ptr);
+
+        /******** Implement the 'init' function ********/
+
+        BasicBlock *init_entry = BasicBlock::Create(
+            *context,       // The LLVM context
+            "entry",        // The label of the block
+            init_function); // The function in which should be inserted the block
+
+        builder->SetInsertPoint(init_entry);
+
         /************** Defining the vtable **************/
         // Create a constant
         Constant *vtable_const = ConstantStruct::get(
@@ -205,7 +250,17 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
             GlobalValue::InternalLinkage, // The linkage
             vtable_const,                 // The constant value
             current_class->get_name() + "_vtable");      // The name of the variable
-            
+
+        /******** Initialize the vtable ********/
+
+        Value* vtable_ptr = builder->CreateGEP(
+            class_type,                 // The pointed type
+            init_function->arg_begin(), // The address (self)
+            {builder->getInt32(0),      // First element "of the array" (no array here, only one element, but it is required)
+            builder->getInt32(0)}, 
+            "");                        // Name of the LLVM variable (not fixed here)
+
+        builder->CreateStore(vtable, vtable_ptr);    
     }
 }
 
