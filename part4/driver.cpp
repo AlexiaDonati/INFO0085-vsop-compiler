@@ -166,8 +166,6 @@ string Driver::generate_code(){
     if(type_table == NULL)
         make_type_table();
     
-    //LLVM *llvm = LLVM::get_instance(ast, source_file);
-
     AST::Code_generation_visitor* code_generator = new AST::Code_generation_visitor(type_table);
     ast->accept(code_generator);
 
