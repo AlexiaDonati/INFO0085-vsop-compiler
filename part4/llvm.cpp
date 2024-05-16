@@ -91,7 +91,15 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
 
     arguments_values = get_function_args(method_function);
 
-    set_return_value(0);
+    load(arguments_values[0], 0);
+/*
+    make_next_block("test", method_function);
+
+    load(arguments_values[0], 0);
+
+    make_next_block("", method_function);
+
+    load(arguments_values[0], 0);*/
 
 // M table save---------------------------
     save_m_table(m_table_type, class_name, methods_types, methods);
@@ -631,7 +639,21 @@ Function* LLVM::make_init(string class_name, StructType* class_type){
     return init_function;
 }
 
-void LLVM::make_function_block(string name, Function *function){
+BasicBlock * LLVM::make_next_block(string name, Function *function){
+    // ==== ==== ==== Define block
+    BasicBlock *function_block = BasicBlock::Create(
+        *context,         // The LLVM context
+        name,             // The label of the block
+        function);        // The function in which should be inserted the block
+    
+    // ==== ==== ==== Define Builder
+    builder->CreateBr(function_block);
+    builder->SetInsertPoint(function_block);
+
+    return function_block;
+}
+
+BasicBlock * LLVM::make_function_block(string name, Function *function){
     // ==== ==== ==== Define block
     BasicBlock *function_block = BasicBlock::Create(
         *context,         // The LLVM context
@@ -640,6 +662,8 @@ void LLVM::make_function_block(string name, Function *function){
     
     // ==== ==== ==== Define Builder
     builder->SetInsertPoint(function_block);
+
+    return function_block;
 }
 
 Value* LLVM::load(Value* object, uint position){

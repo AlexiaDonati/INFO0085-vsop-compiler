@@ -86,7 +86,9 @@ class LLVM {
 
         Function* make_init(string class_name, StructType* class_type);
 
-        void make_function_block(string name, Function *function);
+        BasicBlock * make_next_block(string name, Function *function);
+
+        BasicBlock * make_function_block(string name, Function *function);
 
         Value* load(Value* object, uint position);
 
