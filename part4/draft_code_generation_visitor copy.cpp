@@ -54,7 +54,12 @@ void* Code_generation_visitor::visit(Method* method){
     // Make block then implement it
     make_new_block(method_function);
 
-    method->get_body_block()->accept(this);
+    Value *return_value = (Value *) method->get_body_block()->accept(this);
+
+    if(return_value == NULL)
+        set_return_value();
+    
+    set_return_value(return_value);
 
     // Remove args from v_table
     for (auto arg_value : args_values)
@@ -85,7 +90,31 @@ void* Code_generation_visitor::visit(If* if_){
 }
 
 void* Code_generation_visitor::visit(While* while_){
+
+    // Make the condition block
+    BasicBlock *cond_block = make_next_block();
+
+    Value *cond_value = (Value*) while_->get_cond_expr()->accept(this);
+
+    // Make the body block
+    BasicBlock *body_block = make_new_block();
+
+    while_->get_body_expr()->accept(this);
+    BUILDER->CreateBr(cond_block);
+
+    // Make the after block
+    BasicBlock *after_block = make_next_block();
+
+    // Make the builder targetting the current block
+    BUILDER->SetInsertPoint(cond_block);
+
+    // if cond is true -> jmp to body_block, else -> jmp to after_block
+    BUILDER->CreateCondBr(cond_value, body_block, after_block);
+
+    // Must finish on the after block
+    BUILDER->SetInsertPoint(after_block);
     
+    return NULL;
 }
 
 void* Code_generation_visitor::visit(Let* let){
@@ -320,6 +349,14 @@ Value *Code_generation_visitor::get_field(string name){
     return load(self_value, name);
 }
 
+BasicBlock * Code_generation_visitor::get_current_block(){
+    return BUILDER->GetInsertBlock();
+}
+
+BasicBlock * Code_generation_visitor::make_new_block(){
+    return make_new_block(get_function());
+}
+
 BasicBlock * Code_generation_visitor::make_new_block(Function *function){
     // ==== ==== ==== Define block
     BasicBlock *function_block = BasicBlock::Create(
@@ -334,7 +371,7 @@ BasicBlock * Code_generation_visitor::make_new_block(Function *function){
 }
 
 BasicBlock * Code_generation_visitor::make_next_block(){
-    return make_new_block(get_function());
+    return make_next_block(get_function());
 }
 
 BasicBlock * Code_generation_visitor::make_next_block(Function *function){
@@ -349,4 +386,33 @@ BasicBlock * Code_generation_visitor::make_next_block(Function *function){
     BUILDER->SetInsertPoint(function_block);
 
     return function_block;
+}
+
+void Code_generation_visitor::set_return_value(bool return_value){
+    BUILDER->CreateRet(
+        ConstantInt::get(
+            Type::getInt1Ty(*context), 
+            (return_value) ? 1 : 0
+        )
+    );
+}
+
+void Code_generation_visitor::set_return_value(int return_value){
+    BUILDER->CreateRet(
+        ConstantInt::get(
+            Type::getInt32Ty(*context), 
+            return_value
+        )
+    );
+}
+
+void Code_generation_visitor::set_return_value(Value *return_value){
+    BUILDER->CreateRet(
+        return_value
+    );
+}
+
+// return unit
+void Code_generation_visitor::set_return_value(){
+    BUILDER->CreateRetVoid();
 }
