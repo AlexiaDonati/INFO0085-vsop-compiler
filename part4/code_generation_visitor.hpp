@@ -14,7 +14,6 @@ namespace AST{
     class Code_generation_visitor : public Visitor {
         private:
             LLVM *llvm_instance = nullptr;
-            Class *current_class = nullptr;
 
         public:
             type::Table *table;
