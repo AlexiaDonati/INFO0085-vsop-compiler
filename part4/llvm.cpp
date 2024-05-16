@@ -169,7 +169,7 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
         // Declare function 'new': allocate memory for a new object and return it.
         FunctionType *method_type = FunctionType::get(
             class_type->getPointerTo(), // The return type
-            {},                         // The arguments
+            {},                         // The arguments (no self for new)
             false);                     // No variable number of arguments
 
         Function *new_function = Function::Create(
@@ -236,31 +236,32 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
 
         builder->SetInsertPoint(init_entry);
 
-        /************** Defining the vtable **************/
+
+        /************** Defining the mtable **************/
         // Create a constant
-        Constant *vtable_const = ConstantStruct::get(
+        Constant *mtable_const = ConstantStruct::get(
             vtable_type, // Type of the constant structure
             methods);    // Values to give to the different fields
 
         // Assign the constant to a global variable
-        GlobalVariable *vtable = new GlobalVariable(
+        GlobalVariable *mtable = new GlobalVariable(
             *module,                      // The LLVM module
             vtable_type,                  // The type of the constant
             true,                         // It is constant
             GlobalValue::InternalLinkage, // The linkage
-            vtable_const,                 // The constant value
-            current_class->get_name() + "_vtable");      // The name of the variable
+            mtable_const,                 // The constant value
+            current_class->get_name() + "_mtable");      // The name of the variable
 
-        /******** Initialize the vtable ********/
+        /******** Initialize the mtable ********/
 
-        Value* vtable_ptr = builder->CreateGEP(
+        Value* mtable_ptr = builder->CreateGEP(
             class_type,                 // The pointed type
             init_function->arg_begin(), // The address (self)
             {builder->getInt32(0),      // First element "of the array" (no array here, only one element, but it is required)
             builder->getInt32(0)}, 
             "");                        // Name of the LLVM variable (not fixed here)
 
-        builder->CreateStore(vtable, vtable_ptr);    
+        builder->CreateStore(mtable, mtable_ptr);    
     }
 }
 
