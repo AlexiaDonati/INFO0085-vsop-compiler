@@ -90,13 +90,31 @@ void* Code_generation_visitor::visit(While* while_){
 
 void* Code_generation_visitor::visit(Let* let){
     // add new variable to vtable and keep the old if there is a collition on names
+    string name = let->get_name();
+    Value *old_variable = NULL;
+    if(current_vtable.count(name))
+        old_variable = current_vtable[name];
 
     // initialize if needed
+    if(let->has_init_expr()){
+        make_next_block();
+        Value* variable_value = (Value*) let->get_init_expr()->accept(this);
+        current_vtable[name] = variable_value;
+    } else {
+        current_vtable[name] = NULL;
+    }
 
     // execute block
+    make_next_block();
+    Value* return_value = (Value*) let->scope_expr()->accept(this);
 
-    // reload old variable if collision
-    
+    // Remove new and reload old variable if collision
+    current_vtable.erase(name);
+
+    if(old_variable != NULL)
+        current_vtable[name] = old_variable;  
+
+    return return_value;
 }
 
 void* Code_generation_visitor::visit(Assign* assign){
@@ -205,7 +223,7 @@ void* Code_generation_visitor::visit(New* new_){
 
     Value *new_object = BUILDER->CreateCall(new_function);
 
-    Function *init_function = module->getFunction(new_->type + "..init");
+    Function *init_function = MODULE->getFunction(new_->type + "..init");
 
     return BUILDER->CreateCall(init_function, {new_object});
 }
@@ -313,6 +331,10 @@ BasicBlock * Code_generation_visitor::make_new_block(Function *function){
     BUILDER->SetInsertPoint(function_block);
 
     return function_block;
+}
+
+BasicBlock * Code_generation_visitor::make_next_block(){
+    return make_new_block(get_function());
 }
 
 BasicBlock * Code_generation_visitor::make_next_block(Function *function){
