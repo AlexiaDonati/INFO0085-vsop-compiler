@@ -644,7 +644,7 @@ BasicBlock * LLVM::make_next_block(string name, Function *function){
     BasicBlock *function_block = BasicBlock::Create(
         *context,         // The LLVM context
         name,             // The label of the block
-        function);        // The function in which should be inserted the block
+        builder->GetInsertBlock()->getParent());        // The function in which should be inserted the block
     
     // ==== ==== ==== Define Builder
     builder->CreateBr(function_block);

@@ -33,11 +33,8 @@ void* Code_generation_visitor::visit(Formal* formal){
 }
 
 void* Code_generation_visitor::visit(Block* block){
-    make_function_block("", method_function);
-
-    vector<Value *> arguments_values = get_function_args(method_function);
-
-    set_return_value(true);
+    vector<Value *> lines_values = this->accept_list(block->get);
+    return lines_values.back();
 }
 
 void* Code_generation_visitor::visit(If* if_){
@@ -208,13 +205,33 @@ string Code_generation_visitor::get_type_string(Expr *expr){
     return table->find_expr_table(expr)->type_to_string();
 }
 
-void Code_generation_visitor::make_function_block(Function *function){
+Function* Code_generation_visitor::get_function(){
+    return BUILDER->GetInsertBlock()->getParent();
+}
+
+BasicBlock * Code_generation_visitor::make_new_block(Function *function){
     // ==== ==== ==== Define block
     BasicBlock *function_block = BasicBlock::Create(
         *context,         // The LLVM context
-        "entry",             // The label of the block
+        "",             // The label of the block
         function);        // The function in which should be inserted the block
     
     // ==== ==== ==== Define Builder
     BUILDER->SetInsertPoint(function_block);
+
+    return function_block;
+}
+
+BasicBlock * Code_generation_visitor::make_next_block(Function *function){
+    // ==== ==== ==== Define block
+    BasicBlock *function_block = BasicBlock::Create(
+        *context,         // The LLVM context
+        "",             // The label of the block
+        function);        // The function in which should be inserted the block
+    
+    // ==== ==== ==== Define Builder
+    BUILDER->CreateBr(function_block);
+    BUILDER->SetInsertPoint(function_block);
+
+    return function_block;
 }
