@@ -66,16 +66,55 @@ void* Code_generation_visitor::visit(Unop* unop){
 }
 
 void* Code_generation_visitor::visit(Binop* binop){
-    binop->get_column();
-    return NULL;
+    string op = binop->get_op();
+
+    Value *result = NULL;
+
+    Value *left = (Value*) binop->get_left_expr()->accept(this);
+    Value *right = (Value*) binop->get_right_expr()->accept(this);
+
+    switch (binop_to_enum.at(op)){
+    case EQ:
+        result = builder->CreateICmpEQ(left, right, "");
+        break;
+    case LT:
+        result = builder->CreateICmpSLT(left, right, "");
+        break;
+    case LEQ:
+        result = builder->CreateICmpSLE(left, right, "");
+        break;
+    case ADD:
+        result = builder->CreateAdd(left, right, "");
+        break;
+    case SUB:
+        result = builder->CreateSub(left, right, "");
+        break;
+    case MUL:
+        result = builder->CreateMul(left, right, "");
+        break;
+    case DIV:
+        result = builder->CreateSDiv(left, right, "");
+        break;
+    case POW:
+        // TODO: implement the pow function the call it here
+        break;
+    case AND:
+        result = builder->CreateAnd(left, right, "");
+        break;
+    default:
+        break;
+    }
+
+    return result;
 }
 
 void* Code_generation_visitor::visit(Call* call){
     Value *object = (Value*) call->get_object()->accept(this);
+    string object_type = get_type_string(call->get_object());
     // Position of the method in the m table
-    uint position = // TODO: must know the position of the method in m table
-    std::string return_type = table->find_expr_table(call)->->type_to_string();
-    std::vector<Value *> args = this->accept_list(call->get_arg_expr_list());
+    uint position = method_indexes[object_type + "." + call->get_method()];
+    string return_type = get_type_string(call);
+    vector<Value *> args = this->accept_list(call->get_arg_expr_list());
 
     // Load the value of mtable of object
     Value* m_table_value = load(object, 0); // m table always at index 0
@@ -139,4 +178,8 @@ Value* Code_generation_visitor::get_pointer(Value* object, uint position){
             {llvm_instance->builder->getInt32(0), 
             llvm_instance->builder->getInt32(position)},
             "");
+}
+
+std::string Code_generation_visitor::get_type_string(Expr *expr){
+    return table->find_expr_table(expr)->type_to_string();
 }
