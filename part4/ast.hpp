@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <map>
 #include "type.hpp"
+#include "llvm/IR/Function.h"
 
 #define TO_VALUE(void_pointer) this->get_value_from_void(void_pointer)
 #define TO_VOID(value) this->get_void_from_value(value)
@@ -558,6 +559,10 @@ namespace AST
 
             std::map<std::string, Field*>  field_map;
             std::map<std::string, Method*> method_map;
+
+            std::map<std::string, llvm::FunctionType*>  method_signatures;
+            std::map<std::string, uint32_t> method_indexes;
+            std::map<std::string, uint32_t> field_indexes;
         private:
             std::string name;
             std::string parent;
