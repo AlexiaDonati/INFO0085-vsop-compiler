@@ -5,6 +5,8 @@
 using namespace AST;
 using namespace std;
 
+#define BUILDER llvm_instance->builder
+
 void* Code_generation_visitor::visit(Program* program){
     program->get_column();
     return NULL;
@@ -61,8 +63,27 @@ void* Code_generation_visitor::visit(Self* self){
 }
 
 void* Code_generation_visitor::visit(Unop* unop){
-    unop->get_column();
-    return NULL;
+    string op = unop->get_op();
+
+    Value *result = NULL;
+
+    Value *expr = (Value*) unop->get_expr()->accept(this);
+
+    switch (unop_to_enum.at(op)){
+    case NOT:
+        result = BUILDER->CreateNot(expr, "");
+        break;
+    case UNARY:
+        result = BUILDER->CreateNeg(expr, "");
+        break;
+    case ISNULL:
+        result = BUILDER->CreateIsNull(expr, "");
+        break;
+    default:
+        break;
+    }
+
+    return result;
 }
 
 void* Code_generation_visitor::visit(Binop* binop){
@@ -75,31 +96,31 @@ void* Code_generation_visitor::visit(Binop* binop){
 
     switch (binop_to_enum.at(op)){
     case EQ:
-        result = builder->CreateICmpEQ(left, right, "");
+        result = BUILDER->CreateICmpEQ(left, right, "");
         break;
     case LT:
-        result = builder->CreateICmpSLT(left, right, "");
+        result = BUILDER->CreateICmpSLT(left, right, "");
         break;
     case LEQ:
-        result = builder->CreateICmpSLE(left, right, "");
+        result = BUILDER->CreateICmpSLE(left, right, "");
         break;
     case ADD:
-        result = builder->CreateAdd(left, right, "");
+        result = BUILDER->CreateAdd(left, right, "");
         break;
     case SUB:
-        result = builder->CreateSub(left, right, "");
+        result = BUILDER->CreateSub(left, right, "");
         break;
     case MUL:
-        result = builder->CreateMul(left, right, "");
+        result = BUILDER->CreateMul(left, right, "");
         break;
     case DIV:
-        result = builder->CreateSDiv(left, right, "");
+        result = BUILDER->CreateSDiv(left, right, "");
         break;
     case POW:
         // TODO: implement the pow function the call it here
         break;
     case AND:
-        result = builder->CreateAnd(left, right, "");
+        result = BUILDER->CreateAnd(left, right, "");
         break;
     default:
         break;
@@ -129,17 +150,17 @@ void* Code_generation_visitor::visit(Call* call){
 
     args.insert(args.begin(), object);
 
-    return builder->CreateCall(false_signature, length_method_value, args, "");
+    return BUILDER->CreateCall(false_signature, length_method_value, args, "");
 }
 
 void* Code_generation_visitor::visit(New* new_){
     Function *new_function = module->getFunction(new_->type + "..new");
 
-    Value *new_object = llvm_instance->builder->CreateCall(new_function);
+    Value *new_object = BUILDER->CreateCall(new_function);
 
     Function *init_function = module->getFunction(new_->type + "..init");
 
-    return llvm_instance->builder->CreateCall(init_function, {new_object});
+    return BUILDER->CreateCall(init_function, {new_object});
 }
 
 void* Code_generation_visitor::visit(String* string_){
@@ -169,14 +190,14 @@ void* Code_generation_visitor::visit(Object* object){
 
 Value* Code_generation_visitor::load(Value* object, uint position){
     Value* ptr = get_pointer(object, position);
-    return llvm_instance->builder->CreateLoad(ptr, "");
+    return BUILDER->CreateLoad(ptr, "");
 }
 
 Value* Code_generation_visitor::get_pointer(Value* object, uint position){
-    return llvm_instance->builder->CreateGEP(
+    return BUILDER->CreateGEP(
             object, 
-            {llvm_instance->builder->getInt32(0), 
-            llvm_instance->builder->getInt32(position)},
+            {BUILDER->getInt32(0), 
+            BUILDER->getInt32(position)},
             "");
 }
 
