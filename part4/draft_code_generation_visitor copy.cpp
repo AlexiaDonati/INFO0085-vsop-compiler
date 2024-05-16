@@ -6,29 +6,72 @@ using namespace AST;
 using namespace std;
 
 #define BUILDER llvm_instance->builder
+#define MODULE module
 
 void* Code_generation_visitor::visit(Program* program){
-    program->get_column();
+    this->accept_list(program->get_class_list());
+
     return NULL;
 }
 
 void* Code_generation_visitor::visit(Class* class_){
-    class_->get_column();
+    current_class = class_->get_name();
+
+    // Clear v_table (because do not need variable of other classes)
+    current_vtable.clear();
+    // We don't put field in the v_table 
+    // because we will get the value from the self arg
+
+    // We know that if a variable has no value in the v table
+    // It is a field of the class
+
+    // Make methods
+    this->accept_list(class_->get_method_list());
+
     return NULL;
+    
 }
 
 void* Code_generation_visitor::visit(Field* field){
-    field->get_column();
     return NULL;
 }
 
 void* Code_generation_visitor::visit(Method* method){
-    method->get_column();
+    // Put args in v_table
+    Function *method_function = get_function(current_class, method->get_name());
+
+    vector<Value *> args_values = get_function_args(method_function);
+    map<string, Value*> old_vtable;
+
+    for (auto arg_value : args_values){
+        // Save all already existing variables to retreive later
+        if(current_vtable.count(get_name(arg_value)))
+            old_vtable[get_name(arg_value)] = current_vtable[get_name(arg_value)];
+            
+        current_vtable[get_name(arg_value)] = arg_value;
+    }
+
+    // Make block then implement it
+    make_new_block(method_function);
+
+    method->get_body_block()->accept(this);
+
+    // Remove args from v_table
+    for (auto arg_value : args_values)
+        current_vtable.erase(get_name(arg_value));
+
+    // retreve old variable
+    for(auto it = old_vtable.begin(); it != old_vtable.end(); it++){
+        string arg_name = it->first;
+        Value *arg_value = it->second;
+
+        current_vtable[arg_name] = arg_value;
+    }
+
     return NULL;
 }
 
 void* Code_generation_visitor::visit(Formal* formal){
-    formal->get_column();
     return NULL;
 }
 
@@ -38,28 +81,32 @@ void* Code_generation_visitor::visit(Block* block){
 }
 
 void* Code_generation_visitor::visit(If* if_){
-    if_->get_column();
-    return NULL;
+    
 }
 
 void* Code_generation_visitor::visit(While* while_){
-    while_->get_column();
-    return NULL;
+    
 }
 
 void* Code_generation_visitor::visit(Let* let){
-    let->get_column();
-    return NULL;
+    // add new variable to vtable and keep the old if there is a collition on names
+
+    // initialize if needed
+
+    // execute block
+
+    // reload old variable if collision
+    
 }
 
 void* Code_generation_visitor::visit(Assign* assign){
-    assign->get_column();
-    return NULL;
+    Value* expr_value = (Value *) assign->get_expr()->accept(this);
+
+    BUILDER->CreateStore(expr_value, get_variable(assign->get_name()));
 }
 
 void* Code_generation_visitor::visit(Self* self){
-    self->get_column();
-    return NULL;
+    return get_function_args().front();
 }
 
 void* Code_generation_visitor::visit(Unop* unop){
@@ -164,28 +211,36 @@ void* Code_generation_visitor::visit(New* new_){
 }
 
 void* Code_generation_visitor::visit(String* string_){
-    string_->get_column();
-    return NULL;
+    
 }
 
 void* Code_generation_visitor::visit(Integer* integer){
-    integer->get_column();
-    return NULL;
+    
 }
 
 void* Code_generation_visitor::visit(Boolean* boolean){
-    boolean->get_column();
-    return NULL;
+    
 }
 
 void* Code_generation_visitor::visit(Unit* unit){
-    unit->get_column();
-    return NULL;
+    
 }
 
 void* Code_generation_visitor::visit(Object* object){
-    object->get_column();
-    return NULL;
+   return get_variable(object->get_name());
+}
+
+Value* Code_generation_visitor::load(Value* object, string name){
+    Value* ptr = get_pointer(object, position);
+    return BUILDER->CreateLoad(ptr, "");
+}
+
+Value* Code_generation_visitor::get_pointer(Value* object, string name){
+    return BUILDER->CreateGEP(
+            object, 
+            {BUILDER->getInt32(0), 
+            BUILDER->getInt32(field_indexes[name])},
+            "");
 }
 
 Value* Code_generation_visitor::load(Value* object, uint position){
@@ -205,8 +260,46 @@ string Code_generation_visitor::get_type_string(Expr *expr){
     return table->find_expr_table(expr)->type_to_string();
 }
 
+Function* Code_generation_visitor::get_function(string class, string method){
+    return MODULE->getFunction(class + "." + method);
+}
+
 Function* Code_generation_visitor::get_function(){
     return BUILDER->GetInsertBlock()->getParent();
+}
+
+vector<Value *> Code_generation_visitor::get_function_args(Function *function){
+    vector<Value *> arguments_values;
+    for (auto &arg : function->args())
+        arguments_values.push_back(&arg);
+    return arguments_values;
+}
+
+vector<Value *> Code_generation_visitor::get_function_args(){
+    Function *current_function = get_function();
+    vector<Value *> arguments_values;
+    for (auto &arg : current_function->args())
+        arguments_values.push_back(&arg);
+    return arguments_values;
+}
+
+string Code_generation_visitor::get_name(Value *value){
+    return value->getName()->str();
+}
+
+Value *Code_generation_visitor::get_variable(string name){
+    if(current_vtable.count(name))
+        return current_vtable[name];
+
+    return load(get_function_args.first(), name);
+}
+
+Value *Code_generation_visitor::get_field(string name){
+    vector<Value *> args_values = get_function_args();
+
+    Value *self_value = args_values.first();
+
+    return load(self_value, name);
 }
 
 BasicBlock * Code_generation_visitor::make_new_block(Function *function){
