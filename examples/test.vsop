@@ -1,13 +1,8 @@
-class Parent {
-    whoAmI(): string { "I'm a Parent.\n" }
-}
-class Child extends Parent {
-    whoAmI(): string { "I'm a Child.\n" }
-}
 class Main {
-    someParent(): Parent { new Child }
-    main(): int32 {
-        print(someParent().whoAmI());
+    foo : int32 <- 1 ;
+
+    main() : int32 {
+        foo <- 2;
         0
     }
 }

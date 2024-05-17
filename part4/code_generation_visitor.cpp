@@ -52,6 +52,8 @@ void* Code_generation_visitor::visit(Class* class_){
     // We know that if a variable has no value in the v table
     // It is a field of the class
 
+    this->accept_list(class_->get_field_list());
+
     // Make methods
     this->accept_list(class_->get_method_list());
 
@@ -59,8 +61,27 @@ void* Code_generation_visitor::visit(Class* class_){
 }
 
 void* Code_generation_visitor::visit(Field* field){
-    field->get_column();
-    return NULL;
+    if(!field->has_init_expr())
+        return NULL;
+
+    Function *init_function = MODULE->getFunction(current_class->get_name() + "..init");
+
+    BasicBlock *last_block = &init_function->getBasicBlockList().back();
+
+    BasicBlock *previous_block = get_current_block();
+
+    BUILDER->SetInsertPoint(last_block);
+
+    Value* init_value = (Value *) field->get_init_expr()->accept(this);
+
+    Value *field_ptr = get_variable_ptr(field->get_name());
+    LOG(field_ptr);
+
+    BUILDER->CreateStore(init_value, field_ptr);
+
+    BUILDER->SetInsertPoint(previous_block);
+
+    return init_value;
 }
 
 void* Code_generation_visitor::visit(Method* method){
@@ -230,9 +251,8 @@ void* Code_generation_visitor::visit(Assign* assign){
     BUILDER->CreateStore(expr_value, new_value);
 
     // update v table
-    current_vtable[assign->get_name()] = new_value;
-
-    LOG(new_value);
+    if(current_vtable.count(assign->get_name()))
+        current_vtable[assign->get_name()] = new_value;
 
     return new_value;
 }
@@ -433,11 +453,16 @@ Value *Code_generation_visitor::get_variable(string name){
     if(current_vtable.count(name))
         return current_vtable[name];
 
+    // if not in v_table, it is in self
     return load(get_function_args()[0], name);
 }
 
 Value *Code_generation_visitor::get_variable_ptr(string name){
-    return get_pointer(get_variable(name));
+    if(current_vtable.count(name))
+        return get_pointer(current_vtable[name]);
+
+    // if not in v_table, it is in self
+    return get_pointer(get_function_args()[0], name);
 }
 
 Value *Code_generation_visitor::get_field(string name){
