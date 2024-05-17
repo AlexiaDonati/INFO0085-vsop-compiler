@@ -143,6 +143,7 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
     /************** Declare the methods as part of the class **************/
     for (size_t i = 0; i < classes->get_size(); ++i){
         AST::Class *current_class = classes->get_element(i);
+        vtable_type = module->getTypeByName("struct." + current_class->get_name() + "Vtable");
         class_type = module->getTypeByName(current_class->get_name());
 
         std::vector<Type *> methods_types;
