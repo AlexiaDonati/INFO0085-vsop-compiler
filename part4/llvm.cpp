@@ -32,7 +32,7 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
         module);                      // The LLVM module
     
     /****************** Declare 'pow' function ******************/
-    // double pow(int x, int y);
+    // int pow(int x, int y);
 
     // Signature
     FunctionType *pow_sign = FunctionType::get(
@@ -48,13 +48,12 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
         module);                        // The LLVM module
 
     /****************** Define the Classes ******************/
-    AST::List<AST::Class> *classes = program->get_class_list();
-
     StructType *class_type = nullptr; // Declare structure for class
     StructType *vtable_type = nullptr; // Declare VTable structure for class
+    
+    for (auto &class_: program->class_map){
 
-    for (size_t i = 0; i < classes->get_size(); ++i){
-        AST::Class *current_class = classes->get_element(i);
+        AST::Class *current_class = class_.second;
 
         /****************** Define the Class structure ******************/
         // Initialize the class structure
@@ -73,7 +72,7 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
         uint32_t field_index = 1;
 
         AST::Class *parent = current_class;
-        while (true){ // Iterate over the class and its parents
+        while (true){ // Iterate over the class and its parents starting from the current class to the root class 'Object'
 
             AST::List<AST::Field> *field_list = parent->get_field_list();
             for (size_t j = 0; j < field_list->get_size(); ++j){ // Iterate over the fields of the class
@@ -85,19 +84,14 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
                 field_index++;
             }
 
-            if (parent->get_parent() == "Object"){
+            if(parent->get_name() == "Object"){
                 break;
             }
-            for(size_t c = 0; c < classes->get_size(); ++c){
-                if(classes->get_element(c)->get_name() == parent->get_parent()){
-                    parent = classes->get_element(c);
-                    break;
-                }
-            }
+            parent = program->class_map[parent->get_parent()];
         }
     
         class_type->setBody(class_fields);
-        
+
         /************** Create the Methods **************/
         AST::List<AST::Method> *method_list = current_class->get_method_list();
         for (size_t j = 0; j < method_list->get_size(); ++j){
@@ -143,8 +137,9 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
     }
 
     /************** Declare the methods as part of the class **************/
-    for (size_t i = 0; i < classes->get_size(); ++i){
-        AST::Class *current_class = classes->get_element(i);
+    for (auto &class_: program->class_map){
+        AST::Class *current_class = class_.second;
+
         vtable_type = module->getTypeByName("struct." + current_class->get_name() + "Vtable");
         class_type = module->getTypeByName(current_class->get_name());
 
@@ -173,15 +168,10 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
                 }
             }
 
-            if (parent->get_parent() == "Object"){
+            if (parent->get_name() == "Object"){
                 break;
             }
-            for(size_t c = 0; c < classes->get_size(); ++c){
-                if(classes->get_element(c)->get_name() == parent->get_parent()){
-                    parent = classes->get_element(c);
-                    break;
-                }
-            }
+            parent = program->class_map[parent->get_parent()];
         } 
         vtable_type->setBody(methods_types);
 
