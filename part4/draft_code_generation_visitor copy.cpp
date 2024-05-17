@@ -258,19 +258,19 @@ void* Code_generation_visitor::visit(New* new_){
 }
 
 void* Code_generation_visitor::visit(String* string_){
-    
+    return BUILDER.CreateGlobalStringPtr(string_->get_value());
 }
 
 void* Code_generation_visitor::visit(Integer* integer){
-    
+    return BUILDER.getInt32(integer->get_value());
 }
 
 void* Code_generation_visitor::visit(Boolean* boolean){
-    
+    return BUILDER.getInt1(integer->get_value());
 }
 
 void* Code_generation_visitor::visit(Unit* unit){
-    
+    return NULL;
 }
 
 void* Code_generation_visitor::visit(Object* object){
