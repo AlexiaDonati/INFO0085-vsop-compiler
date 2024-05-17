@@ -150,7 +150,7 @@ namespace AST
 
     class Check_classes : public Visitor {
         private:
-            std::map<std::string, Class*> class_map;
+            std::map<std::string, Class*> *class_map;
             bool main_class_exists = false;
 
         public:
@@ -583,6 +583,8 @@ namespace AST
             std::string getType() const  {return "Program";}
 
             List<Class>* get_class_list() { return class_list; }
+
+            std::map<std::string, Class*> class_map;
         private:
             List<Class>* class_list;
     };

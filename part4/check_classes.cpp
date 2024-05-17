@@ -74,12 +74,12 @@ bool Check_classes::check_class_body_redefinition(Class* class_){
 void* Check_classes::visit(Class* class_){
     string name = class_->get_name();
 
-    if (class_map.find(name) != class_map.end()) {
+    if ((*class_map).find(name) != (*class_map).end()) {
         cerr << class_->get_file_name() << ":" << class_->get_line() << ":" << class_->get_column() << ": semantic error: Class with name " << name << " already exists." << endl;
         return TO_VOID(false);
     }
 
-    class_map[name] = class_;
+    (*class_map)[name] = class_;
     Literals_visitor::set_parent(name, class_->get_parent());
 
     if(!check_class_body_redefinition(class_)){
@@ -124,14 +124,14 @@ bool Check_classes::check_override_field(Class* class_) {
         string name = it->first;
         Field* field = it->second;
 
-        Class* parent = class_map[class_->get_parent()];
+        Class* parent = (*class_map)[class_->get_parent()];
         while (parent->get_name() != "Object"){
             if (parent->field_map.find(name) != parent->field_map.end()){
                 cerr << field->get_file_name() << ":" << field->get_line() << ":" << field->get_column() << ": semantic error: Field with name " << name << " already exists in parent class." << endl;
                 return false;
             }
 
-            parent = class_map[parent->get_parent()];
+            parent = (*class_map)[parent->get_parent()];
         }
     }
 
@@ -143,7 +143,7 @@ bool Check_classes::check_override_method(Class* class_) {
         string name = it->first;
         Method* method = it->second;
 
-        Class* parent = class_map[class_->get_parent()];
+        Class* parent = (*class_map)[class_->get_parent()];
         while (parent->get_name() != "Object"){
             if (parent->method_map.find(name) != parent->method_map.end()){
 
@@ -173,7 +173,7 @@ bool Check_classes::check_override_method(Class* class_) {
                 }
             }
 
-            parent = class_map[parent->get_parent()];
+            parent = (*class_map)[parent->get_parent()];
         }
     }  
 
@@ -181,18 +181,18 @@ bool Check_classes::check_override_method(Class* class_) {
 }
 
 bool Check_classes::check_extend(){
-    for (auto it = class_map.begin(); it != class_map.end(); it++){
+    for (auto it = (*class_map).begin(); it != (*class_map).end(); it++){
         map<string, Class*> extend_path;
         string name = it->first;
         extend_path[name] = it->second;
 
         string parent_name = it->second->get_parent();
 
-        if (parent_name == "Object" || class_map.find(parent_name) == class_map.end()){
+        if (parent_name == "Object" || (*class_map).find(parent_name) == (*class_map).end()){
             continue;
         }
 
-        Class* parent = class_map[parent_name];
+        Class* parent = (*class_map)[parent_name];
         extend_path[parent_name] = parent;
 
         while (parent->get_name() != "Object"){
@@ -203,7 +203,7 @@ bool Check_classes::check_extend(){
                 return false;
             }
 
-            parent = class_map[next_parent_name];
+            parent = (*class_map)[next_parent_name];
             extend_path[next_parent_name] = parent;
         }
     
@@ -219,7 +219,7 @@ bool Check_classes::check_extend(){
 }
 
 bool Check_classes::is_class_defined(std::string class_name){
-    for (auto it = class_map.begin(); it != class_map.end(); it++){
+    for (auto it = (*class_map).begin(); it != (*class_map).end(); it++){
         if(it->first == class_name || class_name == "")
             return true;
     }
@@ -227,7 +227,7 @@ bool Check_classes::is_class_defined(std::string class_name){
 }
 
 bool Check_classes::check_undefined(){
-    for (auto it = class_map.begin(); it != class_map.end(); it++){
+    for (auto it = (*class_map).begin(); it != (*class_map).end(); it++){
         if(!is_class_defined(it->second->get_parent())){
             cerr << it->second->get_file_name() << ":" << it->second->get_line() << ":" << it->second->get_column() << ": semantic error: " << it->second->get_parent() << " is not defined" << endl;
             return false;
@@ -278,12 +278,13 @@ void Check_classes::add_object_class(Program* program){
     Literals_visitor::set_dispatch("Object", "inputInt32", "int32");
 
     Class* object_class = new Class(line, column, file_name, "Object", "", field_list, method_list);
-    class_map["Object"] = object_class;
+    program->class_map["Object"] = object_class;
 }
 
 void* Check_classes::visit(Program* program){
-    add_object_class(program);
+    class_map = &(program->class_map);
 
+    add_object_class(program);
     List<Class>* class_list = program->get_class_list();
     if(!fill_class_map(class_list)){
         return new int(0); // Error in class definition
