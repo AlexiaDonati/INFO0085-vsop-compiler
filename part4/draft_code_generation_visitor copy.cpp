@@ -37,6 +37,9 @@ void* Code_generation_visitor::visit(Field* field){
 }
 
 void* Code_generation_visitor::visit(Method* method){
+    // Clear v_table (because do not need variable of other methods)
+    current_vtable.clear();
+
     // Put args in v_table
     Function *method_function = get_function(current_class, method->get_name());
 
@@ -55,9 +58,6 @@ void* Code_generation_visitor::visit(Method* method){
     make_new_block(method_function);
 
     Value *return_value = (Value *) method->get_body_block()->accept(this);
-
-    if(return_value == NULL)
-        set_return_value();
     
     set_return_value(return_value);
 
@@ -438,31 +438,12 @@ BasicBlock * Code_generation_visitor::make_next_block(Function *function){
     return function_block;
 }
 
-void Code_generation_visitor::set_return_value(bool return_value){
-    BUILDER->CreateRet(
-        ConstantInt::get(
-            Type::getInt1Ty(*context), 
-            (return_value) ? 1 : 0
-        )
-    );
-}
-
-void Code_generation_visitor::set_return_value(int return_value){
-    BUILDER->CreateRet(
-        ConstantInt::get(
-            Type::getInt32Ty(*context), 
-            return_value
-        )
-    );
-}
-
 void Code_generation_visitor::set_return_value(Value *return_value){
-    BUILDER->CreateRet(
-        return_value
-    );
-}
 
-// return unit
-void Code_generation_visitor::set_return_value(){
-    BUILDER->CreateRetVoid();
+    if(return_value == NULL)
+        BUILDER->CreateRetVoid();
+    else
+        BUILDER->CreateRet(
+            return_value
+        );
 }
