@@ -86,7 +86,55 @@ void* Code_generation_visitor::visit(Block* block){
 }
 
 void* Code_generation_visitor::visit(If* if_){
-    
+    // Make the condition block
+    BasicBlock *cond_block = make_next_block();
+
+    Value *cond_value = (Value*) if_->get_cond_expr()->accept(this);
+
+    // Make the after block
+    BasicBlock *after_block = make_new_block();
+
+    // Make the then block
+    BasicBlock *then_block = make_new_block();
+
+    Value *then_value = (Value*)if_->get_then_expr()->accept(this);
+
+    BUILDER->CreateBr(after_block);
+
+    // Make the else block
+    BasicBlock *else_block = NULL;
+    Value *else_value = NULL;
+    if(if_->has_else_expr()){
+        else_block = make_new_block();
+
+        else_value = (Value*)if_->get_else_expr()->accept(this);
+
+        BUILDER->CreateBr(after_block);
+    }
+
+    // Make the builder targetting the current block
+    BUILDER->SetInsertPoint(cond_block);
+
+    // if cond is true -> jmp to body_block, else -> jmp to after_block
+    if(else_block == NULL)
+        BUILDER->CreateCondBr(cond_value, then_block, after_block);
+    else
+        BUILDER->CreateCondBr(cond_value, body_block, else_block);
+
+    // Make the builder targetting the current block
+    BUILDER->SetInsertPoint(after_block);
+
+    // If one is unit -> return unit
+    if(else_value == NULL || then_value == NULL)
+        return NULL;
+
+    // use phi function to get the return value
+
+    PHINode* phi_node = BUILDER->CreatePHI(then_value->getType(), 2, "");
+    phi_node->addIncoming(then_value, then_block);
+    phi_node->addIncoming(else_value, else_block);
+
+    return dyn_cast<Value>(phi_node);
 }
 
 void* Code_generation_visitor::visit(While* while_){
@@ -103,7 +151,7 @@ void* Code_generation_visitor::visit(While* while_){
     BUILDER->CreateBr(cond_block);
 
     // Make the after block
-    BasicBlock *after_block = make_next_block();
+    BasicBlock *after_block = make_new_block();
 
     // Make the builder targetting the current block
     BUILDER->SetInsertPoint(cond_block);
@@ -276,6 +324,8 @@ void* Code_generation_visitor::visit(Unit* unit){
 void* Code_generation_visitor::visit(Object* object){
    return get_variable(object->get_name());
 }
+
+/*********************************************************************************/
 
 Value* Code_generation_visitor::load(Value* object, string name){
     Value* ptr = get_pointer(object, position);
