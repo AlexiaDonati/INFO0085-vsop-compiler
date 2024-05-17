@@ -563,6 +563,7 @@ namespace AST
             std::map<std::string, llvm::FunctionType*>  method_signatures;
             std::map<std::string, uint32_t> method_indexes;
             std::map<std::string, uint32_t> field_indexes;
+            std::map<std::string, llvm::Function *> functions;
         private:
             std::string name;
             std::string parent;

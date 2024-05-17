@@ -137,6 +137,8 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
                 arg_it->setName(formal_list->get_element(k)->get_name());
                 ++arg_it;
             }
+
+            current_class->functions[method->get_name() + "_" + current_class->get_name()] = method_function;
         }
     }
 
@@ -166,7 +168,7 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
                     methods_types.push_back(type->getPointerTo());
 
                     current_class->method_signatures[method->get_name()] = type;
-                    current_class->method_indexes[method->get_name()] = method_index;
+                    method_indexes[current_class->get_name() + "." + method->get_name()] = method_index;
                     method_index++;
                 }
             }
@@ -193,7 +195,7 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
         Function *new_function = Function::Create(
             method_type,                            // The signature
             GlobalValue::ExternalLinkage,           // The linkage
-            "new_" + current_class->get_name(),     // The name
+            current_class->get_name() + "..new",     // The name
             module);                                // The LLVM module
 
         // Declare function 'init': initialize an object.
@@ -205,7 +207,7 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
         Function *init_function = Function::Create(
             method_type,                            // The signature
             GlobalValue::ExternalLinkage,           // The linkage
-            "init_" + current_class->get_name(),    // The name
+            current_class->get_name() + "..init" ,    // The name
             module);                                // The LLVM module
 
         init_function->arg_begin()->setName("self");
@@ -280,7 +282,7 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
             "");                        // Name of the LLVM variable (not fixed here)
 
         builder->CreateStore(mtable, mtable_ptr);    
-    }
+    } 
 }
 
 void LLVM::optimize(){
@@ -294,6 +296,15 @@ void LLVM::print(){
     module->print(os, nullptr);
 
     std::cout << output << std::endl;
+}
+
+void LLVM::print(Value *value){
+    string output;
+
+    raw_string_ostream os(output);
+    value->print(os);
+
+    std::cerr << output << std::endl;
 }
 
 void LLVM::executable(const string &fileName){
