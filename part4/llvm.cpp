@@ -25,18 +25,34 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
         false);                                    // No variable number of arguments
 
     // Declare the function
-    Function *malloc_function = Function::Create(
+    Function::Create(
         malloc_sign,                  // The signature
         GlobalValue::ExternalLinkage, // The linkage: external, malloc is implemented elsewhere
         "malloc",                     // The name
         module);                      // The LLVM module
     
+    /****************** Declare 'pow' function ******************/
+    // double pow(int x, int y);
+
+    // Signature
+    FunctionType *pow_sign = FunctionType::get(
+        Type::getInt32Ty(*context),                                       // The return type
+        {Type::getInt32Ty(*context), Type::getInt32Ty(*context)},   // The arguments
+        false);                                                                 // No variable number of arguments
+
+    // Declare the function                         
+    Function::Create(
+        pow_sign,                       // The signature
+        GlobalValue::ExternalLinkage,   // The linkage: external, pow is implemented elsewhere
+        "pow",                          // The name
+        module);                        // The LLVM module
+
+    /****************** Define the Classes ******************/
     AST::List<AST::Class> *classes = program->get_class_list();
 
     StructType *class_type = nullptr; // Declare structure for class
     StructType *vtable_type = nullptr; // Declare VTable structure for class
 
-    /****************** Define the Classes ******************/
     for (size_t i = 0; i < classes->get_size(); ++i){
         AST::Class *current_class = classes->get_element(i);
 
