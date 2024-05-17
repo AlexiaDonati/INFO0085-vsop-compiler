@@ -31,6 +31,7 @@ class LLVM {
         LLVMContext *context; // Used to generate the LLVM module and the types
         Module *module; // Module containing the LLVM IR (compilation unit)
         IRBuilder<> *builder; // Used to generate the LLVM IR
+        std::map<std::string, uint32_t> method_indexes;
 
         LLVM(AST::Program *program, const string &fileName);
 
@@ -59,6 +60,8 @@ class LLVM {
         void optimize();
 
         void print();
+
+        void print(Value *value);
 
         void executable(const std::string &fileName);
 };
