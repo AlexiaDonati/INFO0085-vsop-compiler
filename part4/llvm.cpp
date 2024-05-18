@@ -278,7 +278,12 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
             builder->getInt32(0)}, 
             "");                        // Name of the LLVM variable (not fixed here)
 
-        builder->CreateStore(mtable, mtable_ptr);    
+        builder->CreateStore(mtable, mtable_ptr);   
+
+        if (current_class->get_name() == "Object"){
+
+            builder->CreateRet(init_function->arg_begin());
+        } 
     } 
 }
 
