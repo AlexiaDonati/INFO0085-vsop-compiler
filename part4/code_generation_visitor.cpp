@@ -54,6 +54,14 @@ void* Code_generation_visitor::visit(Class* class_){
 
     this->accept_list(class_->get_field_list());
 
+    // add the return value to the init function
+    Function *init_function = MODULE->getFunction(current_class->get_name() + "..init");
+    BasicBlock *last_block = &init_function->getBasicBlockList().back();
+    BasicBlock *previous_block = get_current_block();
+    BUILDER->SetInsertPoint(last_block);
+    set_return_value(get_function_args(init_function)[0]);
+    BUILDER->SetInsertPoint(previous_block);
+
     // Make methods
     this->accept_list(class_->get_method_list());
 
@@ -75,7 +83,6 @@ void* Code_generation_visitor::visit(Field* field){
     Value* init_value = (Value *) field->get_init_expr()->accept(this);
 
     Value *field_ptr = get_variable_ptr(field->get_name());
-    LOG(field_ptr);
 
     BUILDER->CreateStore(init_value, field_ptr);
 
@@ -355,11 +362,7 @@ void* Code_generation_visitor::visit(Call* call){
 void* Code_generation_visitor::visit(New* new_){
     Function *new_function = MODULE->getFunction(new_->get_type() + "___new");
 
-    Value *new_object = BUILDER->CreateCall(new_function);
-
-    Function *init_function = MODULE->getFunction(new_->get_type() + "___init");
-
-    return BUILDER->CreateCall(init_function, {new_object});
+    return BUILDER->CreateCall(new_function);
 }
 
 void* Code_generation_visitor::visit(String* string_){
