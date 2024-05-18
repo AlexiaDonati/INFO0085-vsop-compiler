@@ -82,7 +82,7 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
             parent = program->class_map[parent->get_parent()];
             parents.insert(parents.begin(), parent);
         }
-        for (auto &parent : parents){ // Iterate over the class and its parents starting from the current class to the root class 'Object'
+        for (auto &parent : parents){ // Iterate over the class and its parents starting from the root class 'Object' to the current class
 
             AST::List<AST::Field> *field_list = parent->get_field_list();
             for (size_t j = 0; j < field_list->get_size(); ++j){ // Iterate over the fields of the class
@@ -151,6 +151,7 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
         std::vector<Type *> methods_types;
         vector<Constant *> methods;
         uint32_t method_index = 0;
+        std::map<std::string, bool> override_another_method;
 
         AST::Class *parent = current_class;
         std::vector<AST::Class *> parents;
@@ -163,8 +164,7 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
             parent = program->class_map[parent->get_parent()];
             parents.insert(parents.begin(), parent);
         }
-
-        for (auto &parent : parents){ // Iterate over the class and its parents starting from the current class to the root class 'Object'
+        for (auto &parent : parents){ // Iterate over the class and its parents starting from the root class 'Object' to the current class
 
             AST::List<AST::Method> *parent_methods = parent->get_method_list();
             for(size_t y = 0; y < parent_methods->get_size(); ++y){
@@ -174,17 +174,27 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
                     continue;
 
                 Function *class_function = module->getFunction(current_class->get_name() + "__" + method->get_name());
-                bool got_overriden = class_function != NULL;
 
-                FunctionType * type;
-                if(!got_overriden){
+                //FunctionType * type;
+                if(!override_another_method[method->get_name()]){
+                    override_another_method[method->get_name()] = true;
+
                     Function *function = module->getFunction(parent->get_name() + "__" + method->get_name());
+                    Type *function_type = function->getFunctionType();
                     
-                    // cast the function to the current class (must change the first arg to the current class)
+                    methods.push_back(function);
+                    methods_types.push_back(PointerType::get(function_type, 0));
+
+                    current_class->method_signatures[method->get_name()] = (FunctionType *) function_type;
+                    current_class->method_indexes[method->get_name()] = method_index;
+                    method_index++;
+
+                    /*
+                    urrent class (must change the first arg to the current class)
                     std::vector<Type*> casted_args;
 
                     for (auto& arg : function->args()) {
-                        casted_args.push_back(arg.getType());
+                        casted_args.push_back(arg.get_type());
                     }
                     casted_args[0] = class_type->getPointerTo();
                     
@@ -204,17 +214,22 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
 
                     methods.push_back(casted_function);
 
-                    type = casted_function->getFunctionType();
+                    type = casted_function->getFunctionType();*/
                 } else {
-                    methods.push_back(class_function);
+                    int index = current_class->method_indexes[method->get_name()];
 
-                    type = class_function->getFunctionType();
+                    Function *function = module->getFunction(parent->get_name() + "__" + method->get_name());
+                    methods[index] = function;
+
+                    Type *function_type = function->getFunctionType();
+                    methods_types[index] = PointerType::get(function_type, 0);
+                    current_class->method_signatures[method->get_name()] = (FunctionType *) function_type;
                 }
-                methods_types.push_back(type->getPointerTo());
+                //methods_types.push_back(type->getPointerTo());
 
-                current_class->method_signatures[method->get_name()] = type;
-                method_indexes[current_class->get_name() + "." + method->get_name()] = method_index;
-                method_index++;
+                //current_class->method_signatures[method->get_name()] = type;
+                //method_indexes[current_class->get_name() + "." + method->get_name()] = method_index;
+                //method_index++;
             }
         } 
         vtable_type->setBody(methods_types);
