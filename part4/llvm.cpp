@@ -344,13 +344,37 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
             "");                        // Name of the LLVM variable (not fixed here)
 
         builder->CreateStore(mtable, mtable_ptr);   
-
-        /*
-        if (current_class->get_name() == "Object"){
-
-            builder->CreateRet(init_function->arg_begin());
-        } */
     } 
+
+    /************** Define the main function **************/
+    
+    FunctionType *method_type = FunctionType::get(
+        get_type("int32"),  // The return type
+        {},                 // The arguments (no self for new)
+        false);             // No variable number of arguments
+
+    Function *main_function = Function::Create(
+        method_type,                    // The signature
+        GlobalValue::ExternalLinkage,   // The linkage
+        "main",                         // The name
+        module);                        // The LLVM module
+
+    /************** Implement the 'main' function **************/
+
+    BasicBlock *main_entry = BasicBlock::Create(
+        *context,       // The LLVM context
+        "entry",        // The label of the block
+        main_function); // The function in which should be inserted the block
+
+    builder->SetInsertPoint(main_entry);
+
+    Function *Main_new_function = module->getFunction("Main___new");
+    Value *main_value = builder->CreateCall(Main_new_function);
+
+    Function *Main_main_function = module->getFunction("Main__main");
+    Value *main_return = builder->CreateCall(Main_main_function, {main_value});
+    
+    builder->CreateRet(main_return);
 }
 
 void LLVM::optimize(){
