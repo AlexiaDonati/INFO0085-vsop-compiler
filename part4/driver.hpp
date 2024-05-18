@@ -94,7 +94,13 @@ namespace VSOP
          */
         int semantic_analysis();
 
-        std::string generate_code();
+        /**
+         * @brief Generate the code.
+         * 
+         * @param source_file The source file.
+         * @param execucable_generation True if we want to generate an executable.
+         */
+        void generate_code(const std::string &source_file, bool execucable_generation);
 
         void make_type_table();
 

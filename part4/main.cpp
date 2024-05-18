@@ -28,12 +28,12 @@ int main(int argc, char const *argv[])
 {
     Mode mode;
     string source_file;
-    bool must_print = false;
+    bool execucable_generation = false;
 
     if (argc == 2)
     {
         mode = Mode::CODE_GENERATION;
-        must_print = true;
+        execucable_generation = true;
         source_file = argv[1];
     }
     else if (argc == 3)
@@ -48,7 +48,7 @@ int main(int argc, char const *argv[])
     }
     else
     {
-        cerr << "Usage: " << argv[0] << " [-l|-p|-c] <source_file>" << endl;
+        cerr << "Usage: " << argv[0] << " [-l|-p|-c|-i] <source_file>" << endl;
         return -1;
     }
 
@@ -97,14 +97,7 @@ int main(int argc, char const *argv[])
         if (res != 0)
             return res;
 
-        string code_text = driver.generate_code();
-
-        /*
-        if(must_print)
-            // print the output text
-        else
-            // make file of output text
-        */
+        driver.generate_code(source_file, execucable_generation);
 
         driver.delete_type_table();
         driver.delete_ast();

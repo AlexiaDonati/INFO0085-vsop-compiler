@@ -234,8 +234,15 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
             class_type->getPointerTo(),     // The casting type
             "");                            // Name of the LLVM variable (not fixed here)
 
+        // The new object needs to be initialized, thus we call the 'init' function
+        Value *initialized_struct = CallInst::Create(
+            init_function,     // Name of the function to call
+            {cast_struct_ptr}, // Arguments
+            "",                // Name of the LLVM variable (not fixed here)
+            new_entry);        // The block in which the instruction will be inserted
+
         // The last thing to do is to return the initialized object
-        builder->CreateRet(cast_struct_ptr);
+        builder->CreateRet(initialized_struct);
 
         /******** Implement the 'init' function ********/
 
@@ -298,5 +305,18 @@ void LLVM::print(Value *value){
 }
 
 void LLVM::executable(const string &fileName){
+    string output;
+    raw_string_ostream os(output);
+    module->print(os, nullptr);
 
+    string exe_filename = fileName.substr(0, fileName.find_last_of("."));
+    ofstream exe(exe_filename + ".ll");
+	exe << output;
+	exe.close();
+
+    string cmd = "clang " + exe_filename + ".ll" + " -o " + exe_filename;
+    char char_cmd[cmd.size() + 1];
+    strcpy(char_cmd, cmd.c_str());
+
+    system(char_cmd);
 }

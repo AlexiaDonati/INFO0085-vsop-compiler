@@ -70,6 +70,12 @@ namespace AST{
                 }
             }
 
+            void generate_executable(const std::string &fileName){
+                if(llvm_instance != NULL){
+                    llvm_instance->executable(fileName);
+                }
+            }
+
             /*********************************************************************************/
 
             Value* load(Value* object, string name);

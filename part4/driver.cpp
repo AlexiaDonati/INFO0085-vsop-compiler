@@ -162,17 +162,19 @@ int Driver::semantic_analysis()
     return 0;
 }
 
-string Driver::generate_code(){
+void Driver::generate_code(const std::string &source_file, bool execucable_generation){
     if(type_table == NULL)
         make_type_table();
     
     AST::Code_generation_visitor* code_generator = new AST::Code_generation_visitor(type_table);
     ast->accept(code_generator);
 
-    //llvm->optimizeCode();
-    code_generator->print();
-
-    return "TODO";
+    if(execucable_generation){
+        code_generator->generate_executable(source_file);
+    }
+    else{
+        code_generator->print();
+    }
 }
 
 void Driver::make_type_table(){

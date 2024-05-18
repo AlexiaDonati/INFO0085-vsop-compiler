@@ -16,6 +16,8 @@
 
 #include <map>
 #include <vector>
+#include <iostream>
+#include <fstream>
 
 #include "ast.hpp"
 
