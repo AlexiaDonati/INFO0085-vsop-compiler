@@ -328,7 +328,7 @@ void* Code_generation_visitor::visit(Call* call){
     Value *object = (Value*) call->get_object()->accept(this);
     string object_type = get_type_string(call->get_object());
     // Position of the method in the m table
-    uint position = llvm_instance->method_indexes[object_type + "." + call->get_method()];
+    uint position = current_class->method_indexes[call->get_method()];
     string return_type = get_type_string(call);
     vector<Value *> args = this->accept_list(call->get_arg_expr_list());
 
