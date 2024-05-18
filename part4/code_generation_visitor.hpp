@@ -84,6 +84,8 @@ namespace AST{
 
             Value* load(Value* object, uint position);
 
+            Value* load(Value* ptr);
+
             Value* get_pointer(Value* object);
 
             Value* get_pointer(Value* object, uint position);

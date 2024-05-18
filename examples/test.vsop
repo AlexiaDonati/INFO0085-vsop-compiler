@@ -23,6 +23,18 @@ class Main {
         "rgfdg"
     }
 
+    pow(x : int32, n : int32) : int32 {
+        let pow : int32 <- 1 in {
+            let i : int32 <- 0 in {
+                while i < n do {
+                    pow <- pow + x;
+                    i <- i + 1
+                };
+                pow
+            }
+        }
+    }
+
     main() : int32 {
         foo <- 2;
         while (foo = 2) do {

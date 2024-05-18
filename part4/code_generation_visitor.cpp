@@ -99,18 +99,17 @@ void* Code_generation_visitor::visit(Method* method){
     Function *method_function = get_function(current_class->get_name(), method->get_name());
 
     vector<Value *> args_values = get_function_args(method_function);
-    map<string, Value*> old_vtable;
 
-    for (auto arg_value : args_values){
-        // Save all already existing variables to retreive later
-        if(current_vtable.count(get_name(arg_value)))
-            old_vtable[get_name(arg_value)] = current_vtable[get_name(arg_value)];
-            
-        current_vtable[get_name(arg_value)] = arg_value;
+    make_new_block(method_function);
+    
+    for (auto arg_value : args_values){       
+        if (!arg_value->getType()->isPointerTy()) {
+            current_vtable[get_name(arg_value)] = BUILDER->CreateAlloca(arg_value->getType());
+        } else 
+            current_vtable[get_name(arg_value)] = arg_value;
     }
 
     // Make block then implement it
-    make_new_block(method_function);
 
     Value *return_value = (Value *) method->get_body_block()->accept(this);
     
@@ -119,14 +118,6 @@ void* Code_generation_visitor::visit(Method* method){
     // Remove args from v_table
     for (auto arg_value : args_values)
         current_vtable.erase(get_name(arg_value));
-
-    // retreve old variable
-    for(auto it = old_vtable.begin(); it != old_vtable.end(); it++){
-        string arg_name = it->first;
-        Value *arg_value = it->second;
-
-        current_vtable[arg_name] = arg_value;
-    }
 
     return NULL;
 }
@@ -228,17 +219,17 @@ void* Code_generation_visitor::visit(Let* let){
     if(current_vtable.count(name))
         old_variable = current_vtable[name];
 
+    Value *new_ptr = BUILDER->CreateAlloca(llvm_instance->get_type(let->get_type()));
+
     // initialize if needed
     if(let->has_init_expr()){
-        make_next_block();
-        Value* variable_value = (Value*) let->get_init_expr()->accept(this);
-        current_vtable[name] = variable_value;
-    } else {
-        current_vtable[name] = BUILDER->CreateAlloca(llvm_instance->get_type(let->get_type()));;
-    }
+        Value* variable_new_value = (Value*) let->get_init_expr()->accept(this);
+        BUILDER->CreateStore(variable_new_value, new_ptr);
+    } 
+
+    current_vtable[name] = new_ptr;
 
     // execute block
-    make_next_block();
     Value* return_value = (Value*) let->get_scope_expr()->accept(this);
 
     // Remove new and reload old variable if collision
@@ -253,15 +244,13 @@ void* Code_generation_visitor::visit(Let* let){
 void* Code_generation_visitor::visit(Assign* assign){
     Value* expr_value = (Value *) assign->get_expr()->accept(this);
 
-    Value *new_value = get_variable_ptr(assign->get_name());
+    Value *variable_ptr = get_variable_ptr(assign->get_name());
 
-    BUILDER->CreateStore(expr_value, new_value);
-
-    // update v table
+    BUILDER->CreateStore(expr_value, variable_ptr);
     if(current_vtable.count(assign->get_name()))
-        current_vtable[assign->get_name()] = new_value;
+        current_vtable[assign->get_name()] = variable_ptr;
 
-    return new_value;
+    return expr_value;
 }
 
 void* Code_generation_visitor::visit(Self* self){
@@ -406,11 +395,11 @@ Value* Code_generation_visitor::load(Value* object, uint position){
     return BUILDER->CreateLoad(ptr, "");
 }
 
-Value* Code_generation_visitor::get_pointer(Value* object){
-    return BUILDER->CreateGEP(
-            object, 
-            {BUILDER->getInt32(0)},
-            "");
+Value* Code_generation_visitor::load(Value* ptr){
+    if (!ptr->getType()->isPointerTy()) {
+        return ptr;
+    } 
+    return BUILDER->CreateLoad(ptr, "");
 }
 
 Value* Code_generation_visitor::get_pointer(Value* object, uint position){
@@ -454,7 +443,7 @@ string Code_generation_visitor::get_name(Value *value){
 
 Value *Code_generation_visitor::get_variable(string name){
     if(current_vtable.count(name))
-        return current_vtable[name];
+        return load(current_vtable[name]);
 
     // if not in v_table, it is in self
     return load(get_function_args()[0], name);
@@ -462,7 +451,7 @@ Value *Code_generation_visitor::get_variable(string name){
 
 Value *Code_generation_visitor::get_variable_ptr(string name){
     if(current_vtable.count(name))
-        return get_pointer(current_vtable[name]);
+        return current_vtable[name];
 
     // if not in v_table, it is in self
     return get_pointer(get_function_args()[0], name);
