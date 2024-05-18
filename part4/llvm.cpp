@@ -370,7 +370,7 @@ void LLVM::executable(const string &fileName){
 	exe << output;
 	exe.close();
 
-    string cmd = "clang " + exe_filename + ".ll" + " /usr/local/lib/vsop/*.c" + " -o " + exe_filename;
+    string cmd = "clang " + exe_filename + ".ll" + " /usr/local/lib/vsop/*.ll" + " -o " + exe_filename;
     char char_cmd[cmd.size() + 1];
     strcpy(char_cmd, cmd.c_str());
 
