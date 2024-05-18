@@ -64,7 +64,7 @@ void* Code_generation_visitor::visit(Field* field){
     if(!field->has_init_expr())
         return NULL;
 
-    Function *init_function = MODULE->getFunction(current_class->get_name() + "..init");
+    Function *init_function = MODULE->getFunction(current_class->get_name() + "___init");
 
     BasicBlock *last_block = &init_function->getBasicBlockList().back();
 
@@ -353,11 +353,11 @@ void* Code_generation_visitor::visit(Call* call){
 }
 
 void* Code_generation_visitor::visit(New* new_){
-    Function *new_function = MODULE->getFunction(new_->get_type() + "..new");
+    Function *new_function = MODULE->getFunction(new_->get_type() + "___new");
 
     Value *new_object = BUILDER->CreateCall(new_function);
 
-    Function *init_function = MODULE->getFunction(new_->get_type() + "..init");
+    Function *init_function = MODULE->getFunction(new_->get_type() + "___init");
 
     return BUILDER->CreateCall(init_function, {new_object});
 }
@@ -423,7 +423,7 @@ string Code_generation_visitor::get_type_string(Expr *expr){
 }
 
 Function* Code_generation_visitor::get_function(string class_name, string method){
-    return current_class->functions[method + "_" + class_name];
+    return current_class->functions[class_name + "__" + method];
 }
 
 Function* Code_generation_visitor::get_function(){

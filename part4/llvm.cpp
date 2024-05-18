@@ -120,7 +120,7 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
             Function *method_function = Function::Create(
                 method_type,                                            // The signature
                 GlobalValue::ExternalLinkage,                           // The linkage (not important here)
-                method->get_name() + "_" + current_class->get_name(),   // The name
+                current_class->get_name() + "__" + method->get_name(),   // The name
                 module);                                                // The LLVM module
             
             // Setting the name of the arguments
@@ -132,10 +132,10 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
                 ++arg_it;
             }
 
-            current_class->functions[method->get_name() + "_" + current_class->get_name()] = method_function;
+            current_class->functions[current_class->get_name() + "__" + method->get_name()] = method_function;
         }
     }
-
+    
     /************** Declare the methods as part of the class **************/
     for (auto &class_: program->class_map){
         AST::Class *current_class = class_.second;
@@ -156,7 +156,7 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
 
                 bool got_overriden = current_class->method_signatures.find(method->get_name()) != current_class->method_signatures.end();
                 if(!got_overriden){
-                    Function *function = module->getFunction(method->get_name() + "_" + parent->get_name());
+                    Function *function = module->getFunction(parent->get_name() + "__" + method->get_name());
                     methods.push_back(function);
 
                     FunctionType *type = function->getFunctionType();
@@ -185,7 +185,7 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
         Function *new_function = Function::Create(
             method_type,                            // The signature
             GlobalValue::ExternalLinkage,           // The linkage
-            current_class->get_name() + "..new",     // The name
+            current_class->get_name() + "___new",     // The name
             module);                                // The LLVM module
 
         // Declare function 'init': initialize an object.
@@ -197,12 +197,18 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
         Function *init_function = Function::Create(
             method_type,                            // The signature
             GlobalValue::ExternalLinkage,           // The linkage
-            current_class->get_name() + "..init" ,    // The name
+            current_class->get_name() + "___init" ,    // The name
             module);                                // The LLVM module
 
         init_function->arg_begin()->setName("self");
 
         /******** Implement the 'new' function ********/
+        
+        if(current_class->get_name() == "Object"){
+            // The 'new' function of the Object class are already implemented in the runtime
+            continue;
+        }
+
         // First create an entry point.
         BasicBlock *new_entry = BasicBlock::Create(
             *context,      // The LLVM context
@@ -314,7 +320,7 @@ void LLVM::executable(const string &fileName){
 	exe << output;
 	exe.close();
 
-    string cmd = "clang " + exe_filename + ".ll" + " -o " + exe_filename;
+    string cmd = "clang " + exe_filename + ".ll" + " /usr/local/lib/vsop/*.c" + " -o " + exe_filename;
     char char_cmd[cmd.size() + 1];
     strcpy(char_cmd, cmd.c_str());
 
