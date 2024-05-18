@@ -173,13 +173,13 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
                 if(current_class->method_signatures.count(method->get_name()))
                     continue;
 
-                Function *class_function = module->getFunction(method->get_name() + "_" + current_class->get_name());
+                Function *class_function = module->getFunction(current_class->get_name() + "__" + method->get_name());
                 bool got_overriden = class_function != NULL;
 
                 FunctionType * type;
                 if(!got_overriden){
                     Function *function = module->getFunction(parent->get_name() + "__" + method->get_name());
-
+                    
                     // cast the function to the current class (must change the first arg to the current class)
                     std::vector<Type*> casted_args;
 
@@ -330,10 +330,11 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
 
         builder->CreateStore(mtable, mtable_ptr);   
 
+        /*
         if (current_class->get_name() == "Object"){
 
             builder->CreateRet(init_function->arg_begin());
-        } 
+        } */
     } 
 }
 

@@ -55,7 +55,7 @@ void* Code_generation_visitor::visit(Class* class_){
     this->accept_list(class_->get_field_list());
 
     // add the return value to the init function
-    Function *init_function = MODULE->getFunction(current_class->get_name() + "..init");
+    Function *init_function = MODULE->getFunction(current_class->get_name() + "___init");
     BasicBlock *last_block = &init_function->getBasicBlockList().back();
     BasicBlock *previous_block = get_current_block();
     BUILDER->SetInsertPoint(last_block);
