@@ -75,7 +75,6 @@ void* Code_generation_visitor::visit(Field* field){
     Value* init_value = (Value *) field->get_init_expr()->accept(this);
 
     Value *field_ptr = get_variable_ptr(field->get_name());
-    LOG(field_ptr);
 
     BUILDER->CreateStore(init_value, field_ptr);
 
@@ -355,11 +354,7 @@ void* Code_generation_visitor::visit(Call* call){
 void* Code_generation_visitor::visit(New* new_){
     Function *new_function = MODULE->getFunction(new_->get_type() + "..new");
 
-    Value *new_object = BUILDER->CreateCall(new_function);
-
-    Function *init_function = MODULE->getFunction(new_->get_type() + "..init");
-
-    return BUILDER->CreateCall(init_function, {new_object});
+    return BUILDER->CreateCall(new_function);
 }
 
 void* Code_generation_visitor::visit(String* string_){
