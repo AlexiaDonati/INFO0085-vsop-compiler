@@ -72,7 +72,17 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
         uint32_t field_index = 1;
 
         AST::Class *parent = current_class;
-        while (true){ // Iterate over the class and its parents starting from the current class to the root class 'Object'
+        std::vector<AST::Class *> parents;
+        parents.insert(parents.begin(), parent);
+
+        // Get all parents
+        while(true){
+            if (parent->get_name() == "Object")
+                break;
+            parent = program->class_map[parent->get_parent()];
+            parents.insert(parents.begin(), parent);
+        }
+        for (auto &parent : parents){ // Iterate over the class and its parents starting from the current class to the root class 'Object'
 
             AST::List<AST::Field> *field_list = parent->get_field_list();
             for (size_t j = 0; j < field_list->get_size(); ++j){ // Iterate over the fields of the class
@@ -83,11 +93,6 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
                 current_class->field_indexes[field->get_name()] = field_index;
                 field_index++;
             }
-
-            if(parent->get_name() == "Object"){
-                break;
-            }
-            parent = program->class_map[parent->get_parent()];
         }
     
         class_type->setBody(class_fields);
@@ -148,30 +153,69 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
         uint32_t method_index = 0;
 
         AST::Class *parent = current_class;
-        while(true){ // Iterate over the class and its parents starting from the current class to the root class 'Object'
+        std::vector<AST::Class *> parents;
+        parents.insert(parents.begin(), parent);
+
+        // Get all parents
+        while(true){
+            if (parent->get_name() == "Object")
+                break;
+            parent = program->class_map[parent->get_parent()];
+            parents.insert(parents.begin(), parent);
+        }
+
+        for (auto &parent : parents){ // Iterate over the class and its parents starting from the current class to the root class 'Object'
 
             AST::List<AST::Method> *parent_methods = parent->get_method_list();
             for(size_t y = 0; y < parent_methods->get_size(); ++y){
                 AST::Method *method = parent_methods->get_element(y); 
 
-                bool got_overriden = current_class->method_signatures.find(method->get_name()) != current_class->method_signatures.end();
+                if(current_class->method_signatures.count(method->get_name()))
+                    continue;
+
+                Function *class_function = module->getFunction(method->get_name() + "_" + current_class->get_name());
+                bool got_overriden = class_function != NULL;
+
+                FunctionType * type;
                 if(!got_overriden){
                     Function *function = module->getFunction(method->get_name() + "_" + parent->get_name());
-                    methods.push_back(function);
 
-                    FunctionType *type = function->getFunctionType();
-                    methods_types.push_back(type->getPointerTo());
+                    // cast the function to the current class (must change the first arg to the current class)
+                    std::vector<Type*> casted_args;
 
-                    current_class->method_signatures[method->get_name()] = type;
-                    method_indexes[current_class->get_name() + "." + method->get_name()] = method_index;
-                    method_index++;
+                    for (auto& arg : function->args()) {
+                        casted_args.push_back(arg.getType());
+                    }
+                    casted_args[0] = class_type->getPointerTo();
+                    
+                    FunctionType *casted_type = FunctionType::get(
+                        function->getReturnType(),   // The return type
+                        casted_args, // The arguments
+                        false);                       // No variable number of arguments
+
+                    Function *casted_function = Function::Create(
+                        casted_type,                            // The signature
+                        function->getLinkage(),           // The linkage
+                        function->getName() ,    // The name
+                        module);                                // The LLVM module
+
+                    casted_function->arg_begin()->setName("self");
+                    casted_function->copyAttributesFrom(function);
+
+                    methods.push_back(casted_function);
+
+                    type = casted_function->getFunctionType();
+                } else {
+                    methods.push_back(class_function);
+
+                    type = class_function->getFunctionType();
                 }
-            }
+                methods_types.push_back(type->getPointerTo());
 
-            if (parent->get_name() == "Object"){
-                break;
+                current_class->method_signatures[method->get_name()] = type;
+                method_indexes[current_class->get_name() + "." + method->get_name()] = method_index;
+                method_index++;
             }
-            parent = program->class_map[parent->get_parent()];
         } 
         vtable_type->setBody(methods_types);
 

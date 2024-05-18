@@ -1,3 +1,17 @@
+class Parent {
+    test : int32;
+
+    p_fun() : int32 {0}
+    ho() : string {"str"}
+}
+
+class Child extends Parent {
+    ch : int32;
+
+    c_fun() : int32 {0}
+    p_fun() : int32 {1}
+}
+
 class Main {
     foo : int32 <- 2;
 
