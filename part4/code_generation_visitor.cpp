@@ -338,8 +338,8 @@ void* Code_generation_visitor::visit(Binop* binop){
 void* Code_generation_visitor::visit(Call* call){
     Value *object = (Value*) call->get_object()->accept(this);
     string object_type = get_type_string(call->get_object());
-    // Position of the method in the m table
-    uint position = llvm_instance->method_indexes[object_type + "." + call->get_method()];
+    // Position of the method in the m tableµ
+    uint position = current_class->method_indexes[call->get_method()];
     string return_type = get_type_string(call);
     vector<Value *> args = this->accept_list(call->get_arg_expr_list());
 
@@ -455,7 +455,6 @@ string Code_generation_visitor::get_name(Value *value){
 Value *Code_generation_visitor::get_variable(string name){
     if(current_vtable.count(name))
         return current_vtable[name];
-
     // if not in v_table, it is in self
     return load(get_function_args()[0], name);
 }
