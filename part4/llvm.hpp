@@ -59,8 +59,6 @@ class LLVM {
                 return PointerType::get(module->getTypeByName(type), 0);
         }
 
-        void optimize();
-
         void print();
 
         void print(Value *value);

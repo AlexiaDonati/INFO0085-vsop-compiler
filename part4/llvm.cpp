@@ -180,33 +180,6 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
                     current_class->method_signatures[method->get_name()] = (FunctionType *) function_type;
                     current_class->method_indexes[method->get_name()] = method_index;
                     method_index++;
-
-                    /*
-                    urrent class (must change the first arg to the current class)
-                    std::vector<Type*> casted_args;
-
-                    for (auto& arg : function->args()) {
-                        casted_args.push_back(arg.get_type());
-                    }
-                    casted_args[0] = class_type->getPointerTo();
-                    
-                    FunctionType *casted_type = FunctionType::get(
-                        function->getReturnType(),   // The return type
-                        casted_args, // The arguments
-                        false);                       // No variable number of arguments
-
-                    Function *casted_function = Function::Create(
-                        casted_type,                            // The signature
-                        function->getLinkage(),           // The linkage
-                        function->getName() ,    // The name
-                        module);                                // The LLVM module
-
-                    casted_function->arg_begin()->setName("self");
-                    casted_function->copyAttributesFrom(function);
-
-                    methods.push_back(casted_function);
-
-                    type = casted_function->getFunctionType();*/
                 } else {
                     int index = current_class->method_indexes[method->get_name()];
 
@@ -362,10 +335,6 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
     Value *main_return = builder->CreateCall(Main_main_function, {main_value});
     
     builder->CreateRet(main_return);
-}
-
-void LLVM::optimize(){
-
 }
 
 void LLVM::print(){
