@@ -47,20 +47,18 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
         "pow",                          // The name
         module);                        // The LLVM module
 
-    /****************** Define the Classes ******************/
-    StructType *class_type = nullptr; // Declare structure for class
-    StructType *vtable_type = nullptr; // Declare VTable structure for class
+
+    /****************** Define the Class structure ******************/
+    for (auto &class_: program->class_map){
+        StructType *class_type = StructType::create(*context, class_.first); // Declare structure for class
+        StructType *vtable_type = StructType::create(*context, "struct." + class_.first + "Vtable"); // Declare VTable structure for class
+    }
     
     for (auto &class_: program->class_map){
+        StructType *class_type = module->getTypeByName(class_.first);
+        StructType *vtable_type = module->getTypeByName("struct." + class_.first + "Vtable");
 
         AST::Class *current_class = class_.second;
-
-        /****************** Define the Class structure ******************/
-        // Initialize the class structure
-        class_type = StructType::create(*context, current_class->get_name()); // Declare structure for class
-        
-        // Initialize the VTable structure
-        vtable_type = StructType::create(*context, "struct." + current_class->get_name() + "Vtable"); // Declare VTable structure for class
 
         /************** Fields **************/
         std::vector<Type *> class_fields = std::vector<Type *>();
@@ -145,8 +143,8 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
     for (auto &class_: program->class_map){
         AST::Class *current_class = class_.second;
 
-        vtable_type = module->getTypeByName("struct." + current_class->get_name() + "Vtable");
-        class_type = module->getTypeByName(current_class->get_name());
+        StructType *vtable_type = module->getTypeByName("struct." + current_class->get_name() + "Vtable");
+        StructType *class_type = module->getTypeByName(current_class->get_name());
 
         std::vector<Type *> methods_types;
         vector<Constant *> methods;
