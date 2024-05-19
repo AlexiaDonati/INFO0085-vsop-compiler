@@ -336,16 +336,17 @@ void* Code_generation_visitor::visit(Call* call){
     Value* m_table_value = load(object, 0); // m table always at index 0
     
     // Load object.method() in object m_tables
-    Value* length_method_value = load(m_table_value, position);
+    Value* method_value = load(m_table_value, position);
 
-    FunctionType *false_signature = FunctionType::get(
-        llvm_instance->get_type(return_type), // Return type
-        {},               // do not need to specify because will be con$mpleted automaticaly by call (to be verified)
-        false);           // No variable number of arguments
+    FunctionType *signature = current_class->method_signatures[call->get_method()];
 
-    args.insert(args.begin(), object);
+    // Cast object to the right type
+    Type *cast_destination_type = signature->getParamType(0);
+    Value *casted_value = BUILDER->CreateBitCast(object, cast_destination_type, "");
 
-    return BUILDER->CreateCall(false_signature, length_method_value, args, "");
+    args.insert(args.begin(), casted_value);
+
+    return BUILDER->CreateCall(signature, method_value, args, "");
 }
 
 void* Code_generation_visitor::visit(New* new_){
