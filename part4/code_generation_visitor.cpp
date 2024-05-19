@@ -105,6 +105,7 @@ void* Code_generation_visitor::visit(Method* method){
     for (auto arg_value : args_values){       
         if (!arg_value->getType()->isPointerTy()) {
             current_vtable[get_name(arg_value)] = BUILDER->CreateAlloca(arg_value->getType());
+            BUILDER->CreateStore(arg_value, current_vtable[get_name(arg_value)]);
         } else 
             current_vtable[get_name(arg_value)] = arg_value;
     }
