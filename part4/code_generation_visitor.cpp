@@ -254,13 +254,17 @@ void* Code_generation_visitor::visit(Let* let){
     if(current_vtable.count(name))
         old_variable = current_vtable[name];
 
-    Value *new_ptr = BUILDER->CreateAlloca(llvm_instance->get_type(let->get_type()));
-
     // initialize if needed
-    if(let->has_init_expr()){
-        Value* variable_new_value = (Value*) let->get_init_expr()->accept(this);
-        BUILDER->CreateStore(variable_new_value, new_ptr);
-    } 
+    Value *new_ptr;
+    Value* variable_new_value = (Value*) let->get_init_expr()->accept(this);
+    if (let->has_init_expr() && !variable_new_value->getType()->isPointerTy()){
+        new_ptr = BUILDER->CreateAlloca(llvm_instance->get_type(let->get_type()));
+        BUILDER->CreateStore(load(variable_new_value), new_ptr);
+    }
+    else if(let->has_init_expr())
+        new_ptr = variable_new_value;
+    else
+        new_ptr = BUILDER->CreateAlloca(llvm_instance->get_type(let->get_type()));
 
     current_vtable[name] = new_ptr;
 
@@ -277,7 +281,7 @@ void* Code_generation_visitor::visit(Let* let){
 }
 
 void* Code_generation_visitor::visit(Assign* assign){
-    Value* expr_value = (Value *) assign->get_expr()->accept(this);
+    Value* expr_value = load((Value *) assign->get_expr()->accept(this));
 
     Value *variable_ptr = get_variable_ptr(assign->get_name());
 
@@ -382,12 +386,19 @@ void* Code_generation_visitor::visit(Call* call){
 
 
     // Cast object to the right type
-    Type *cast_destination_type = signature->getParamType(0);
-    Value *casted_value = BUILDER->CreateBitCast(object, cast_destination_type, "");
+    vector<Value *> casted_args;
+    {
+        Type *cast_destination_type = signature->getParamType(0);
+        casted_args.push_back(BUILDER->CreateBitCast(object, cast_destination_type, ""));
+    }
+    int i = 1;
+    for(auto arg : args){
+        Type *cast_destination_type = signature->getParamType(i);
+        casted_args.push_back(BUILDER->CreateBitCast(arg, cast_destination_type, ""));
+        i++;
+    }
 
-    args.insert(args.begin(), casted_value);
-
-    return BUILDER->CreateCall(signature, method_value, args, "");
+    return BUILDER->CreateCall(signature, method_value, casted_args, "");
 }
 
 void* Code_generation_visitor::visit(New* new_){
@@ -433,7 +444,7 @@ void* Code_generation_visitor::visit(Unit* unit){
 }
 
 void* Code_generation_visitor::visit(Object* object){
-    return get_variable(object->get_name());
+    return get_variable_ptr(object->get_name());
 }
 
 /*********************************************************************************/
