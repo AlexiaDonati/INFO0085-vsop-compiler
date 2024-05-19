@@ -170,12 +170,6 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
             for(size_t y = 0; y < parent_methods->get_size(); ++y){
                 AST::Method *method = parent_methods->get_element(y); 
 
-                if(current_class->method_signatures.count(method->get_name()))
-                    continue;
-
-                Function *class_function = module->getFunction(current_class->get_name() + "__" + method->get_name());
-
-                //FunctionType * type;
                 if(!override_another_method[method->get_name()]){
                     override_another_method[method->get_name()] = true;
 
@@ -225,11 +219,6 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
                     methods_types[index] = PointerType::get(function_type, 0);
                     current_class->method_signatures[method->get_name()] = (FunctionType *) function_type;
                 }
-                //methods_types.push_back(type->getPointerTo());
-
-                //current_class->method_signatures[method->get_name()] = type;
-                //method_indexes[current_class->get_name() + "." + method->get_name()] = method_index;
-                //method_index++;
             }
         } 
         vtable_type->setBody(methods_types);
