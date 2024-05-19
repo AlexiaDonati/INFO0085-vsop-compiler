@@ -362,7 +362,21 @@ void* Code_generation_visitor::visit(New* new_){
 }
 
 void* Code_generation_visitor::visit(String* string_){
-    return BUILDER->CreateGlobalStringPtr(string_->get_value());
+    string raw_tring = string_->get_value();
+
+    // replace all "\\x0a" to '\n'
+    string new_string = raw_tring;
+    string test_string = "\\x0a";
+    size_t position = new_string.find(test_string);
+    while(position != string::npos){
+        string left = new_string.substr(0, position);
+        string right = new_string.substr(position + test_string.length());
+        new_string = left + "\n" + right;
+        position = new_string.find(test_string);
+    }
+    
+    
+    return BUILDER->CreateGlobalStringPtr(new_string);
 }
 
 void* Code_generation_visitor::visit(Integer* integer){
