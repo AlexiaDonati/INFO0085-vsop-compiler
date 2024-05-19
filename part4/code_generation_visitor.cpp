@@ -255,16 +255,10 @@ void* Code_generation_visitor::visit(Let* let){
         old_variable = current_vtable[name];
 
     // initialize if needed
-    Value *new_ptr;
+    Value *new_ptr = BUILDER->CreateAlloca(llvm_instance->get_type(let->get_type()));
     Value* variable_new_value = (Value*) let->get_init_expr()->accept(this);
-    if (let->has_init_expr() && !variable_new_value->getType()->isPointerTy()){
-        new_ptr = BUILDER->CreateAlloca(llvm_instance->get_type(let->get_type()));
-        BUILDER->CreateStore(load(variable_new_value), new_ptr);
-    }
-    else if(let->has_init_expr())
-        new_ptr = variable_new_value;
-    else
-        new_ptr = BUILDER->CreateAlloca(llvm_instance->get_type(let->get_type()));
+    
+    new_ptr = assign_value(variable_new_value, new_ptr);
 
     current_vtable[name] = new_ptr;
 
@@ -285,15 +279,25 @@ void* Code_generation_visitor::visit(Assign* assign){
 
     Value *variable_ptr = get_variable_ptr(assign->get_name());
 
-    // Cast expr_value
-    Type *cast_destination_type = load(variable_ptr)->getType();
-    expr_value = BUILDER->CreateBitCast(expr_value, cast_destination_type, "");
+    Value *new_value = assign_value(expr_value, variable_ptr);
 
-    BUILDER->CreateStore(expr_value, variable_ptr);
     if(current_vtable.count(assign->get_name()))
         current_vtable[assign->get_name()] = variable_ptr;
 
-    return expr_value;
+    return new_value;
+}
+
+Value *Code_generation_visitor::assign_value(Value* new_value, Value *destination_ptr){
+    // Cast new_value
+    Type *cast_destination_type = load(destination_ptr)->getType();
+    if(cast_destination_type->isPointerTy())
+        new_value = BUILDER->CreateBitCast(new_value, cast_destination_type, "");
+    else
+        new_value = load(new_value);
+
+    BUILDER->CreateStore(new_value, destination_ptr);
+
+    return new_value;
 }
 
 void* Code_generation_visitor::visit(Self* self){
@@ -614,6 +618,14 @@ bool Code_generation_visitor::is_parent(string child, string parent){
 
 Class *Code_generation_visitor::get_class(string class_name){
     return current_program->class_map[class_name];
+}
+
+bool Code_generation_visitor::is_field(string name){
+    if(current_vtable.count(name))
+        return false;
+
+    // if not in v_table, it is in self
+    return true;
 }
 
 /**************************/

@@ -79,6 +79,8 @@ namespace AST{
 
             /*********************************************************************************/
 
+            Value *assign_value(Value* new_value, Value *destination_ptr);
+
             Value* load(Value* object, string name);
 
             Value* get_pointer(Value* object, string name);
@@ -124,6 +126,8 @@ namespace AST{
             bool is_parent(string child, string parent);
 
             Class *get_class(string class_name);
+
+            bool is_field(string name);
     };
 
 }
