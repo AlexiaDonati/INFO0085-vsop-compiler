@@ -313,7 +313,13 @@ void* Code_generation_visitor::visit(Binop* binop){
         result = BUILDER->CreateSDiv(left, right, "");
         break;
     case POW:
-        // TODO: implement the pow function the call it here
+        {
+            vector<Value *> args;
+            args.push_back(left);
+            args.push_back(right);
+            Function *pow_function = MODULE->getFunction("pow");
+            result = BUILDER->CreateCall(pow_function, args, "");
+        }
         break;
     case AND:
         result = BUILDER->CreateAnd(left, right, "");
@@ -330,7 +336,6 @@ void* Code_generation_visitor::visit(Call* call){
     string object_type = get_type_string(call->get_object());
     // Position of the method in the m table
     uint position = current_class->method_indexes[call->get_method()];
-    string return_type = get_type_string(call);
     vector<Value *> args = this->accept_list(call->get_arg_expr_list());
 
     // Load the value of mtable of object

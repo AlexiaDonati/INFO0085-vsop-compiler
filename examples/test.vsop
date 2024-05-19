@@ -1,50 +1,16 @@
-class Parent {
-    test : int32;
-
-    p_fun() : int32 {0}
-    ho() : string {"str"}
-}
-
-class Child extends Parent {
-    ch : int32;
-
-    c_fun() : int32 {0}
-    p_fun() : int32 {1}
-}
-
 class Main {
-    foo : int32 <- 2;
-
-    foo() : int32 {
-        foo
-    }
-
-    test() : string {
-        "rgfdg"
-    }
-
-    pow(x : int32, n : int32) : int32 {
-        let pow : int32 <- 1 in {
-            let i : int32 <- 0 in {
-                while i < n do {
-                    pow <- pow + x;
-                    i <- i + 1
-                };
-                pow
-            }
-        }
-    }
-
     main() : int32 {
-        foo <- 2;
-        while (foo = 2) do {
-            foo <- foo + 1
-        };
-        if true and foo = 2
-        then {
-            foo <- 1
-        } else {
-            foo <- 0
+        let x :int32 in {
+            let n : int32 in {
+                x <- 2;
+                n <- 0;
+                while n < 10 do {
+                    printInt32(x ^ n);
+                    print(" -> ");
+                    n <- n + 1
+                };
+                print("           ")
+            }
         };
         0
     }

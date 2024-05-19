@@ -45,6 +45,38 @@ declare i32 @ungetc(i32, %_IO_FILE*)
 
 ; Object's methods
 
+define i32 @pow(i32 %x, i32 %n) {
+  %1 = alloca i32, align 4
+  store i32 %x, i32* %1, align 4
+  %2 = alloca i32, align 4
+  store i32 %n, i32* %2, align 4
+  %3 = alloca i32, align 4
+  store i32 1, i32* %3, align 4
+  %4 = alloca i32, align 4
+  store i32 0, i32* %4, align 4
+  br label %5
+
+5:                                                ; preds = %9, %0
+  %6 = load i32, i32* %4, align 4
+  %7 = load i32, i32* %2, align 4
+  %8 = icmp slt i32 %6, %7
+  br i1 %8, label %9, label %15
+
+9:                                                ; preds = %5
+  %10 = load i32, i32* %3, align 4
+  %11 = load i32, i32* %1, align 4
+  %12 = mul i32 %10, %11
+  store i32 %12, i32* %3, align 4
+  %13 = load i32, i32* %4, align 4
+  %14 = add i32 %13, 1
+  store i32 %14, i32* %4, align 4
+  br label %5
+
+15:                                               ; preds = %5
+  %16 = load i32, i32* %3, align 4
+  ret i32 %16
+}
+
 define %Object* @Object__print(%Object*, i8*) {
   %3 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([3 x i8], [3 x i8]* @.str, i64 0, i64 0), i8* %1)
   ret %Object* %0
