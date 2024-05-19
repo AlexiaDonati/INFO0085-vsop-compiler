@@ -281,9 +281,13 @@ void* Code_generation_visitor::visit(Let* let){
 }
 
 void* Code_generation_visitor::visit(Assign* assign){
-    Value* expr_value = load((Value *) assign->get_expr()->accept(this));
+    Value* expr_value = (Value *) assign->get_expr()->accept(this);
 
     Value *variable_ptr = get_variable_ptr(assign->get_name());
+
+    // Cast expr_value
+    Type *cast_destination_type = load(variable_ptr)->getType();
+    expr_value = BUILDER->CreateBitCast(expr_value, cast_destination_type, "");
 
     BUILDER->CreateStore(expr_value, variable_ptr);
     if(current_vtable.count(assign->get_name()))
@@ -444,7 +448,12 @@ void* Code_generation_visitor::visit(Unit* unit){
 }
 
 void* Code_generation_visitor::visit(Object* object){
-    return get_variable_ptr(object->get_name());
+    string name = object->get_name();
+    if(current_vtable.count(name))
+        return current_vtable[name];
+
+    // if not in v_table, it is in self
+    return load(get_function_args()[0], name);
 }
 
 /*********************************************************************************/
