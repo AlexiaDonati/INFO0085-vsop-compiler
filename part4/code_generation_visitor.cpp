@@ -1,6 +1,7 @@
 #include "ast.hpp"
 #include "code_generation_visitor.hpp"
 #include <iostream>
+#include <sstream>
 
 using namespace AST;
 using namespace std;
@@ -11,6 +12,8 @@ using namespace llvm;
 #define CONTEXT llvm_instance->context
 
 #define LOG(value) llvm_instance->print(value)
+
+string replace_in_string(string raw_string, string replace_target, string replacement);
 
 enum BINOP {EQ, LT, LEQ, ADD, SUB, MUL, DIV, POW, AND};
 enum UNOP {NOT, UNARY, ISNULL};
@@ -362,19 +365,24 @@ void* Code_generation_visitor::visit(New* new_){
 }
 
 void* Code_generation_visitor::visit(String* string_){
-    string raw_tring = string_->get_value();
+    string raw_string = string_->get_value();
 
-    // replace all "\\x0a" to '\n'
-    string new_string = raw_tring;
-    string test_string = "\\x0a";
-    size_t position = new_string.find(test_string);
-    while(position != string::npos){
-        string left = new_string.substr(0, position);
-        string right = new_string.substr(position + test_string.length());
-        new_string = left + "\n" + right;
-        position = new_string.find(test_string);
+    // replace all hex by the value
+    string new_string = replace_in_string(raw_string, "\\x08", "\x08"); // b
+    new_string = replace_in_string(new_string, "\\x09", "\x09"); // t
+    new_string = replace_in_string(new_string, "\\x0a", "\x0a"); // n
+    new_string = replace_in_string(new_string, "\\x0d", "\x0d"); // r
+    new_string = replace_in_string(new_string, "\\x22", "\x22"); // "
+    new_string = replace_in_string(new_string, "\\x5c", "\x5c"); // \\
+    new_string = replace_in_string(new_string, "\\x7F", "\\x7F");
+
+    for(int i = 0; i <= 0x1F; i++){
+        stringstream ss;
+        ss << "\\x" << hex << i;
+        string real_value;
+        real_value.push_back((char) i);
+        new_string = replace_in_string(new_string, ss.str(), real_value);
     }
-    
     
     return BUILDER->CreateGlobalStringPtr(new_string);
 }
@@ -533,4 +541,16 @@ void Code_generation_visitor::set_return_value(Value *return_value){
         BUILDER->CreateRet(
             return_value
         );
+}
+
+string replace_in_string(string raw_string, string replace_target, string replacement){
+    string new_string = raw_string;
+    size_t position = new_string.find(replace_target);
+    while(position != string::npos){
+        string left = new_string.substr(0, position);
+        string right = new_string.substr(position + replace_target.length());
+        new_string = left + replacement + right;
+        position = new_string.find(replace_target);
+    }
+    return new_string;
 }

@@ -8,7 +8,7 @@ source_filename = "../examples/test.vsop"
 
 @Main_mtable = internal constant %struct.MainVtable { %Object* (%Object*, i8*)* @Object__print, %Object* (%Object*, i1)* @Object__printBool, %Object* (%Object*, i32)* @Object__printInt32, i8* (%Object*)* @Object__inputLine, i1 (%Object*)* @Object__inputBool, i32 (%Object*)* @Object__inputInt32, i32 (%Main*)* @Main__main }
 @0 = private unnamed_addr constant [5 x i8] c" -> \00", align 1
-@1 = private unnamed_addr constant [4 x i8] c"\0A\0A\0A\00", align 1
+@1 = private unnamed_addr constant [7 x i8] c"\22\0A\0A\22\0A\\\00", align 1
 
 declare i8* @malloc(i64)
 
@@ -53,7 +53,7 @@ define i32 @Main__main(%Main* %self) {
   %27 = getelementptr %struct.MainVtable, %struct.MainVtable* %26, i32 0, i32 0
   %28 = load %Object* (%Object*, i8*)*, %Object* (%Object*, i8*)** %27, align 8
   %29 = bitcast %Main* %self to %Object*
-  %30 = call %Object* %28(%Object* %29, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @1, i32 0, i32 0))
+  %30 = call %Object* %28(%Object* %29, i8* getelementptr inbounds ([7 x i8], [7 x i8]* @1, i32 0, i32 0))
   ret i32 0
 }
 
