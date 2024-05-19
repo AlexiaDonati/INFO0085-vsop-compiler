@@ -38,6 +38,8 @@ const map<string, UNOP> unop_to_enum = {
 
 void* Code_generation_visitor::visit(Program* program){
     llvm_instance = LLVM::get_instance(program, program->get_file_name());
+
+    current_program = program;
     
     this->accept_list(program->get_class_list());
 
@@ -137,6 +139,26 @@ void* Code_generation_visitor::visit(Block* block){
 }
 
 void* Code_generation_visitor::visit(If* if_){
+    // Prepare casting if needed
+    string else_return_type = "";
+    string then_return_type = "";
+    bool must_cast_else = false;
+    bool must_cast_then = false;
+    string cast_type = "";
+    if(if_->has_else_expr()){
+        then_return_type = get_type_string(if_->get_then_expr());
+        else_return_type = get_type_string(if_->get_else_expr());
+        if(is_parent(then_return_type, else_return_type)){
+            then_return_type = true;
+            cast_type = else_return_type;
+        }
+        else if(is_parent(else_return_type, then_return_type)){
+            must_cast_else = true;
+            cast_type = then_return_type;
+        }
+    }
+
+
     // Make the condition block
     BasicBlock *cond_block = make_next_block();
 
@@ -150,6 +172,11 @@ void* Code_generation_visitor::visit(If* if_){
 
     Value *then_value = (Value*)if_->get_then_expr()->accept(this);
 
+    if(must_cast_then){
+        Type *cast_destination_type = llvm_instance->get_type(else_return_type);
+        then_value = BUILDER->CreateBitCast(then_value, cast_destination_type, "");
+    }
+
     BUILDER->CreateBr(after_block);
 
     // Make the else block
@@ -159,6 +186,11 @@ void* Code_generation_visitor::visit(If* if_){
         else_block = make_new_block();
 
         else_value = (Value*)if_->get_else_expr()->accept(this);
+
+        if(must_cast_else){
+            Type *cast_destination_type = llvm_instance->get_type(then_return_type);
+            else_value = BUILDER->CreateBitCast(else_value, cast_destination_type, "");
+        }
 
         BUILDER->CreateBr(after_block);
     }
@@ -181,7 +213,6 @@ void* Code_generation_visitor::visit(If* if_){
         return NULL;
 
     // use phi function to get the return value
-
     PHINode* phi_node = BUILDER->CreatePHI(then_value->getType(), 2, "");
     phi_node->addIncoming(then_value, then_block);
     phi_node->addIncoming(else_value, else_block);
@@ -336,9 +367,9 @@ void* Code_generation_visitor::visit(Binop* binop){
 
 void* Code_generation_visitor::visit(Call* call){
     Value *object = (Value*) call->get_object()->accept(this);
-    string object_type = get_type_string(call->get_object());
     // Position of the method in the m table
-    uint position = current_class->method_indexes[call->get_method()];
+    string object_type = get_type_string(call->get_object());
+    uint position = get_class(object_type)->method_indexes[call->get_method()];
     vector<Value *> args = this->accept_list(call->get_arg_expr_list());
 
     // Load the value of mtable of object
@@ -347,7 +378,8 @@ void* Code_generation_visitor::visit(Call* call){
     // Load object.method() in object m_tables
     Value* method_value = load(m_table_value, position);
 
-    FunctionType *signature = current_class->method_signatures[call->get_method()];
+    FunctionType *signature = get_class(object_type)->method_signatures[call->get_method()];
+
 
     // Cast object to the right type
     Type *cast_destination_type = signature->getParamType(0);
@@ -542,6 +574,29 @@ void Code_generation_visitor::set_return_value(Value *return_value){
             return_value
         );
 }
+
+bool Code_generation_visitor::is_parent(string child, string parent){
+    if(parent == "Object")
+        return true;
+    AST::Class *child_class = current_program->class_map[child];
+    AST::Class *parent_class = current_program->class_map[parent];
+
+    AST::Class *true_parent = current_program->class_map[child_class->get_parent()];
+    while(true){
+        if(true_parent->get_name() == parent_class->get_name())
+            return true;
+        if (true_parent->get_name() == "Object")
+            break;
+        true_parent = current_program->class_map[true_parent->get_parent()];
+    }
+    return false;
+}
+
+Class *Code_generation_visitor::get_class(string class_name){
+    return current_program->class_map[class_name];
+}
+
+/**************************/
 
 string replace_in_string(string raw_string, string replace_target, string replacement){
     string new_string = raw_string;

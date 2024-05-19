@@ -20,6 +20,7 @@ namespace AST{
 
         public:
             type::Table *table;
+            Program* current_program;
             Class* current_class;
             map<string, Value*> current_vtable;
 
@@ -119,6 +120,10 @@ namespace AST{
             BasicBlock * make_next_block(Function *function);
 
             void set_return_value(Value *return_value);
+
+            bool is_parent(string child, string parent);
+
+            Class *get_class(string class_name);
     };
 
 }
