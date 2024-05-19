@@ -4,7 +4,7 @@ CXX 			= clang++
 
 LLVM_CONFIG		= llvm-config 
 
-CXXFLAGS 		= -Wall -Wextra -ggdb3 $(shell ${LLVM_CONFIG} --cxxflags)
+CXXFLAGS 		= -ggdb3 $(shell ${LLVM_CONFIG} --cxxflags)
 
 LDFLAGS			= $(shell ${LLVM_CONFIG} --ldflags --system-libs --libs all)
 

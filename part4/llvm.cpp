@@ -240,7 +240,7 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
         Value* ptr_size = builder->CreateGEP(
             class_type,                                             // The pointed type
             ConstantPointerNull::get(class_type->getPointerTo()),   // The address
-            {builder->getInt32(1)},                                 // The index of the element we want
+            builder->getInt32(1),                                   // The index of the element we want
             "");                                                    // Name of the LLVM variable (not fixed here)
 
         Value* bytes_size = builder->CreatePointerCast(
@@ -295,7 +295,7 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
             current_class->get_name() + "_mtable");      // The name of the variable
 
         /******** Initialize the mtable ********/
-
+        
         Value* mtable_ptr = builder->CreateGEP(
             class_type,                 // The pointed type
             init_function->arg_begin(), // The address (self)
@@ -303,7 +303,7 @@ LLVM::LLVM(AST::Program* program, const std::string &fileName): fileName(fileNam
             builder->getInt32(0)}, 
             "");                        // Name of the LLVM variable (not fixed here)
 
-        builder->CreateStore(mtable, mtable_ptr);   
+        builder->CreateStore(mtable, mtable_ptr); 
     } 
 
     /************** Define the main function **************/
@@ -365,7 +365,7 @@ void LLVM::executable(const string &fileName){
 	exe << output;
 	exe.close();
 
-    string cmd = "clang " + exe_filename + ".ll" + " /usr/local/lib/vsop/*.ll" + " -o " + exe_filename;
+    string cmd = "clang -Wno-override-module " + exe_filename + ".ll" + " /usr/local/lib/vsop/*.ll" + " -o " + exe_filename;
     char char_cmd[cmd.size() + 1];
     strcpy(char_cmd, cmd.c_str());
 
