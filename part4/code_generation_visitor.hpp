@@ -130,6 +130,8 @@ namespace AST{
             bool is_field(string name);
 
             Value *get_unit_value();
+
+            Value *make_pointer(Value *value);
     };
 
 }

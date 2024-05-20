@@ -85,7 +85,7 @@ void* Code_generation_visitor::visit(Field* field){
 
     BUILDER->SetInsertPoint(last_block);
 
-    Value* init_value = (Value *) field->get_init_expr()->accept(this);
+    Value* init_value = load((Value *) field->get_init_expr()->accept(this));
 
     Value *field_ptr = get_variable_ptr(field->get_name());
 
@@ -116,7 +116,7 @@ void* Code_generation_visitor::visit(Method* method){
 
     Value *return_value = (Value *) method->get_body_block()->accept(this);
     
-    set_return_value(return_value);
+    set_return_value(load(return_value));
 
     // Remove args from v_table
     for (auto arg_value : args_values)
@@ -157,7 +157,7 @@ void* Code_generation_visitor::visit(If* if_){
 
 
 
-    Value *cond_value = (Value*) if_->get_cond_expr()->accept(this);
+    Value *cond_value = load((Value*) if_->get_cond_expr()->accept(this));
 
     // Make the condition block
     BasicBlock *cond_block = get_current_block();
@@ -168,7 +168,7 @@ void* Code_generation_visitor::visit(If* if_){
     // Make the then block
     BasicBlock *then_block = make_new_block();
 
-    Value *then_value = (Value*)if_->get_then_expr()->accept(this);
+    Value *then_value = load((Value*)if_->get_then_expr()->accept(this));
 
     if(must_cast_then){
         Type *cast_destination_type = llvm_instance->get_type(else_return_type);
@@ -183,7 +183,7 @@ void* Code_generation_visitor::visit(If* if_){
     if(if_->has_else_expr()){
         else_block = make_new_block();
 
-        else_value = (Value*)if_->get_else_expr()->accept(this);
+        else_value = load((Value*)if_->get_else_expr()->accept(this));
 
         if(must_cast_else){
             Type *cast_destination_type = llvm_instance->get_type(then_return_type);
@@ -215,14 +215,14 @@ void* Code_generation_visitor::visit(If* if_){
     phi_node->addIncoming(then_value, then_block);
     phi_node->addIncoming(else_value, else_block);
 
-    return dyn_cast<Value>(phi_node);
+    return make_pointer(dyn_cast<Value>(phi_node));
 }
 
 void* Code_generation_visitor::visit(While* while_){
     // Make the condition block
     BasicBlock *cond_block = make_next_block();
 
-    Value *cond_value = (Value*) while_->get_cond_expr()->accept(this);
+    Value *cond_value = load((Value*) while_->get_cond_expr()->accept(this));
 
     // Make the body block
     BasicBlock *body_block = make_new_block();
@@ -322,7 +322,7 @@ void* Code_generation_visitor::visit(Unop* unop){
         break;
     }
 
-    return result;
+    return make_pointer(result);
 }
 
 void* Code_generation_visitor::visit(Binop* binop){
@@ -350,7 +350,7 @@ void* Code_generation_visitor::visit(Binop* binop){
             phi_node->addIncoming(right, true_block);
             phi_node->addIncoming(left, false_block);
 
-            return dyn_cast<Value>(phi_node);
+            return make_pointer(dyn_cast<Value>(phi_node));
         }
 
     Value *result = NULL;
@@ -395,7 +395,7 @@ void* Code_generation_visitor::visit(Binop* binop){
         break;
     }
 
-    return result;
+    return make_pointer(result);
 }
 
 void* Code_generation_visitor::visit(Call* call){
@@ -421,11 +421,7 @@ void* Code_generation_visitor::visit(Call* call){
     int i = 1;
     for(auto arg : args){
         List<Expr> *args_expr = call->get_arg_expr_list();
-        if(get_type_string(args_expr->get_element(i-1)) == "string"){
-            Type *cast_destination_type = signature->getParamType(i);
-            casted_args.push_back(BUILDER->CreateBitCast(arg, cast_destination_type, "cast"));
-        }
-        else if(is_object_type(get_type_string(args_expr->get_element(i-1)))){
+        if(is_object_type(get_type_string(args_expr->get_element(i-1)))){
             Type *cast_destination_type = signature->getParamType(i);
             casted_args.push_back(BUILDER->CreateBitCast(load(arg), cast_destination_type, "cast"));
         } else {
@@ -434,23 +430,13 @@ void* Code_generation_visitor::visit(Call* call){
         i++;
     }
 
-    Value *result_value = BUILDER->CreateCall(signature, method_value, casted_args, "call");
-
-    Value *result_ptr = BUILDER->CreateAlloca(result_value->getType());
-    BUILDER->CreateStore(result_value, result_ptr);
-    
-    return result_ptr;
+    return make_pointer(BUILDER->CreateCall(signature, method_value, casted_args, "call"));
 }
 
 void* Code_generation_visitor::visit(New* new_){
     Function *new_function = MODULE->getFunction(new_->get_type() + "___new");
-
-    Value *result_value = BUILDER->CreateCall(new_function);
-
-    Value *result_ptr = BUILDER->CreateAlloca(result_value->getType());
-    BUILDER->CreateStore(result_value, result_ptr);
     
-    return result_ptr;
+    return make_pointer(BUILDER->CreateCall(new_function));
 }
 
 void* Code_generation_visitor::visit(String* string_){
@@ -472,21 +458,21 @@ void* Code_generation_visitor::visit(String* string_){
         real_value.push_back((char) i);
         new_string = replace_in_string(new_string, ss.str(), real_value);
     }
-    
-    return BUILDER->CreateGlobalStringPtr(new_string);
+
+    return make_pointer(BUILDER->CreateGlobalStringPtr(new_string));
 }
 
 void* Code_generation_visitor::visit(Integer* integer){
-    return BUILDER->getInt32(integer->get_value());
+    return make_pointer(BUILDER->getInt32(integer->get_value()));
 }
 
 void* Code_generation_visitor::visit(Boolean* boolean){
-    return BUILDER->getInt1(boolean->get_value());
+    return make_pointer(BUILDER->getInt1(boolean->get_value()));
 }
 
 void* Code_generation_visitor::visit(Unit* unit){
     unit->get_column();
-    return get_unit_value();
+    return make_pointer(get_unit_value());
 }
 
 void* Code_generation_visitor::visit(Object* object){
@@ -495,7 +481,7 @@ void* Code_generation_visitor::visit(Object* object){
         return current_vtable[name];
 
     // if not in v_table, it is in self
-    return load(get_function_args()[0], name);
+    return make_pointer(load(get_function_args()[0], name));
 }
 
 /*********************************************************************************/
@@ -671,6 +657,14 @@ bool Code_generation_visitor::is_field(string name){
 
 Value *Code_generation_visitor::get_unit_value(){
     return ConstantPointerNull::get(dyn_cast<PointerType>(llvm_instance->get_type("unit")));
+}
+
+Value *Code_generation_visitor::make_pointer(Value *value){
+    Value *result_value = value;
+
+    Value *result_ptr = BUILDER->CreateAlloca(result_value->getType());
+    BUILDER->CreateStore(result_value, result_ptr);
+    return result_ptr;
 }
 
 /**************************/
