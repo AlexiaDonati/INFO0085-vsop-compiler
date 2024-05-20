@@ -257,9 +257,10 @@ void* Code_generation_visitor::visit(Let* let){
 
     // initialize if needed
     Value *new_ptr = BUILDER->CreateAlloca(llvm_instance->get_type(let->get_type()));
-    Value* variable_new_value = (Value*) let->get_init_expr()->accept(this);
-    
-    new_ptr = assign_value(variable_new_value, new_ptr);
+    if(let->has_init_expr()){
+        Value* variable_new_value = (Value*) let->get_init_expr()->accept(this);
+        new_ptr = assign_value(variable_new_value, new_ptr);
+    }
 
     current_vtable[name] = new_ptr;
 
@@ -283,7 +284,7 @@ void* Code_generation_visitor::visit(Assign* assign){
     Value *new_value = assign_value(expr_value, variable_ptr);
 
     if(current_vtable.count(assign->get_name()))
-        current_vtable[assign->get_name()] = variable_ptr;
+        current_vtable[assign->get_name()] = new_value;
 
     return new_value;
 }
@@ -610,6 +611,9 @@ bool Code_generation_visitor::is_parent(string child, string parent){
         return true;
     AST::Class *child_class = current_program->class_map[child];
     AST::Class *parent_class = current_program->class_map[parent];
+
+    if(child_class == NULL || parent_class == NULL)
+        return false;
 
     AST::Class *true_parent = current_program->class_map[child_class->get_parent()];
     while(true){
