@@ -377,9 +377,12 @@ void* Literals_visitor::visit(If* if_) {
         else
             returned_table = new type::Table(LOC(if_), then_type);
     } else {
+        //
         if(is_child_of(then_type, else_type))
             returned_table = new type::Table(LOC(if_), else_type);
         else if(is_child_of(else_type, then_type))
+            returned_table = new type::Table(LOC(if_), then_type);
+        else
             returned_table = new type::Table(LOC(if_), then_type);
     }
 
