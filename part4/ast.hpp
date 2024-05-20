@@ -521,7 +521,12 @@ namespace AST
     class Field : public Expr {
         public:
             Field(int line, int column, std::string file_name, std::string name, std::string type, Expr* init_expr) : 
-                Expr(line, column, file_name), name(name), type(type), init_expr(init_expr) {};
+                Expr(line, column, file_name), name(name), type(type), init_expr(init_expr) {
+                    if (init_expr == nullptr){
+                        if(type == "string")
+                            this->init_expr = new String(line, column, file_name, "");
+                    }
+                };
             ~Field() {
                 if (has_init_expr())
                     delete init_expr;
