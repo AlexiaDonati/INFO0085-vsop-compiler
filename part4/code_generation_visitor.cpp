@@ -170,8 +170,11 @@ void* Code_generation_visitor::visit(If* if_){
 
     // Make the then block
     BasicBlock *then_block = make_new_block();
+    BasicBlock *last_then_block;
 
     Value *then_value = load((Value*)if_->get_then_expr()->accept(this));
+
+    last_then_block = get_current_block();
 
     if(must_cast_then){
         Type *cast_destination_type = llvm_instance->get_type(else_return_type);
@@ -182,11 +185,14 @@ void* Code_generation_visitor::visit(If* if_){
 
     // Make the else block
     BasicBlock *else_block = NULL;
+    BasicBlock *last_else_block = NULL;
     Value *else_value = NULL;
     if(if_->has_else_expr()){
         else_block = make_new_block();
 
         else_value = load((Value*)if_->get_else_expr()->accept(this));
+
+        last_else_block = get_current_block();
 
         if(must_cast_else){
             Type *cast_destination_type = llvm_instance->get_type(then_return_type);
@@ -215,8 +221,8 @@ void* Code_generation_visitor::visit(If* if_){
 
     // use phi function to get the return value
     PHINode* phi_node = BUILDER->CreatePHI(then_value->getType(), 2, "phi");
-    phi_node->addIncoming(then_value, then_block);
-    phi_node->addIncoming(else_value, else_block);
+    phi_node->addIncoming(then_value, last_then_block);
+    phi_node->addIncoming(else_value, last_else_block);
 
     return make_pointer(dyn_cast<Value>(phi_node));
 }
