@@ -116,7 +116,10 @@ void* Code_generation_visitor::visit(Method* method){
 
     Value *return_value = (Value *) method->get_body_block()->accept(this);
     
-    set_return_value(load(return_value));
+    // cast
+    return_value = load(return_value);
+    Value *casted_return_value = BUILDER->CreateBitCast(return_value, method_function->getReturnType(), "cast");
+    set_return_value(casted_return_value);
 
     // Remove args from v_table
     for (auto arg_value : args_values)
@@ -208,7 +211,7 @@ void* Code_generation_visitor::visit(If* if_){
 
     // If one is unit -> return unit
     if(get_type_string(if_) == "unit")
-        return get_unit_value();
+        return make_pointer(get_unit_value());
 
     // use phi function to get the return value
     PHINode* phi_node = BUILDER->CreatePHI(then_value->getType(), 2, "phi");
