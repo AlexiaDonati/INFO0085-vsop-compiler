@@ -14,6 +14,7 @@ using namespace llvm;
 #define LOG(value) llvm_instance->print(value)
 
 string replace_in_string(string raw_string, string replace_target, string replacement);
+bool is_object_type(string type);
 
 enum BINOP {EQ, LT, LEQ, ADD, SUB, MUL, DIV, POW, AND};
 enum UNOP {NOT, UNARY, ISNULL};
@@ -93,7 +94,7 @@ void* Code_generation_visitor::visit(Field* field){
 
     BUILDER->SetInsertPoint(previous_block);
 
-    return init_value;
+    return field_ptr;
 }
 
 void* Code_generation_visitor::visit(Method* method){
@@ -297,7 +298,7 @@ Value *Code_generation_visitor::assign_value(Value* new_value, Value *destinatio
 
     BUILDER->CreateStore(new_value, destination_ptr);
 
-    return new_value;
+    return destination_ptr;
 }
 
 void* Code_generation_visitor::visit(Self* self){
@@ -401,8 +402,13 @@ void* Code_generation_visitor::visit(Call* call){
     }
     int i = 1;
     for(auto arg : args){
-        Type *cast_destination_type = signature->getParamType(i);
-        casted_args.push_back(BUILDER->CreateBitCast(arg, cast_destination_type, ""));
+        List<Expr> *args_expr = call->get_arg_expr_list();
+        if(is_object_type(get_type_string(args_expr->get_element(i-1)))){
+            Type *cast_destination_type = signature->getParamType(i);
+            casted_args.push_back(BUILDER->CreateBitCast(arg, cast_destination_type, ""));
+        } else {
+            casted_args.push_back(load(arg));
+        }
         i++;
     }
 
@@ -640,4 +646,13 @@ string replace_in_string(string raw_string, string replace_target, string replac
         position = new_string.find(replace_target);
     }
     return new_string;
+}
+
+bool is_object_type(string type){
+    if(type == "int32"
+        || type == "bool"
+        || type == "unit"
+        || type == "")
+        return false;
+    return true;
 }
