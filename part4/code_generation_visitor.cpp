@@ -305,7 +305,7 @@ void* Code_generation_visitor::visit(Unop* unop){
 
     Value *result = NULL;
 
-    Value *expr = (Value*) unop->get_expr()->accept(this);
+    Value *expr = load((Value*) unop->get_expr()->accept(this));
 
     switch (unop_to_enum.at(op)){
     case NOT:
@@ -329,8 +329,8 @@ void* Code_generation_visitor::visit(Binop* binop){
 
     Value *result = NULL;
 
-    Value *left = (Value*) binop->get_left_expr()->accept(this);
-    Value *right = (Value*) binop->get_right_expr()->accept(this);
+    Value *left = load((Value*) binop->get_left_expr()->accept(this));
+    Value *right = load((Value*) binop->get_right_expr()->accept(this));
 
     switch (binop_to_enum.at(op)){
     case EQ:
@@ -408,8 +408,13 @@ void* Code_generation_visitor::visit(Call* call){
         }
         i++;
     }
+
+    Value *result_value = BUILDER->CreateCall(signature, method_value, casted_args, "call");
+
+    Value *result_ptr = BUILDER->CreateAlloca(result_value->getType());
+    BUILDER->CreateStore(result_value, result_ptr);
     
-    return BUILDER->CreateCall(signature, method_value, casted_args, "call");
+    return result_ptr;
 }
 
 void* Code_generation_visitor::visit(New* new_){
