@@ -156,10 +156,11 @@ void* Code_generation_visitor::visit(If* if_){
     }
 
 
-    // Make the condition block
-    BasicBlock *cond_block = get_current_block();
 
     Value *cond_value = (Value*) if_->get_cond_expr()->accept(this);
+
+    // Make the condition block
+    BasicBlock *cond_block = get_current_block();
 
     // Make the after block
     BasicBlock *after_block = make_new_block();
@@ -327,6 +328,31 @@ void* Code_generation_visitor::visit(Unop* unop){
 void* Code_generation_visitor::visit(Binop* binop){
     string op = binop->get_op();
 
+    if(binop_to_enum.at(op) == AND)
+    {
+            BasicBlock *old_block = get_current_block();
+            BasicBlock *true_block = make_new_block();
+            BasicBlock *false_block = make_new_block();
+            BasicBlock *after_block = make_new_block();
+            BUILDER->SetInsertPoint(old_block);
+            Value *left = load((Value*) binop->get_left_expr()->accept(this));
+            BUILDER->CreateCondBr(left, true_block, false_block);
+
+            BUILDER->SetInsertPoint(true_block);
+            Value *right = load((Value*) binop->get_right_expr()->accept(this));
+            BUILDER->CreateBr(after_block);
+            BUILDER->SetInsertPoint(false_block);
+            BUILDER->CreateBr(after_block);
+            BUILDER->SetInsertPoint(after_block);
+
+            // get value with phi
+            PHINode* phi_node = BUILDER->CreatePHI(left->getType(), 2, "phi");
+            phi_node->addIncoming(right, true_block);
+            phi_node->addIncoming(left, false_block);
+
+            return dyn_cast<Value>(phi_node);
+        }
+
     Value *result = NULL;
 
     Value *left = load((Value*) binop->get_left_expr()->accept(this));
@@ -364,7 +390,6 @@ void* Code_generation_visitor::visit(Binop* binop){
         }
         break;
     case AND:
-        result = BUILDER->CreateAnd(left, right, "and");
         break;
     default:
         break;
@@ -420,7 +445,12 @@ void* Code_generation_visitor::visit(Call* call){
 void* Code_generation_visitor::visit(New* new_){
     Function *new_function = MODULE->getFunction(new_->get_type() + "___new");
 
-    return BUILDER->CreateCall(new_function);
+    Value *result_value = BUILDER->CreateCall(new_function);
+
+    Value *result_ptr = BUILDER->CreateAlloca(result_value->getType());
+    BUILDER->CreateStore(result_value, result_ptr);
+    
+    return result_ptr;
 }
 
 void* Code_generation_visitor::visit(String* string_){
