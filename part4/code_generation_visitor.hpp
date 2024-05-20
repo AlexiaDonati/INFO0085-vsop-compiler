@@ -128,6 +128,8 @@ namespace AST{
             Class *get_class(string class_name);
 
             bool is_field(string name);
+
+            Value *get_unit_value();
     };
 
 }

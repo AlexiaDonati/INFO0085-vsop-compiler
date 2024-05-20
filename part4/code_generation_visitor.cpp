@@ -43,7 +43,6 @@ void* Code_generation_visitor::visit(Program* program){
     current_program = program;
     
     this->accept_list(program->get_class_list());
-
     return NULL;
 }
 
@@ -161,7 +160,7 @@ void* Code_generation_visitor::visit(If* if_){
 
 
     // Make the condition block
-    BasicBlock *cond_block = make_next_block();
+    BasicBlock *cond_block = get_current_block();
 
     Value *cond_value = (Value*) if_->get_cond_expr()->accept(this);
 
@@ -175,7 +174,7 @@ void* Code_generation_visitor::visit(If* if_){
 
     if(must_cast_then){
         Type *cast_destination_type = llvm_instance->get_type(else_return_type);
-        then_value = BUILDER->CreateBitCast(then_value, cast_destination_type, "");
+        then_value = BUILDER->CreateBitCast(then_value, cast_destination_type, "cast");
     }
 
     BUILDER->CreateBr(after_block);
@@ -190,7 +189,7 @@ void* Code_generation_visitor::visit(If* if_){
 
         if(must_cast_else){
             Type *cast_destination_type = llvm_instance->get_type(then_return_type);
-            else_value = BUILDER->CreateBitCast(else_value, cast_destination_type, "");
+            else_value = BUILDER->CreateBitCast(else_value, cast_destination_type, "cast");
         }
 
         BUILDER->CreateBr(after_block);
@@ -210,11 +209,11 @@ void* Code_generation_visitor::visit(If* if_){
     BUILDER->SetInsertPoint(after_block);
 
     // If one is unit -> return unit
-    if(else_value == NULL || then_value == NULL)
-        return NULL;
+    if(get_type_string(if_) == "unit")
+        return get_unit_value();
 
     // use phi function to get the return value
-    PHINode* phi_node = BUILDER->CreatePHI(then_value->getType(), 2, "");
+    PHINode* phi_node = BUILDER->CreatePHI(then_value->getType(), 2, "phi");
     phi_node->addIncoming(then_value, then_block);
     phi_node->addIncoming(else_value, else_block);
 
@@ -245,7 +244,7 @@ void* Code_generation_visitor::visit(While* while_){
     // Must finish on the after block
     BUILDER->SetInsertPoint(after_block);
     
-    return NULL;
+    return get_unit_value();
 }
 
 void* Code_generation_visitor::visit(Let* let){
@@ -293,7 +292,7 @@ Value *Code_generation_visitor::assign_value(Value* new_value, Value *destinatio
     // Cast new_value
     Type *cast_destination_type = load(destination_ptr)->getType();
     if(cast_destination_type->isPointerTy())
-        new_value = BUILDER->CreateBitCast(new_value, cast_destination_type, "");
+        new_value = BUILDER->CreateBitCast(new_value, cast_destination_type, "cast");
     else
         new_value = load(new_value);
 
@@ -315,13 +314,13 @@ void* Code_generation_visitor::visit(Unop* unop){
 
     switch (unop_to_enum.at(op)){
     case NOT:
-        result = BUILDER->CreateNot(expr, "");
+        result = BUILDER->CreateNot(expr, "not");
         break;
     case UNARY:
-        result = BUILDER->CreateNeg(expr, "");
+        result = BUILDER->CreateNeg(expr, "neg");
         break;
     case ISNULL:
-        result = BUILDER->CreateIsNull(expr, "");
+        result = BUILDER->CreateIsNull(expr, "isnull");
         break;
     default:
         break;
@@ -340,25 +339,25 @@ void* Code_generation_visitor::visit(Binop* binop){
 
     switch (binop_to_enum.at(op)){
     case EQ:
-        result = BUILDER->CreateICmpEQ(left, right, "");
+        result = BUILDER->CreateICmpEQ(left, right, "eq");
         break;
     case LT:
-        result = BUILDER->CreateICmpSLT(left, right, "");
+        result = BUILDER->CreateICmpSLT(left, right, "slt");
         break;
     case LEQ:
-        result = BUILDER->CreateICmpSLE(left, right, "");
+        result = BUILDER->CreateICmpSLE(left, right, "sle");
         break;
     case ADD:
-        result = BUILDER->CreateAdd(left, right, "");
+        result = BUILDER->CreateAdd(left, right, "add");
         break;
     case SUB:
-        result = BUILDER->CreateSub(left, right, "");
+        result = BUILDER->CreateSub(left, right, "sub");
         break;
     case MUL:
-        result = BUILDER->CreateMul(left, right, "");
+        result = BUILDER->CreateMul(left, right, "mul");
         break;
     case DIV:
-        result = BUILDER->CreateSDiv(left, right, "");
+        result = BUILDER->CreateSDiv(left, right, "div");
         break;
     case POW:
         {
@@ -366,11 +365,11 @@ void* Code_generation_visitor::visit(Binop* binop){
             args.push_back(left);
             args.push_back(right);
             Function *pow_function = MODULE->getFunction("pow");
-            result = BUILDER->CreateCall(pow_function, args, "");
+            result = BUILDER->CreateCall(pow_function, args, "pow");
         }
         break;
     case AND:
-        result = BUILDER->CreateAnd(left, right, "");
+        result = BUILDER->CreateAnd(left, right, "and");
         break;
     default:
         break;
@@ -399,21 +398,21 @@ void* Code_generation_visitor::visit(Call* call){
     vector<Value *> casted_args;
     {
         Type *cast_destination_type = signature->getParamType(0);
-        casted_args.push_back(BUILDER->CreateBitCast(object, cast_destination_type, ""));
+        casted_args.push_back(BUILDER->CreateBitCast(object, cast_destination_type, "cast"));
     }
     int i = 1;
     for(auto arg : args){
         List<Expr> *args_expr = call->get_arg_expr_list();
         if(is_object_type(get_type_string(args_expr->get_element(i-1)))){
             Type *cast_destination_type = signature->getParamType(i);
-            casted_args.push_back(BUILDER->CreateBitCast(arg, cast_destination_type, ""));
+            casted_args.push_back(BUILDER->CreateBitCast(arg, cast_destination_type, "cast"));
         } else {
             casted_args.push_back(load(arg));
         }
         i++;
     }
 
-    return BUILDER->CreateCall(signature, method_value, casted_args, "");
+    return BUILDER->CreateCall(signature, method_value, casted_args, "call");
 }
 
 void* Code_generation_visitor::visit(New* new_){
@@ -455,7 +454,7 @@ void* Code_generation_visitor::visit(Boolean* boolean){
 
 void* Code_generation_visitor::visit(Unit* unit){
     unit->get_column();
-    return NULL;
+    return get_unit_value();
 }
 
 void* Code_generation_visitor::visit(Object* object){
@@ -471,7 +470,7 @@ void* Code_generation_visitor::visit(Object* object){
 
 Value* Code_generation_visitor::load(Value* object, string name){
     Value* ptr = get_pointer(object, name);
-    return BUILDER->CreateLoad(ptr, "");
+    return BUILDER->CreateLoad(ptr, "value");
 }
 
 Value* Code_generation_visitor::get_pointer(Value* object, string name){
@@ -479,19 +478,19 @@ Value* Code_generation_visitor::get_pointer(Value* object, string name){
             object, 
             {BUILDER->getInt32(0), 
             BUILDER->getInt32(current_class->field_indexes[name])},
-            "");
+            "ptr");
 }
 
 Value* Code_generation_visitor::load(Value* object, uint position){
     Value* ptr = get_pointer(object, position);
-    return BUILDER->CreateLoad(ptr, "");
+    return BUILDER->CreateLoad(ptr, "value");
 }
 
 Value* Code_generation_visitor::load(Value* ptr){
     if (!ptr->getType()->isPointerTy()) {
         return ptr;
     } 
-    return BUILDER->CreateLoad(ptr, "");
+    return BUILDER->CreateLoad(ptr, "value");
 }
 
 Value* Code_generation_visitor::get_pointer(Value* object, uint position){
@@ -499,7 +498,7 @@ Value* Code_generation_visitor::get_pointer(Value* object, uint position){
             object, 
             {BUILDER->getInt32(0), 
             BUILDER->getInt32(position)},
-            "");
+            "ptr");
 }
 
 string Code_generation_visitor::get_type_string(Expr *expr){
@@ -569,7 +568,7 @@ BasicBlock * Code_generation_visitor::make_new_block(Function *function){
     // ==== ==== ==== Define block
     BasicBlock *function_block = BasicBlock::Create(
         *CONTEXT,         // The LLVM context
-        "",             // The label of the block
+        "block",             // The label of the block
         function);        // The function in which should be inserted the block
     
     // ==== ==== ==== Define Builder
@@ -586,7 +585,7 @@ BasicBlock * Code_generation_visitor::make_next_block(Function *function){
     // ==== ==== ==== Define block
     BasicBlock *function_block = BasicBlock::Create(
         *CONTEXT,         // The LLVM context
-        "",             // The label of the block
+        "block",             // The label of the block
         function);        // The function in which should be inserted the block
     
     // ==== ==== ==== Define Builder
@@ -636,6 +635,10 @@ bool Code_generation_visitor::is_field(string name){
 
     // if not in v_table, it is in self
     return true;
+}
+
+Value *Code_generation_visitor::get_unit_value(){
+    return ConstantPointerNull::get(dyn_cast<PointerType>(llvm_instance->get_type("unit")));
 }
 
 /**************************/
