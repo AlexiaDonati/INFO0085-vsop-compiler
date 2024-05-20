@@ -108,11 +108,8 @@ void* Code_generation_visitor::visit(Method* method){
     make_new_block(method_function);
     
     for (auto arg_value : args_values){       
-        if (!arg_value->getType()->isPointerTy()) {
-            current_vtable[get_name(arg_value)] = BUILDER->CreateAlloca(arg_value->getType());
-            BUILDER->CreateStore(arg_value, current_vtable[get_name(arg_value)]);
-        } else 
-            current_vtable[get_name(arg_value)] = arg_value;
+        current_vtable[get_name(arg_value)] = BUILDER->CreateAlloca(arg_value->getType());
+        BUILDER->CreateStore(arg_value, current_vtable[get_name(arg_value)]);
     }
 
     // Make block then implement it
@@ -257,7 +254,7 @@ void* Code_generation_visitor::visit(Let* let){
     // initialize if needed
     Value *new_ptr = BUILDER->CreateAlloca(llvm_instance->get_type(let->get_type()));
     if(let->has_init_expr()){
-        Value* variable_new_value = (Value*) let->get_init_expr()->accept(this);
+        Value* variable_new_value = load((Value*) let->get_init_expr()->accept(this));
         new_ptr = assign_value(variable_new_value, new_ptr);
     }
 
@@ -276,7 +273,7 @@ void* Code_generation_visitor::visit(Let* let){
 }
 
 void* Code_generation_visitor::visit(Assign* assign){
-    Value* expr_value = (Value *) assign->get_expr()->accept(this);
+    Value* expr_value = load((Value *) assign->get_expr()->accept(this));
 
     Value *variable_ptr = get_variable_ptr(assign->get_name());
 
@@ -293,8 +290,6 @@ Value *Code_generation_visitor::assign_value(Value* new_value, Value *destinatio
     Type *cast_destination_type = load(destination_ptr)->getType();
     if(cast_destination_type->isPointerTy())
         new_value = BUILDER->CreateBitCast(new_value, cast_destination_type, "cast");
-    else
-        new_value = load(new_value);
 
     BUILDER->CreateStore(new_value, destination_ptr);
 
@@ -302,7 +297,7 @@ Value *Code_generation_visitor::assign_value(Value* new_value, Value *destinatio
 }
 
 void* Code_generation_visitor::visit(Self* self){
-    return get_function_args().front();
+    return current_vtable["self"];
 }
 
 void* Code_generation_visitor::visit(Unop* unop){
@@ -384,10 +379,8 @@ void* Code_generation_visitor::visit(Call* call){
     string object_type = get_type_string(call->get_object());
     uint position = get_class(object_type)->method_indexes[call->get_method()];
     vector<Value *> args = this->accept_list(call->get_arg_expr_list());
-
     // Load the value of mtable of object
-    Value* m_table_value = load(object, 0); // m table always at index 0
-    
+    Value* m_table_value = load(load(object), 0); // m table always at index 0
     // Load object.method() in object m_tables
     Value* method_value = load(m_table_value, position);
 
@@ -398,20 +391,24 @@ void* Code_generation_visitor::visit(Call* call){
     vector<Value *> casted_args;
     {
         Type *cast_destination_type = signature->getParamType(0);
-        casted_args.push_back(BUILDER->CreateBitCast(object, cast_destination_type, "cast"));
+        casted_args.push_back(BUILDER->CreateBitCast(load(object), cast_destination_type, "cast"));
     }
     int i = 1;
     for(auto arg : args){
         List<Expr> *args_expr = call->get_arg_expr_list();
-        if(is_object_type(get_type_string(args_expr->get_element(i-1)))){
+        if(get_type_string(args_expr->get_element(i-1)) == "string"){
             Type *cast_destination_type = signature->getParamType(i);
             casted_args.push_back(BUILDER->CreateBitCast(arg, cast_destination_type, "cast"));
+        }
+        else if(is_object_type(get_type_string(args_expr->get_element(i-1)))){
+            Type *cast_destination_type = signature->getParamType(i);
+            casted_args.push_back(BUILDER->CreateBitCast(load(arg), cast_destination_type, "cast"));
         } else {
             casted_args.push_back(load(arg));
         }
         i++;
     }
-
+    
     return BUILDER->CreateCall(signature, method_value, casted_args, "call");
 }
 
