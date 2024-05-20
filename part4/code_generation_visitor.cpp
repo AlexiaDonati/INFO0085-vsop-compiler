@@ -360,7 +360,15 @@ void* Code_generation_visitor::visit(Binop* binop){
 
     switch (binop_to_enum.at(op)){
     case EQ:
-        result = BUILDER->CreateICmpEQ(left, right, "eq");
+        if(is_object_type(get_type_string(binop->get_left_expr()))){
+            Type *cast_destination_type = llvm_instance->get_type("Object");
+            Value *left_caster_to_compare = BUILDER->CreateBitCast(left, cast_destination_type, "cast");
+            Value *right_caster_to_compare = BUILDER->CreateBitCast(right, cast_destination_type, "cast");
+            result = BUILDER->CreateICmpEQ(left_caster_to_compare, right_caster_to_compare, "eq");
+        }
+        else
+            result = BUILDER->CreateICmpEQ(left, right, "eq");
+
         break;
     case LT:
         result = BUILDER->CreateICmpSLT(left, right, "slt");
